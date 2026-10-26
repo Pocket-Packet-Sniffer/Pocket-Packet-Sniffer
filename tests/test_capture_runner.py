@@ -7,9 +7,9 @@ from threading import Event
 import pytest
 
 from pocket_packet_sniffer.capture import (
+    CapturedPacket,
     CaptureInterfaceError,
     CapturePermissionError,
-    CapturedPacket,
     Capturer,
 )
 from pocket_packet_sniffer.presentation.capture_runner import (
