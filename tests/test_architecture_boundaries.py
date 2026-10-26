@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 ANALYSIS_PATH = ROOT / "src" / "pocket_packet_sniffer" / "analysis"
 
