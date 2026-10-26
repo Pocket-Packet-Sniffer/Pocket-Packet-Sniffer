@@ -57,6 +57,7 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 - [GitHub operating guide](Docs/GITHUB_OPERATING_GUIDE.md) — issue labels, milestones, branching, reviews, merge rules, releases, and repository settings.
 - [Project process](Docs/PROJECT_PROCESS.md) — requirements authority, layer responsibilities, prioritization, and quality gates.
 - [Architecture Decision Record template](Docs/adr/0000-template.md) — record important design choices and their trade-offs.
+- [ADR 0001 — Analysis/Storage record adapter](Docs/adr/0001-analysis-storage-record-adapter.md) — proposed application-boundary mapping, pending layer-owner review.
 - [Contributing guide](CONTRIBUTING.md) — the expected issue-to-PR workflow.
 - [Security and safe use](SECURITY.md) — passive-only scope and sensitive capture-data handling.
 - [Security validation record](Docs/SECURITY_VALIDATION.md) — automated permission checks and remaining manual platform verification.
