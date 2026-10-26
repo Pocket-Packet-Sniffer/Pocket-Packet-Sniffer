@@ -17,7 +17,6 @@ from pocket_packet_sniffer.storage import (
     StorageUnavailableError,
 )
 
-
 BASE_TIME = datetime(2026, 10, 26, 12, 30, 0, 123456, tzinfo=timezone.utc)
 
 
