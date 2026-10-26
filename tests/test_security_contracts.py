@@ -33,3 +33,14 @@ def test_capture_storage_uses_private_directory_and_file_modes(tmp_path):
     assert directory_mode & 0o077 == 0
     assert database_mode == 0o600
     assert pcap_mode == 0o600
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX file-mode checks do not apply to Windows ACLs")
+def test_existing_capture_directory_is_tightened_to_private_mode(tmp_path):
+    capture_dir = tmp_path / "existing-captures"
+    capture_dir.mkdir()
+    capture_dir.chmod(0o755)
+
+    PcapSqliteRepository(capture_dir)
+
+    assert stat.S_IMODE(capture_dir.stat().st_mode) == 0o700

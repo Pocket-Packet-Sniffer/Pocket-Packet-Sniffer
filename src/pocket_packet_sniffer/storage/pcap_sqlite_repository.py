@@ -57,6 +57,9 @@ class PcapSqliteRepository(Repository):
             raise InvalidRecordError("timeout must be positive")
         try:
             self.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            if os.name == "posix":
+                # mkdir(mode=...) does not tighten permissions on an existing directory.
+                self.directory.chmod(0o700)
             self._initialize()
             self._restrict_permissions(self.database_path)
         except PermissionError as exc:

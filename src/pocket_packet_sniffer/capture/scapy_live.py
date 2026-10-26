@@ -165,6 +165,11 @@ class ScapyCapturer(Capturer):
             backend_error = getattr(sniffer, "exception", None)
             if backend_error is not None:
                 raise _translate_backend_error(backend_error, self.interface)
+        except KeyboardInterrupt:
+            # Ctrl+C must stop the background sniffer before the CLI returns.
+            stop_event.set()
+            _stop_sniffer_safely(sniffer)
+            raise
         except CaptureError:
             _stop_sniffer_safely(sniffer)
             raise

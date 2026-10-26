@@ -217,3 +217,32 @@ def test_missing_scapy_dependency_is_clear(monkeypatch):
     monkeypatch.setitem(sys.modules, "scapy.all", None)
     with pytest.raises(CaptureBackendUnavailableError, match="requires Scapy"):
         ScapyCapturer("eth-test").capture(lambda _record: None, Event())
+
+
+def test_keyboard_interrupt_stops_background_live_sniffer(monkeypatch):
+    class InterruptingEvent(Event):
+        def wait(self, timeout=None):
+            raise KeyboardInterrupt()
+
+    instances = []
+
+    class TrackingSniffer(FakeSniffer):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.stopped = False
+            instances.append(self)
+
+        def stop(self, join=True):
+            self.stopped = True
+            super().stop(join)
+
+    install_fake_scapy(monkeypatch, sniffer_factory=TrackingSniffer)
+    stop_event = InterruptingEvent()
+
+    with pytest.raises(KeyboardInterrupt):
+        ScapyCapturer("eth-test").capture(lambda _record: None, stop_event)
+
+    assert stop_event.is_set()
+    assert len(instances) == 1
+    assert instances[0].stopped
+    assert instances[0].running is False

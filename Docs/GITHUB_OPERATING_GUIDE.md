@@ -133,4 +133,4 @@ A maintainer should complete these UI-level settings after code and CI are ready
 
 ## 11. Current limitations of this setup
 
-The working PR establishes process documentation and forms. It does not yet add application CI, CODEOWNERS, or branch protections because the source tree and its validated checks are not yet in `main`. GitHub labels, milestones, repository rules, and organization-level security settings need a maintainer action in the GitHub UI; this integration does not expose write operations for those settings.
+The process PRs have added the working CI workflow and initial CODEOWNERS. The end-to-end integration branch adds the CLI/session package and its tests; after merge, the remaining source-level dependency structure is documented. GitHub labels, milestones, repository rules, and organization-level security settings need a maintainer action in the GitHub UI; this integration does not expose write operations for those settings.
