@@ -22,6 +22,6 @@ This document records what is verified by code/tests and what still requires a m
 
 - Live capture must be tested on each intended operating system with its actual capture driver and least-privilege configuration. Unit tests mock Scapy and do not prove hardware support.
 - Wi-Fi monitor mode, BLE scanning, and Raspberry Pi performance are not validated by the current CI environment.
-- The end-to-end integration branch wires the CLI through `CaptureSession`, invokes the stable error helper, adapts analyzed metadata plus original frame bytes into Storage, and tests PCAP replay/query/CSV export using generated frames. The branch must be reviewed/merged and its live-interface behaviour must be smoke-tested on an authorized target before claiming live deployment readiness.
-- Re-run the security review after the end-to-end CLI/session PR is merged to confirm no unexpected upload or external-service path has been introduced.
+- PR #24 wires the CLI through `CaptureSession`, invokes the stable error helper, adapts analyzed metadata plus original frame bytes into Storage, and tests PCAP replay/query/CSV export using generated frames. It is merged to main; CI run [40353363252](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40353363252) passed with 81 tests. Live-interface behaviour must still be smoke-tested on an authorized target before claiming live deployment readiness.
+- The merged CLI/session path was reviewed for local-file-only capture/query/export commands; run a final target-environment security review after live-interface smoke testing, and re-check if external integrations are added.
 - Verify Windows file access through ACLs separately; POSIX mode-bit checks do not apply on Windows.

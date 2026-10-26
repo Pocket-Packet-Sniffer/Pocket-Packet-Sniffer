@@ -1,80 +1,66 @@
-# Pocket Packet Sniffer — Sprint Plan
+# Pocket Packet Sniffer — Sprint Plan and Closeout
 
-This plan groups work into two delivery increments. Sprint dates and commitments must be agreed by the team; no due dates are inferred here. The sprint assignments are a planning proposal and do not indicate that work is completed.
+This document records the planned work and an evidence-based status snapshot as of 2026-10-26. Sprint dates and retrospective outcomes are not inferred; the team must record those separately. A merged PR and passing CI prove implementation/test status, but do not substitute for the team's actual sprint review and retrospective.
 
 ## Sprint 1 — Foundation and core packet pipeline
 
 **Goal:** establish a reviewable workflow and bring the base capture-to-storage pipeline together.
 
-| Issue | Work | Owner/coordinator | Estimate (points) | Intended outcome |
-|---|---|---|---|
-| #1 | Foundation workflow, CI and requirement traceability | Vikas coordinates; shared work | 5 | Workflow and traceability are documented; CI is active and passing on merged code. |
-| #3 | Raw packet capture via common Capturer interface | Vikas | 5 | Replay fixture backend and supported passive live capture implementation, reviewed and tested. |
-| #4 | Parse/classify packets into a common packet record | Shivanand | 5 | Agree the shared packet model with Capture and Storage; parsing tests pass. |
-| #5 | PCAP storage and Repository interface | Shivakumara GP | 5 | Persist packets/metadata and verify retrieval, after agreeing the shared model. |
-| #9 | Missing interface and permission failures | Vikas | 3 | Actionable typed errors; Presentation/CLI integration is handled with the owning layer. |
-| #10 | Start security/passive-use and portability checks | Vikas + Shivakumara, shared | 5 | Capture/storage safety review begins; evidence is recorded. |
-| #11 | Test scaffolding and CI setup | Sanjith coordinates, shared | 5 | Initial CI and unit tests run on PRs; end-to-end scope is planned. |
-| #15 | Sprint planning/review/retrospective records | Vikas coordinates; shared | 2 | Agree sprint commitment, note blockers, then record review and retrospective at sprint end. |
-| #16 | Repository configuration | Vikas | TBD | Complete contributor access check and remaining repository settings when prerequisites are ready. |
+### Planned scope and current disposition
+
+| Issue | Work | Owner/coordinator | Estimate | Sprint 1 disposition |
+|---|---|---|---:|---|
+| #1 | Foundation workflow, CI and requirement traceability | Vikas coordinates; shared work | 5 | **Complete.** README/process/RTM baseline exists; PR #24 refreshes implementation status. |
+| #3 | Raw packet capture via common Capturer interface | Vikas | 5 | **Complete.** Common interface, PCAP replay, passive Scapy backend and integrated handoff to Analysis are merged and tested. |
+| #4 | Parse/classify packets and establish the cross-layer record contract | Shivanand | 5 | **Complete by explicit adapter.** PR #23 provides parsing; PR #24 provides AnalyzerPipeline and a tested application adapter. ADR 0001 records the accepted adapter design. |
+| #5 | PCAP storage and Repository interface | Shivakumara GP | 5 | **Complete.** PCAP persistence, SQLite metadata, filters and repository tests are merged. |
+| #9 | Missing interface and permission failures | Vikas | 3 | **Complete for the implemented path.** Typed errors and stable exit handling are merged; the CLI/session path uses the helper. Live driver behaviour remains a manual environment check. |
+| #10 | Start security/passive-use and portability checks | Vikas + Shivakumara | 5 | **Sprint 1 portion complete; release checks carry over.** Automated POSIX permission tests and passive-use documentation are merged. Windows ACL, live interface and target-hardware verification remain in the M4 issue. |
+| #11 | Test scaffolding and end-to-end tests | Sanjith coordinates; shared | 5 | **Complete for automated fixture coverage.** CI runs lint and tests; a generated-PCAP test exercises Capture → Analysis → Storage → query/statistics/CSV export. |
+| #15 | Sprint planning, review and retrospective | Vikas coordinates; shared | 2 | **Closeout in progress.** This plan and the factual review draft are prepared; the team still needs to confirm actual review feedback, retrospective actions and estimate-versus-actual notes. |
+| #16 | Repository configuration | Vikas | TBD | **Carry-over.** Contributor access, labels, milestones and CODEOWNERS are in place; main protection and available security controls still require a maintainer UI action. |
+
+## Verified implementation evidence
+
+PRs merged into main:
+
+- **#17 — Capture:** common Capturer interface, classic-PCAP replay, passive Scapy capture and typed capture errors.
+- **#18 — Process/traceability:** workflow and project traceability documentation.
+- **#19 — Storage/Query:** PCAP persistence, SQLite metadata index and query filters.
+- **#20 — Statistics renderer:** presentation-only statistics formatting and refresh.
+- **#21 — CSV export:** local session report exporter.
+- **#22 — Error/security support:** stable capture exit handling and POSIX permission checks.
+- **#23 — Analysis:** normalized protocol parsing and representative controlled packet tests.
+- **#24 — End-to-end application:** AnalyzerPipeline, CaptureSession, storage adapter, rolling statistics, CLI commands, architecture checks and generated-PCAP integration tests.
+
+**Latest verified main commit:** c55b116de6465849e6c7d9cbeb6d692ee6bf84c4 (merge of PR #24).
+
+**Latest verified CI:** [Run 40353363252](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40353363252) — Ruff passed and pytest reported **81 passed**. These tests use generated packet fixtures; they do not prove live hardware or target-platform behaviour.
+
+## Sprint closeout decision
+
+The **committed core implementation goal has been delivered**: the integrated path is merged to main, and its automated test suite is green. The project must not claim that every release/governance item is complete.
+
+Carry these items forward rather than misreporting them as done:
+
+| Carry-over | Reason | Destination |
+|---|---|---|
+| #10 — live interface/portability/security verification | Requires target OS/driver, Windows ACL and/or hardware checks that CI does not perform. | M4 Release Readiness |
+| #15 — actual sprint review/retrospective record | Requires team confirmation of demo/review feedback, actual effort, and agreed improvement actions. A factual draft is in Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md. | Close when the team confirms the record |
+| #16 — repository protection/security settings | Current GitHub integration cannot write these settings; maintainer must configure and verify them in GitHub Settings. | Repository governance / release readiness |
+| PDF report export, if required by the approved SRS | Current CLI exports CSV only; confirm the exact required format before claiming PDF support. | Confirm against SRS; create/reopen a scoped issue if required |
+
+Issues #13 (suspicious-activity alerts) and #14 (concurrent capture backends) remain optional stretch work and are not Sprint 1 completion criteria unless the team changes scope.
 
 ## Sprint 2 — Query, presentation, integration and release readiness
 
-**Goal:** deliver a demonstrable end-to-end user flow and record verification evidence.
+**Original goal:** deliver a demonstrable end-to-end user flow and record verification evidence.
 
-| Issue | Work | Owner/coordinator | Estimate (points) | Intended outcome |
-|---|---|---|---|
-| #6 | Filter and query saved captures | Shivakumara GP | 5 | Search by protocol, address and time window using the agreed Repository API. |
-| #7 | Live traffic statistics in CLI | Sanjith R | 5 | Display packet rate, protocol breakdown and top five talkers using Analysis events/data. |
-| #8 | Export session reports | Sanjith R | 3 | Generate the required session report formats and test outputs. |
-| #10 | Finish security and portability verification | Shared; Capture/Storage lead relevant checks | Review passive-only behaviour, privacy, local file permissions and target-platform limitations. |
-| #11 | Integration and end-to-end tests | Shared; Sanjith coordinates | Verify Capture → Analysis → Storage → Presentation using controlled PCAP fixtures; record actual test results. |
-| #12 | Architecture/setup/demo documentation | Sanjith R coordinates, shared contributions | 3 | Document installation, supported backends, safe demo steps, outputs, tests and known limitations. |
+Several items originally planned for Sprint 2 were delivered early through PRs #19–#24. The remaining Sprint 2/release focus is manual platform/security verification, any report-format gap required by the SRS, final documentation review, and release preparation. Do not duplicate completed implementation work; update the board to reflect merged issue/PR evidence.
 
-Issues #10 and #11 can span both sprints. The team should carry unfinished work forward rather than mark it done to fit the plan. Issue #16 should remain open until its repository-level checklist is actually complete.
+## Review and retrospective procedure
 
-## Stretch backlog — not part of the committed sprint scope
-
-- **#13 — Suspicious-activity alerts (REQ-9):** consider only once the core pipeline is stable and there is evidence supporting detections.
-- **#14 — Concurrent capture backends (REQ-10):** consider only after single-backend end-to-end capture is stable.
-
-## Sprint 1 progress snapshot — 2026-10-26
-
-This is an evidence-based progress snapshot, not a claim that the team has completed its final sprint review.
-
-### Verified merged deliveries
-- **PR #17 — Capture:** common Capturer contract, classic-PCAP replay, passive Scapy backend, typed errors and tests.
-- **PR #18 — Process/traceability:** workflow documentation, RTM and sprint plan.
-- **PR #19 — Storage/Query:** classic-PCAP persistence, SQLite index, Repository boundary, filters and tests.
-- **PR #20 — Statistics renderer:** presentation-only renderer and refresh loop.
-- **PR #21 — CSV report exporter:** local CSV export and tests.
-- **PR #22 — Error/security support:** stable capture exit helper, POSIX permission checks and documentation.
-- **PR #23 — Analysis parser:** normalized packet metadata and TCP/UDP/ARP/ICMP/DNS fixture tests.
-- Main CI passed after PR #23 with lint successful and 68 tests passing.
-
-### Current integration branch
-The branch `feat/PPS-11-end-to-end-session` adds an extensible AnalyzerPipeline, CaptureSession adapter from Analysis metadata plus raw packet bytes to the Storage record contract, rolling traffic statistics, CLI commands for capture/query/CSV export, architecture-boundary tests, and generated-PCAP end-to-end tests. The latest CI run on the final branch commit must pass, and the PR must receive peer review/merge before these changes count as delivered to `main`.
-
-### Remaining before Sprint 1 is fully closed
-| Issue | Evidence | Remaining |
-|---|---|---|
-| #1 | Governance/docs and CI are merged; the updated RTM and CLI guide are in the integration branch. | Merge/verify the latest documentation, then reconcile acceptance checklist with the merged evidence. |
-| #3 | Capture code is merged; CaptureSession is in the integration branch. | Merge after review and run an authorized live-interface smoke test. |
-| #4 | Analysis parser is merged in PR #23; AnalyzerPipeline is in the integration branch. | Merge the pipeline and tests; then verify acceptance criteria. |
-| #9 | Stable error helper is merged and the integration branch uses it in the CLI/session path. | Review the new integration, then verify live permission/startup handling in an authorized environment if available. |
-| #10 | POSIX private directory/file modes are automated; passive-only constraints are documented. | Windows ACL, live driver, Raspberry Pi/performance, and full live-CLI security checks are manual. |
-| #11 | Per-layer tests and generated-PCAP end-to-end tests are in the integration branch. | Review/merge and retain live-interface/hardware checks as follow-ups. |
-| #15 | Sprint goal, estimates, dependencies, and blockers are recorded. | The team must supply actual review/demo feedback, retrospective improvements/owners, and estimate-versus-actual observations. |
-| #16 | Contributor access, labels, milestones, and initial CODEOWNERS are recorded. | Repository admin must configure main-branch protection and available secret-scanning/Dependabot settings in GitHub Settings; connector cannot write these controls. |
-
-Stretch requirements #13 (alerts) and #14 (concurrent backends) remain deferred. Do not claim the sprint complete until the integration PR is merged and the actual team review/retrospective has been recorded.
-
-## Sprint review and retrospective
-
-At each sprint end, record:
-- completed issues and linked merged PRs;
-- demo evidence and test results;
-- incomplete work and blockers carried forward;
-- one or two process improvements, each with an owner.
-
-Do not use the Project board's `Done` status until acceptance criteria have been verified and implementation is merged where code is involved.
+- Use Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md to review the factual results and record team feedback.
+- Agree one or two process improvements and assign owners in the meeting; the draft's suggestions are not team consensus.
+- Carry incomplete work forward with updated acceptance criteria and ownership.
+- Use the Project board's Done status only when the relevant acceptance criteria are verified and implementation is merged.
