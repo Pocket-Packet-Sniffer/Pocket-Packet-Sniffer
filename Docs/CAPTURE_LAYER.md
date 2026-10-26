@@ -27,7 +27,7 @@ The automated tests create synthetic PCAP fixtures and mock the live Scapy backe
 
 ## Error handling
 
-The module exposes typed subclasses of `CaptureError`: `CaptureInterfaceError`, `CapturePermissionError`, `CaptureBackendUnavailableError`, `CaptureFileError`, `CaptureStartupError` and `CaptureCallbackError`. The Presentation/CLI layer should catch `CaptureError`, display the message, and return a documented non-zero failure code instead of printing a traceback to the user.
+The module exposes typed subclasses of `CaptureError`: `CaptureInterfaceError`, `CapturePermissionError`, `CaptureBackendUnavailableError`, `CaptureFileError`, `CaptureStartupError` and `CaptureCallbackError`. The Presentation package now provides `run_capture_with_error_handling`, which returns status `0` on success, `2` for a known capture-domain error, and `130` for Ctrl+C; known failures are printed as one line without a traceback. The helper is covered by `tests/test_capture_runner.py`. The complete CLI/session entry point must call this helper after the Analysis callback is integrated; that wiring is not yet claimed complete.
 
 ## Known limitations to validate during integration
 

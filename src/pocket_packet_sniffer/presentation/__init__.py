@@ -1,5 +1,21 @@
-"""Presentation-layer helpers for human-readable traffic statistics."""
+"""Presentation-layer helpers for capture, statistics, and reports."""
 
+from .capture_runner import (
+    EXIT_CAPTURE_ERROR,
+    EXIT_INTERRUPTED,
+    EXIT_SUCCESS,
+    run_capture_with_error_handling,
+)
 from .dashboard import render_stats, run_live_dashboard
+from .report_export import ReportExportError, export_session_report_csv
 
-__all__ = ["render_stats", "run_live_dashboard"]
+__all__ = [
+    "EXIT_CAPTURE_ERROR",
+    "EXIT_INTERRUPTED",
+    "EXIT_SUCCESS",
+    "ReportExportError",
+    "export_session_report_csv",
+    "render_stats",
+    "run_capture_with_error_handling",
+    "run_live_dashboard",
+]
