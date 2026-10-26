@@ -50,6 +50,9 @@ def export_session_report_csv(
     except (TypeError, ValueError, OSError) as exc:
         raise ReportExportError("invalid report output path") from exc
 
+    if path.is_dir():
+        raise ReportExportError("could not write report to '" + str(path) + "': destination is a directory")
+
     try:
         stored_records = list(records)
     except (TypeError, ValueError) as exc:
