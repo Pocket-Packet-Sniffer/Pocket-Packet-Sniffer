@@ -15,11 +15,6 @@ from .pcap_file import PcapFileCapturer
 from .scapy_live import ScapyCapturer
 
 __all__ = [
-    "CapturedPacket",
-    "Capturer",
-    "PacketCallback",
-    "PcapFileCapturer",
-    "ScapyCapturer",
     "CaptureBackendUnavailableError",
     "CaptureCallbackError",
     "CaptureError",
@@ -27,4 +22,9 @@ __all__ = [
     "CaptureInterfaceError",
     "CapturePermissionError",
     "CaptureStartupError",
+    "CapturedPacket",
+    "Capturer",
+    "PacketCallback",
+    "PcapFileCapturer",
+    "ScapyCapturer",
 ]

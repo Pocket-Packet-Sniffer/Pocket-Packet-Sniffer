@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import math
-from threading import Event, Lock
 import time
+from datetime import datetime, timezone
+from threading import Event, Lock
 from typing import Any
 
 from .base import Capturer, PacketCallback

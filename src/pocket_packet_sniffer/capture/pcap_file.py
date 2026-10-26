@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 import math
 import os
-from pathlib import Path
 import struct
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from threading import Event
 from typing import BinaryIO
 

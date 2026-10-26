@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import struct
+import types
 from datetime import datetime, timezone
 from pathlib import Path
-import struct
 from threading import Event
-import types
 
 import pytest
 

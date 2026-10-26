@@ -20,7 +20,7 @@ Both backends emit a `CapturedPacket` containing a timezone-aware UTC timestamp,
 ```bash
 python -m pip install -r requirements-dev.txt -r requirements-capture.txt
 PYTHONPATH=src pytest -q
-ruff check src tests
+ruff check --select E4,E7,E9,F,I src tests
 ```
 
 The automated tests create synthetic PCAP fixtures and mock the live Scapy backend. CI does not require root/administrator privileges or a real network interface. Live capture should be verified separately on an authorized interface with the right driver and permissions.

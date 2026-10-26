@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from threading import Event
-from typing import Callable
 
 from .models import CapturedPacket
 
