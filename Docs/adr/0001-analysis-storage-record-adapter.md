@@ -1,6 +1,6 @@
 # ADR 0001: Explicit Analysis-to-Storage Record Adapter
 
-- **Status:** Proposed in PR review
+- **Status:** Accepted for the current implementation (maintainer closeout decision)
 - **Date:** 2026-10-26
 - **Decision owners:** Layer owners; review requested from the full team
 
@@ -21,7 +21,7 @@ Use an explicit adapter at the application boundary, implemented by `application
 
 Analysis does not import the Storage package. The adapter preserves the original captured bytes and is covered by generated-PCAP integration tests.
 
-This is a proposed design decision in this PR; the layer owners should confirm it during review. If the team requires a single shared record class instead, agree that alternative explicitly and update this ADR, the SASD, and the RTM together.
+For Sprint 1 closeout, the project maintainer accepts this application-boundary adapter as the implemented contract: the Analysis record is metadata-only; Storage's record retains session identity and original frame bytes. The layer owners may propose a different shared-domain model in a follow-up ADR if a later review or an explicit SRS/SASD requirement demands it. Do not make Analysis import the concrete Storage implementation as an unreviewed workaround.
 
 ## Alternatives considered
 
@@ -34,4 +34,4 @@ This is a proposed design decision in this PR; the layer owners should confirm i
 - Analysis remains independent of concrete Storage implementation.
 - The application boundary has one clear mapping location and tests catch field loss.
 - Two record types remain intentionally distinct; changes to either contract must update the adapter and integration tests.
-- The exact decision is pending team review; it is not treated as approved until the layer owners review this PR.
+- This decision documents the architecture shipped in PR #24. A future alternative requires a reviewed ADR and coordinated code/traceability changes.
