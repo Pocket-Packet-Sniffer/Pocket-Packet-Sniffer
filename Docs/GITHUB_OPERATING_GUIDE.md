@@ -80,7 +80,7 @@ Issue #15 is an ongoing process record. Assign it to a time-boxed sprint/milesto
 
 ## 6. Main-branch protection
 
-The `main` branch is currently not protected. After the application source tree is integrated and a real CI workflow has passed, a repository administrator should open **Settings → Rules → Rulesets** (or **Branches**, depending on the available GitHub UI) and create an active rule targeting `main` with:
+The end-to-end application is now merged to `main` and the CI workflow has passed (81 tests on commit c55b116de6465849e6c7d9cbeb6d692ee6bf84c4). The branch-protection/rulesets endpoint was observed as empty, so `main` is still not confirmed protected. A repository administrator should open **Settings → Rules → Rulesets** (or **Branches**, depending on the available GitHub UI) and create an active rule targeting `main` with:
 
 - Require a pull request before merging.
 - Require at least one approval from someone other than the author.
@@ -92,7 +92,7 @@ Do **not** require CI checks until the workflow exists and its exact check names
 
 ## 7. CI, testing, and dependency hygiene
 
-After code is integrated, add GitHub Actions for the actual language and project layout to run formatting/lint checks, unit tests, and controlled integration tests. Use a PCAP fixture; CI must not require root privileges or capture real network traffic. Add coverage reporting if the test setup supports it, but agree a realistic threshold based on measured coverage rather than inventing one.
+The application CI is now active. It runs Ruff checks and the test suite on pushes and pull requests; the latest main run reported 81 passing tests using generated PCAP data. Keep controlled integration tests non-privileged and use coverage reporting only if freshly measured; do not invent a coverage percentage or threshold.
 
 Once package manifests and lockfiles are in the repository, enable Dependabot security updates and configure ecosystem-appropriate version updates. Review dependency changes through PRs. Never store credentials in repository files; use GitHub Actions secrets only when genuinely needed.
 
@@ -133,4 +133,4 @@ A maintainer should complete these UI-level settings after code and CI are ready
 
 ## 11. Current limitations of this setup
 
-The process PRs have added the working CI workflow and initial CODEOWNERS. The end-to-end integration branch adds the CLI/session package and its tests; after merge, the remaining source-level dependency structure is documented. GitHub labels, milestones, repository rules, and organization-level security settings need a maintainer action in the GitHub UI; this integration does not expose write operations for those settings.
+The process PRs added the working CI workflow and CODEOWNERS, and PR #24 merged the CLI/session integration. The remaining repository-level tasks are UI-only: confirm branch protection/required checks and enable the available secret-scanning/push-protection and Dependabot controls. The connected GitHub integration can read these settings but cannot write them.
