@@ -104,6 +104,41 @@ The implementation is limited to persistence and querying; packet capture, parsi
 
 Only capture traffic on networks/devices you own or are explicitly authorized to monitor. This tool is intended to be passive: it must not inject, alter, or replay network traffic. Capture files may contain sensitive information; keep them local and protect them with suitable file permissions. The CLI must not silently upload captured data.
 
+## CLI usage
+
+Install the application and its CLI:
+
+```bash
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+pocket-packet-sniffer --help
+```
+
+You can also run the CLI as a module with `python -m pocket_packet_sniffer`.
+
+Replay a local classic PCAP into a new local capture session (this reads a file and does not transmit packets):
+
+```bash
+pocket-packet-sniffer capture --pcap-file sample.pcap --storage-dir captures --session-id demo-session
+```
+
+Passively capture an interface you are authorized to monitor and refresh the dashboard every two seconds:
+
+```bash
+pocket-packet-sniffer capture --interface eth0 --storage-dir captures --live-dashboard
+```
+
+Query stored metadata and export a CSV session report:
+
+```bash
+pocket-packet-sniffer query --storage-dir captures --protocol TCP --address 192.0.2.10
+pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv
+```
+
+The query command accepts optional timezone-aware `--start` and `--end` ISO-8601 datetimes. The export command refuses to overwrite an existing file. Capture outputs and the SQLite index remain local under the configured storage directory.
+
 ## Current implementation status
 
-Do not infer implementation status from the design documents alone. Requirements and stretch goals should only be marked complete after the relevant code is merged and tests or demonstration evidence support the claim.
+The repository includes Capture, Analysis parsing, Storage/Query, a statistics provider/renderer, CSV report export, and a CLI/session integration under review in the current end-to-end PR. The branch's generated-PCAP tests exercise Capture → Analysis → Storage → Query/Statistics/CSV export without requiring root privileges or live traffic. Do not consider the integrated workflow released until the PR is reviewed/merged and the relevant CI passes.
+
+Known limitations remain: classic PCAP only, live capture depends on platform/driver/permissions, PDF export is not implemented by the current CLI, and live-interface/Wi-Fi-monitor/BLE/Raspberry Pi behaviour needs manual validation.
