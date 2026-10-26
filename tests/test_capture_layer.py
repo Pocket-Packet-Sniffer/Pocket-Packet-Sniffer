@@ -11,11 +11,11 @@ import pytest
 from pocket_packet_sniffer.capture import (
     CaptureBackendUnavailableError,
     CaptureCallbackError,
+    CapturedPacket,
     CaptureFileError,
     CaptureInterfaceError,
     CapturePermissionError,
     CaptureStartupError,
-    CapturedPacket,
     PcapFileCapturer,
     ScapyCapturer,
 )
