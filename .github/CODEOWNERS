@@ -1,0 +1,9 @@
+# Application code owners. Paths follow the shared package layout under src/pocket_packet_sniffer.
+/src/pocket_packet_sniffer/capture/ @vikaskulakarni
+/src/pocket_packet_sniffer/analysis/ @Shivanandgc
+/src/pocket_packet_sniffer/storage/ @shivakumara-gp
+/src/pocket_packet_sniffer/presentation/ @sanjithramanjaneya-source
+
+# Shared quality and project documentation.
+/tests/ @sanjithramanjaneya-source
+/Docs/ @sanjithramanjaneya-source

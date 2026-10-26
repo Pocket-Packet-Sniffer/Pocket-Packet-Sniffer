@@ -1,32 +1,62 @@
-# Pocket Packet Sniffer — Storage and Query Layer
+# Pocket Packet Sniffer
 
-This repository branch implements the Storage and Query layer for Pocket Packet Sniffer. It stores captured packet bytes in classic PCAP files and searchable packet metadata in SQLite. The layer exposes a `Repository` interface so capture, analysis, and presentation code can use storage without opening files or databases directly.
+Pocket Packet Sniffer is a Software Engineering project for authorized, passive network traffic monitoring. It captures packets from supported interfaces, extracts metadata, stores captures, and presents traffic statistics and query/report functions.
 
-The implementation is limited to storage and querying. It does not capture traffic, parse packets, or provide a CLI. Use packet data from networks and devices you are authorized to monitor.
+## Architecture
 
-## Requirements
+The design follows the four-layer architecture defined by the SRS and SASD:
 
-- Python 3.10 or newer
-- SQLite (included with Python)
-- Pytest for running the tests
+1. **Capture** — captures raw packets through a common Capturer interface.
+2. **Analysis** — parses packets, extracts required metadata, and runs protocol analyzers.
+3. **Storage** — persists PCAP data and indexed metadata through a Repository interface.
+4. **Presentation** — provides the primary CLI for capture control, live statistics, queries, and reports.
 
-Install the package and test dependency from the repository root:
+WiFi, Ethernet, and BLE remain represented in the requirements. Backend availability depends on hardware, drivers, operating system, and permissions. BLE, suspicious-activity detection, concurrent multi-backend capture, Zeek integration, and the web dashboard are stretch/optional work until implemented and validated.
 
-```sh
-python -m pip install -e ".[test]"
-```
+## Requirements and project documents
 
-## Storage format
+The approved project documents currently live under Docs:
+- Project proposal
+- Software Requirements Specification (SRS) v1.3
+- Software Test Plan (STP) v1.3
+- Software Architecture and Design Specification (SASD)
 
-- Raw packet bytes are written to classic PCAP 2.4 files with microsecond timestamps and a 65,535-byte snap length.
-- Each session has its own PCAP file because classic PCAP records one link type in its global header. A session cannot change link type after its first packet.
-- The local `metadata.sqlite3` database stores record/session IDs, protocol, addresses, timestamp, packet lengths, link type association, and PCAP offsets. Packet payload bytes are not duplicated in SQLite.
-- Session IDs are hashed for PCAP filenames. Captures are not uploaded or exported automatically.
-- On POSIX systems, newly created directories request mode `0700` and files request mode `0600`. On other platforms, filesystem ACLs control access.
+The SRS is the source of functional and non-functional requirements. The STP defines the verification approach and test mapping. The SASD explains the design and component boundaries. Implementation decisions should be traceable to these documents.
 
-## Using the repository
+## Engineering workflow
 
-`PacketRecord` is the value passed from analysis to storage. Timestamps must be timezone-aware. Addresses are strings so IPv4, IPv6, MAC, and other analyzer-provided identifiers can be represented.
+- Use one branch per issue: feat/PPS-number-short-name, fix/PPS-number-short-name, or docs/PPS-number-short-name.
+- Create an issue before starting work and include acceptance criteria and SRS/STP traceability.
+- Open a pull request into main; link the issue using Closes #number.
+- A different team member should review changes. Do not merge failing checks or unreviewed work.
+- Update tests, docs, and the Requirement Traceability Matrix where appropriate.
+- Do not mark work Done until acceptance criteria pass and evidence is recorded.
+
+See CONTRIBUTING.md for the detailed working agreement.
+
+## Planning and traceability
+
+- [Requirement Traceability Matrix](Docs/REQUIREMENT_TRACEABILITY.md) — SRS-to-issue and STP-to-test mapping with verification status.
+- [Sprint Plan](Docs/SPRINT_PLAN.md) — proposed Sprint 1/Sprint 2 scope and review records.
+- [GitHub Operating Guide](Docs/GITHUB_OPERATING_GUIDE.md) — repository workflow, milestones, labels, reviews and security settings.
+
+## Team engineering resources
+
+- [GitHub operating guide](Docs/GITHUB_OPERATING_GUIDE.md) — issue labels, milestones, branching, reviews, merge rules, releases, and repository settings.
+- [Project process](Docs/PROJECT_PROCESS.md) — requirements authority, layer responsibilities, prioritization, and quality gates.
+- [Architecture Decision Record template](Docs/adr/0000-template.md) — record important design choices and their trade-offs.
+- [Contributing guide](CONTRIBUTING.md) — the expected issue-to-PR workflow.
+- [Security and safe use](SECURITY.md) — passive-only scope and sensitive capture-data handling.
+
+## Storage and query layer (PPS-04/PPS-05)
+
+The Storage/Query package provides the boundary between packet analysis and presentation:
+
+- `PacketRecord` carries a session ID, record ID, timezone-aware timestamp, normalized protocol, source/destination addresses, captured bytes, PCAP link type, and original packet length.
+- `Repository` defines `save(record)`, `query(protocol, address, time_window)`, and `get_session_summary(session_id)`.
+- `PcapSqliteRepository` stores packet bytes in classic PCAP 2.4 files and searchable metadata in a local SQLite database (`metadata.sqlite3`). SQLite stores packet offsets and metadata, not packet payloads. Each capture session uses one link type.
+
+Example:
 
 ```python
 from datetime import datetime, timezone
@@ -43,51 +73,23 @@ record = PacketRecord(
     packet_data=b"sample captured bytes",
     link_type=1,  # Ethernet
 )
-
 repository.save(record)
-matching_packets = repository.query(
-    protocol="TCP",
-    address="192.0.2.10",
-)
+packets = repository.query(protocol="TCP", address="192.0.2.10")
 summary = repository.get_session_summary("capture-001")
 ```
 
-`save(record)` persists one packet. `query()` returns matching `PacketRecord` objects in timestamp order; with no filters it returns all stored records. `get_session_summary(session_id)` returns the session's packet count and first/last timestamps.
+Query filters combine with AND semantics. Protocol matching is case-insensitive; an address matches the exact source or destination; the optional `(start, end)` time window uses inclusive, timezone-aware datetime bounds. Either time bound may be `None`. No matches return an empty list.
 
-## Query filters
+Invalid records and filters raise `InvalidRecordError`; duplicate IDs raise `DuplicateRecordError`; missing files raise `StorageUnavailableError`; permission failures raise `StorageAccessError`; corrupt PCAP or indexed data raises `StorageCorruptionError`. Other persistence failures use `RepositoryError`.
 
-Filters combine with AND semantics:
+Install this package and its test extra from the repository root with `python -m pip install -e ".[test]"`. Run the storage/query tests with `pytest tests/test_storage_query.py`. The tests use generated packet bytes and temporary storage.
 
-- `protocol="TCP"` matches protocol names case-insensitively.
-- `address="192.0.2.10"` matches an exact source **or** destination address.
-- `time_window=(start, end)` includes both timezone-aware datetime endpoints. Either endpoint may be `None` for an open bound, but both cannot be `None`.
+The implementation is limited to persistence and querying; packet capture, parsing, and CLI behavior belong to their respective layers. Limitations include classic PCAP only, one link type per session, no encryption or retention policy, and no crash recovery for an unindexed trailing PCAP record. Captures remain local; use authorized traffic and protect the storage directory.
 
-No matches produce an empty list. Invalid filters raise `InvalidRecordError`.
+## Safe use
 
-## Errors
+Only capture traffic on networks/devices you own or are explicitly authorized to monitor. This tool is intended to be passive: it must not inject, alter, or replay network traffic. Capture files may contain sensitive information; keep them local and protect them with suitable file permissions. The CLI must not silently upload captured data.
 
-- `InvalidRecordError`: malformed packet record, protocol/address, or query filter.
-- `DuplicateRecordError`: a record ID is already stored.
-- `StorageUnavailableError`: a required metadata or capture file is missing or unavailable.
-- `StorageAccessError`: the process lacks permission to access storage.
-- `StorageCorruptionError`: a PCAP file or indexed record is malformed or inconsistent.
-- `RepositoryError`: another storage-layer failure.
+## Current implementation status
 
-The package exports these exceptions and the `Repository`, `PacketRecord`, `SessionSummary`, and `PcapSqliteRepository` types from `pocket_packet_sniffer.storage`.
-
-## Tests
-
-Run the storage/query tests from the repository root:
-
-```sh
-pytest
-```
-
-The suite uses generated packet bytes and temporary storage to cover PCAP round-trip, protocol/address/time filtering, empty results, malformed and duplicate records, missing/corrupt files, and access/storage failures.
-
-## Limitations
-
-- Classic PCAP only; PCAPNG is not supported.
-- Each capture session has one link type.
-- The layer does not parse packet bytes or verify that supplied metadata matches them; that belongs to Analysis.
-- There is no encryption, retention/pruning policy, or automatic recovery for a PCAP append left unindexed by a sudden process or system crash.
+Do not infer implementation status from the design documents alone. Requirements and stretch goals should only be marked complete after the relevant code is merged and tests or demonstration evidence support the claim.
