@@ -7,8 +7,8 @@ from threading import Event
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.l2 import ARP, Ether
 
-from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.analysis.parser import PacketParser
+from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.application.session import CaptureSession
 from pocket_packet_sniffer.capture import CapturedPacket, Capturer
 from pocket_packet_sniffer.presentation import export_session_report_csv, render_stats
