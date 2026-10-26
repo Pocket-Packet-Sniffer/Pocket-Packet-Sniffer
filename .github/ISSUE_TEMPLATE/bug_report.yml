@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a reproducible defect
+title: "[BUG] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report bugs only for the authorized, passive Pocket Packet Sniffer project. Do not attach real packet captures containing personal, private, or confidential traffic.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem
+      description: What went wrong?
+      placeholder: Describe the observed problem.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Use safe sample data or a controlled PCAP fixture.
+      placeholder: |
+        1. Run ...
+        2. Provide ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and logs
+      description: OS, Python/runtime version, command run, error output. Redact secrets and sensitive packet data.
+    validations:
+      required: true
+  - type: input
+    id: traceability
+    attributes:
+      label: Requirement or test case
+      description: e.g. SRS REQ-2 or STP TC-CAP-02
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked for an existing issue.
+          required: true
+        - label: I did not include secrets or real sensitive capture data.
+          required: true
