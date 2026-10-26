@@ -51,6 +51,7 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 
 - [Requirement Traceability Matrix](Docs/REQUIREMENT_TRACEABILITY.md) — SRS-to-issue and STP-to-test mapping with verification status.
 - [Sprint Plan](Docs/SPRINT_PLAN.md) — proposed Sprint 1/Sprint 2 scope and review records.
+- [Sprint 1 review/retrospective draft](Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md) — verified deliveries and placeholders for actual team review outcomes.
 - [GitHub Operating Guide](Docs/GITHUB_OPERATING_GUIDE.md) — repository workflow, milestones, labels, reviews and security settings.
 
 ## Team engineering resources
