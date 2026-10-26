@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from collections import Counter, deque
-from threading import Lock
 import time
+from collections import Counter, deque
 from collections.abc import Callable
+from threading import Lock
 from typing import Any
 
 from .models import PacketRecord
