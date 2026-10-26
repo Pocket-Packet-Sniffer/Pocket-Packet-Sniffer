@@ -6,9 +6,9 @@ strings so that IPv4, IPv6, MAC, and analyzer-specific identifiers are valid.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-import uuid
 
 from .errors import InvalidRecordError
 
