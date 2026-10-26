@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from threading import Event
 
 from scapy.layers.inet import IP, TCP, UDP
-from scapy.layers.l2 import ARP, Ether
+from scapy.layers.l2 import Ether
 
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
