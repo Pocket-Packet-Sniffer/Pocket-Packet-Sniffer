@@ -40,29 +40,34 @@ Issues #10 and #11 can span both sprints. The team should carry unfinished work 
 
 ## Sprint 1 progress snapshot — 2026-10-26
 
-This is a mid-sprint evidence snapshot, not the sprint review or retrospective.
+This is an evidence-based progress snapshot, not a claim that the team has completed its final sprint review.
 
 ### Verified merged deliveries
+- **PR #17 — Capture:** common Capturer contract, classic-PCAP replay, passive Scapy backend, typed errors and tests.
+- **PR #18 — Process/traceability:** workflow documentation, RTM and sprint plan.
+- **PR #19 — Storage/Query:** classic-PCAP persistence, SQLite index, Repository boundary, filters and tests.
+- **PR #20 — Statistics renderer:** presentation-only renderer and refresh loop.
+- **PR #21 — CSV report exporter:** local CSV export and tests.
+- **PR #22 — Error/security support:** stable capture exit helper, POSIX permission checks and documentation.
+- **PR #23 — Analysis parser:** normalized packet metadata and TCP/UDP/ARP/ICMP/DNS fixture tests.
+- Main CI passed after PR #23 with lint successful and 68 tests passing.
 
-- **PR #17 — Capture:** common Capturer contract, classic-PCAP replay, passive Scapy backend, typed capture errors, synthetic fixture tests and CI.
-- **PR #19 — Storage/Query:** PCAP persistence, indexed SQLite metadata, Repository interface, query filters and storage/query tests.
-- **PR #18 — Process/traceability:** workflow documentation, SRS-to-issue/STP mapping and sprint plan.
-- Main CI was green after the Capture and Storage merges. The statistics renderer (PR #20) and CSV report exporter (PR #21) are also merged, but their complete CLI/session integration remains dependent on Analysis and is not counted as a finished end-to-end pipeline.
+### Current integration branch
+The branch `feat/PPS-11-end-to-end-session` adds an extensible AnalyzerPipeline, CaptureSession adapter from Analysis metadata plus raw packet bytes to the Storage record contract, rolling traffic statistics, CLI commands for capture/query/CSV export, architecture-boundary tests, and generated-PCAP end-to-end tests. The latest CI run on the final branch commit must pass, and the PR must receive peer review/merge before these changes count as delivered to `main`.
 
-### Outstanding Sprint 1 work
-
-| Issue | Current evidence | Remaining before closing |
+### Remaining before Sprint 1 is fully closed
+| Issue | Evidence | Remaining |
 |---|---|---|
-| #1 | Workflow/docs/CI are present and merged. | Keep the issue's acceptance checklist synchronized; end-to-end architectural proof belongs to #11. |
-| #3 | Capture code is merged and its CI passed. | Verify the common callback feeds the actual Analysis implementation; confirm supported live-interface behaviour in an authorized environment. |
-| #4 | Analysis dependency is not yet integrated into main. | Implement packet metadata extraction, protocol analyzers and controlled tests. |
-| #9 | Capture error types and unit tests are merged; an exit-code helper is under review in a follow-up PR. | Wire the helper into the real CLI/session entry point and verify no traceback/misleading active session. |
-| #10 | Capture is passive by design; Storage permission handling exists; a POSIX mode test and security validation record are being added. | Review after the full CLI exists; verify target OS/driver and Raspberry Pi constraints manually. |
-| #11 | CI and per-layer unit tests are present. | Add cross-layer integration/end-to-end tests after Analysis is merged. |
-| #15 | Sprint goal, scope and dependencies are recorded above. | Team must record the actual sprint review, incomplete items, demo evidence and retrospective at sprint end. |
-| #16 | Labels/milestones and contributor write access are verified; CODEOWNERS is in main. | Repository branch protection, required check settings and plan-dependent security settings still need maintainer UI configuration. |
+| #1 | Governance/docs and CI are merged; the updated RTM and CLI guide are in the integration branch. | Merge/verify the latest documentation, then reconcile acceptance checklist with the merged evidence. |
+| #3 | Capture code is merged; CaptureSession is in the integration branch. | Merge after review and run an authorized live-interface smoke test. |
+| #4 | Analysis parser is merged in PR #23; AnalyzerPipeline is in the integration branch. | Merge the pipeline and tests; then verify acceptance criteria. |
+| #9 | Stable error helper is merged and the integration branch uses it in the CLI/session path. | Review the new integration, then verify live permission/startup handling in an authorized environment if available. |
+| #10 | POSIX private directory/file modes are automated; passive-only constraints are documented. | Windows ACL, live driver, Raspberry Pi/performance, and full live-CLI security checks are manual. |
+| #11 | Per-layer tests and generated-PCAP end-to-end tests are in the integration branch. | Review/merge and retain live-interface/hardware checks as follow-ups. |
+| #15 | Sprint goal, estimates, dependencies, and blockers are recorded. | The team must supply actual review/demo feedback, retrospective improvements/owners, and estimate-versus-actual observations. |
+| #16 | Contributor access, labels, milestones, and initial CODEOWNERS are recorded. | Repository admin must configure main-branch protection and available secret-scanning/Dependabot settings in GitHub Settings; connector cannot write these controls. |
 
-Do not close a partial issue merely because its code is merged. The key blocker for declaring the core Sprint 1 pipeline complete is the common Analysis implementation and the end-to-end Capture → Analysis → Storage path.
+Stretch requirements #13 (alerts) and #14 (concurrent backends) remain deferred. Do not claim the sprint complete until the integration PR is merged and the actual team review/retrospective has been recorded.
 
 ## Sprint review and retrospective
 
