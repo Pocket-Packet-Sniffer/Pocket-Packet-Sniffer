@@ -39,12 +39,13 @@ See CONTRIBUTING.md for the detailed working agreement.
 Use Python 3.10 or newer. From the repository root:
 
 ```bash
-python -m pip install -r requirements-dev.txt -r requirements-capture.txt
-PYTHONPATH=src pytest -q
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
 ruff check --select E4,E7,E9,F,I src tests
+pytest -q
 ```
 
-The tests use generated PCAP fixtures and mocked capture backends; they do not require root privileges or live network traffic. The current repository contains Capture, Storage/Query, a statistics renderer, and CSV report export. The complete Analysis layer and full CLI/session integration are still in progress, so these commands verify the available modules rather than an end-to-end product demo.
+The tests use generated PCAP fixtures and mocked capture backends; they do not require root privileges or live network traffic. The repository now includes the Capture, Analysis, Storage, and Presentation/application session path, plus CLI and generated-PCAP integration tests. The latest `main` CI run completed successfully with Ruff passing and 81 tests passing. Live-interface and target-platform behaviour still needs manual verification.
 
 ## Planning and traceability
 
@@ -57,7 +58,7 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 - [GitHub operating guide](Docs/GITHUB_OPERATING_GUIDE.md) — issue labels, milestones, branching, reviews, merge rules, releases, and repository settings.
 - [Project process](Docs/PROJECT_PROCESS.md) — requirements authority, layer responsibilities, prioritization, and quality gates.
 - [Architecture Decision Record template](Docs/adr/0000-template.md) — record important design choices and their trade-offs.
-- [ADR 0001 — Analysis/Storage record adapter](Docs/adr/0001-analysis-storage-record-adapter.md) — proposed application-boundary mapping, pending layer-owner review.
+- [ADR 0001 — Analysis/Storage record adapter](Docs/adr/0001-analysis-storage-record-adapter.md) — explicit application-boundary mapping that preserves layer dependency direction.
 - [Contributing guide](CONTRIBUTING.md) — the expected issue-to-PR workflow.
 - [Security and safe use](SECURITY.md) — passive-only scope and sensitive capture-data handling.
 - [Security validation record](Docs/SECURITY_VALIDATION.md) — automated permission checks and remaining manual platform verification.
@@ -141,6 +142,6 @@ The query command accepts optional timezone-aware `--start` and `--end` ISO-8601
 
 ## Current implementation status
 
-The repository includes Capture, Analysis parsing, Storage/Query, a statistics provider/renderer, CSV report export, and a CLI/session integration under review in the current end-to-end PR. The branch's generated-PCAP tests exercise Capture → Analysis → Storage → Query/Statistics/CSV export without requiring root privileges or live traffic. Do not consider the integrated workflow released until the PR is reviewed/merged and the relevant CI passes.
+The integrated Capture → Analysis → Storage → Presentation/CLI workflow is merged into `main` (PR #24). The latest successful `main` CI run is [40353363252](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40353363252): Ruff passed and `pytest -q` reported 81 passed.
 
-Known limitations remain: classic PCAP only, live capture depends on platform/driver/permissions, PDF export is not implemented by the current CLI, and live-interface/Wi-Fi-monitor/BLE/Raspberry Pi behaviour needs manual validation.
+Known limitations remain: classic PCAP only, live capture depends on platform/driver/permissions, PDF export is not implemented by the current CLI, and live-interface/Wi-Fi-monitor/BLE/Raspberry Pi behaviour needs manual validation. Repository branch protection and plan-available security settings still require maintainer UI verification.
