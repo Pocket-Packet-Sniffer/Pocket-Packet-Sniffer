@@ -1,0 +1,77 @@
+name: User story / engineering task
+description: Create a traceable backlog item with acceptance criteria
+title: "[REQ-] "
+labels: ["backlog"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Work type
+      options:
+        - User story
+        - Bug
+        - Technical task
+        - Test
+        - Documentation
+        - Security
+    validations:
+      required: true
+  - type: input
+    id: requirement
+    attributes:
+      label: SRS / STP traceability
+      description: Example: SRS REQ-1, STP TC-CAP-01
+      placeholder: "REQ-x / TC-..."
+    validations:
+      required: true
+  - type: textarea
+    id: story
+    attributes:
+      label: User story or goal
+      description: Use As a..., I want..., so that... where it makes sense.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Write observable, testable outcomes as a checklist.
+      value: |
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: input
+    id: estimate
+    attributes:
+      label: Story points
+      description: Fibonacci estimate: 1, 2, 3, 5, or 8
+      placeholder: "3"
+  - type: input
+    id: owner
+    attributes:
+      label: Suggested owner
+      description: Use a GitHub username only after confirming it.
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / risks
+      description: List prerequisites, hardware needs, and relevant risks.
+  - type: checkboxes
+    id: done
+    attributes:
+      label: Definition of done
+      options:
+        - label: Acceptance criteria have test evidence
+        - label: Relevant tests and docs are updated
+        - label: Peer review is planned
