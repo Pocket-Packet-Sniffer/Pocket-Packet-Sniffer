@@ -48,6 +48,44 @@ See CONTRIBUTING.md for the detailed working agreement.
 - [Contributing guide](CONTRIBUTING.md) — the expected issue-to-PR workflow.
 - [Security and safe use](SECURITY.md) — passive-only scope and sensitive capture-data handling.
 
+## Storage and query layer (PPS-04/PPS-05)
+
+The Storage/Query package provides the boundary between packet analysis and presentation:
+
+- `PacketRecord` carries a session ID, record ID, timezone-aware timestamp, normalized protocol, source/destination addresses, captured bytes, PCAP link type, and original packet length.
+- `Repository` defines `save(record)`, `query(protocol, address, time_window)`, and `get_session_summary(session_id)`.
+- `PcapSqliteRepository` stores packet bytes in classic PCAP 2.4 files and searchable metadata in a local SQLite database (`metadata.sqlite3`). SQLite stores packet offsets and metadata, not packet payloads. Each capture session uses one link type.
+
+Example:
+
+```python
+from datetime import datetime, timezone
+
+from pocket_packet_sniffer.storage import PacketRecord, PcapSqliteRepository
+
+repository = PcapSqliteRepository("captures")
+record = PacketRecord(
+    session_id="capture-001",
+    protocol="TCP",
+    source_address="192.0.2.10",
+    destination_address="198.51.100.20",
+    timestamp=datetime.now(timezone.utc),
+    packet_data=b"sample captured bytes",
+    link_type=1,  # Ethernet
+)
+repository.save(record)
+packets = repository.query(protocol="TCP", address="192.0.2.10")
+summary = repository.get_session_summary("capture-001")
+```
+
+Query filters combine with AND semantics. Protocol matching is case-insensitive; an address matches the exact source or destination; the optional `(start, end)` time window uses inclusive, timezone-aware datetime bounds. Either time bound may be `None`. No matches return an empty list.
+
+Invalid records and filters raise `InvalidRecordError`; duplicate IDs raise `DuplicateRecordError`; missing files raise `StorageUnavailableError`; permission failures raise `StorageAccessError`; corrupt PCAP or indexed data raises `StorageCorruptionError`. Other persistence failures use `RepositoryError`.
+
+Install this package and its test extra from the repository root with `python -m pip install -e ".[test]"`. Run the storage/query tests with `pytest tests/test_storage_query.py`. The tests use generated packet bytes and temporary storage.
+
+The implementation is limited to persistence and querying; packet capture, parsing, and CLI behavior belong to their respective layers. Limitations include classic PCAP only, one link type per session, no encryption or retention policy, and no crash recovery for an unindexed trailing PCAP record. Captures remain local; use authorized traffic and protect the storage directory.
+
 ## Safe use
 
 Only capture traffic on networks/devices you own or are explicitly authorized to monitor. This tool is intended to be passive: it must not inject, alter, or replay network traffic. Capture files may contain sensitive information; keep them local and protect them with suitable file permissions. The CLI must not silently upload captured data.
