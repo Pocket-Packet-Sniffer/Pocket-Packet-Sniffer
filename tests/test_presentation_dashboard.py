@@ -5,7 +5,10 @@ from threading import Event
 
 import pytest
 
-from pocket_packet_sniffer.presentation.dashboard import render_stats, run_live_dashboard
+from pocket_packet_sniffer.presentation.dashboard import (
+    render_stats,
+    run_live_dashboard,
+)
 
 
 def example_snapshot():
