@@ -120,17 +120,17 @@ Every PR should be reviewed by a non-author, including small documentation chang
 
 A maintainer should complete these UI-level settings after code and CI are ready:
 
-- [ ] Create the recommended labels.
-- [ ] Create milestones and assign relevant issues.
-- [ ] Confirm all four contributors have accepted the organization invite and can push branches.
-- [ ] Enable a main-branch PR/review rule.
-- [ ] Add required CI checks only after observing successful check names.
-- [ ] Enable secret scanning and push protection if available for the repository/organization plan.
-- [ ] Enable Dependabot alerts/security updates; add version updates once package manifests are present.
-- [ ] Add Code Owners after verifying the source paths.
-- [ ] Use a single agreed project board rather than creating duplicates.
-- [ ] Keep generated release notes and demo evidence aligned with merged code.
+- [x] Create the recommended labels and milestones; assign the existing issues to the current milestone plan.
+- [x] Confirm the four contributors' repository access (Vikas: admin; Shivanand, Shivakumara and Sanjith: write).
+- [ ] Enable a main-branch pull-request/review rule and conversation-resolution requirement.
+- [ ] Require the observed `Lint and test` CI check only after confirming its exact status-check selector in Settings.
+- [ ] Enable secret scanning/push protection and Dependabot alerts/security updates where available to this repository/organization.
+- [x] Add and verify initial `.github/CODEOWNERS` mappings for Capture, Analysis, Storage, Presentation, tests and Docs.
+- [x] Keep the existing Project_Pocket-Packet-Sniffer board as the single source of truth.
+- [x] Keep release notes and demo evidence aligned with merged code; latest main CI passed with 81 tests.
+
+The GitHub integration available for this project does not expose project-board item/field mutation or repository branch-protection/security-setting writes. Issue states and milestones can be updated here; the maintainer must verify the board's custom Status/Assignees fields and repository settings in the GitHub UI.
 
 ## 11. Current limitations of this setup
 
-The process PRs added the working CI workflow and CODEOWNERS, and PR #24 merged the CLI/session integration. The remaining repository-level tasks are UI-only: confirm branch protection/required checks and enable the available secret-scanning/push-protection and Dependabot controls. The connected GitHub integration can read these settings but cannot write them.
+PR #24 merged the CLI/session integration and PR #25 merged the Sprint 1 documentation closeout. Main commit 240e9a1dfc4f4120866c89e797cf7ffad9d9f90d passed CI run 40357674966 with Ruff passing and 81 tests passing. Remaining repository-level tasks are UI-only: confirm branch protection/required checks and enable available secret-scanning/push-protection and Dependabot controls. The connected GitHub integration can read these settings but cannot write them.

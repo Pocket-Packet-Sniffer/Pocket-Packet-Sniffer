@@ -31,8 +31,8 @@ This matrix connects the approved SRS requirements to GitHub work items and the 
 ## Snapshot notes (2026-10-26)
 
 - Merged PRs: #17 Capture, #18 process/traceability documentation, #19 Storage/Query, #20 statistics renderer, #21 CSV exporter, #22 error/security helpers, #23 Analysis parser, and #24 end-to-end application integration.
-- Main commit c55b116de6465849e6c7d9cbeb6d692ee6bf84c4 passed CI run [40353363252](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40353363252): Ruff passed and pytest reported 81 passed.
-- The main branch now includes AnalyzerPipeline, TrafficStatistics, CaptureSession, the CLI, architecture checks and generated-PCAP integration coverage. Live interface/Wi-Fi monitor mode/BLE/Raspberry Pi verification, any required PDF export, and repository branch protection remain separate follow-ups.
+- Main commit 240e9a1dfc4f4120866c89e797cf7ffad9d9f90d (PR #25 merge) passed CI run [40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966): Ruff passed and pytest reported 81 passed.
+- The main branch includes AnalyzerPipeline, TrafficStatistics, CaptureSession, the CLI, architecture checks and generated-PCAP integration coverage. The Sprint 1 closeout and review record are in Docs/SPRINT_PLAN.md and Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md. Live interface/Wi-Fi monitor mode/BLE/Raspberry Pi verification, any required PDF export, and repository branch protection remain separate follow-ups.
 
 ## Verification record
 
