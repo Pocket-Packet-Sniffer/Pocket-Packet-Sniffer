@@ -12,7 +12,7 @@ from collections.abc import Callable
 from threading import Event
 from typing import TextIO
 
-from pocket_packet_sniffer.capture import CaptureError, CapturedPacket, Capturer
+from pocket_packet_sniffer.capture import CapturedPacket, CaptureError, Capturer
 
 EXIT_SUCCESS = 0
 EXIT_CAPTURE_ERROR = 2
