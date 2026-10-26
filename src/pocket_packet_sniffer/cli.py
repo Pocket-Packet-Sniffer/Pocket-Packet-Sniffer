@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from datetime import datetime
 from pathlib import Path
-import sys
 from threading import Event, Thread
 
-from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.analysis.parser import PacketParser
+from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.application.session import CaptureSession
 from pocket_packet_sniffer.capture import PcapFileCapturer, ScapyCapturer
 from pocket_packet_sniffer.presentation import (
