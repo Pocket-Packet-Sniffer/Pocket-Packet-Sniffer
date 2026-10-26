@@ -1,64 +1,66 @@
-# Sprint 1 Review and Retrospective — Draft for Team Confirmation
+# Sprint 1 Review and Retrospective — Closeout Record
 
 **Prepared:** 2026-10-26  
-**Status:** Evidence summary prepared; team review/retrospective not yet confirmed. Do not treat the proposed observations or actions below as team consensus until discussed and accepted.
+**Review method:** Maintainer-led asynchronous review of merged pull requests, issue status, project documentation, and GitHub Actions evidence.  
+**Repository maintainer:** Vikas Kulakarni.  
+**Important scope note:** No synchronous team meeting, attendee list, external evaluator feedback, or live-interface demo is recorded in the repository. This closeout does not claim those events occurred.
 
 ## 1. Sprint goal
 
-Establish the repository workflow and CI, implement passive raw packet capture and analysis, persist packet data and searchable metadata, and deliver a repeatable end-to-end fixture path.
+Establish the repository workflow and CI, implement passive raw packet capture and analysis, persist packet data/searchable metadata, and deliver a repeatable end-to-end fixture path.
 
-## 2. Verified delivery
+**Outcome:** the core engineering goal is delivered. PR #24 integrates Capture → Analysis → Storage → CLI and generated-PCAP end-to-end tests. PR #25 updates the implementation and traceability records.
+
+## 2. Verified review evidence
 
 | Delivery | Evidence |
 |---|---|
-| Capture contract, PCAP replay, passive Scapy backend | PR #17 |
-| Process/workflow and traceability baseline | PR #18 |
-| PCAP/SQLite Storage and query functions | PR #19 |
-| Presentation statistics renderer | PR #20 |
-| Local CSV session report export | PR #21 |
+| Capture contract, classic-PCAP replay, passive Scapy backend | PR #17 |
+| Workflow/process and traceability baseline | PR #18 |
+| PCAP/SQLite storage and query functions | PR #19 |
+| Statistics renderer | PR #20 |
+| Local CSV session-report exporter | PR #21 |
 | Stable capture error handling and POSIX permission checks | PR #22 |
 | Packet Analysis parser and controlled protocol tests | PR #23 |
-| Application session, explicit Analysis-to-Storage adapter, traffic statistics, CLI and generated-PCAP end-to-end tests | PR #24 |
-| Latest CI on main | [Run 40353363252](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40353363252): Ruff passed; 81 tests passed |
+| Application session, Analysis-to-Storage adapter, rolling statistics, CLI, architecture checks and generated-PCAP end-to-end tests | PR #24 |
+| Closeout documentation, RTM and this review record | PR #25 |
+| Latest CI on main | [Run 40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966): Ruff passed; pytest reported **81 passed** |
 
-The CI suite uses generated packets and mocks; it does not substitute for a real live-interface, Windows ACL, Wi-Fi monitor-mode, BLE, or Raspberry Pi validation.
+### Demonstration record
 
-## 3. Items carried forward
+- **Automated demonstration evidence:** generated PCAP is processed through Capture → Analysis → Storage, then queried and used for statistics/CSV report output. See `tests/test_session_integration.py` and `tests/test_cli.py`.
+- **Live demonstration:** no live-interface demonstration is evidenced by CI or repository records; do not claim one was performed.
+- **External/stakeholder feedback:** none is recorded in the repository. This means "not recorded", not proof that no feedback was ever given.
+- **Accepted software outcome:** core capture-to-storage and CLI fixture path merged to `main`; current CI is green.
+- **Not claimed as verified:** authorized live interface behaviour on every target OS/driver, Windows ACLs, Wi-Fi monitor mode, BLE, Raspberry Pi performance, or PDF report output.
 
-- **Issue #10:** authorized live-interface and target-platform security/portability verification; Windows ACL and target-hardware performance checks.
-- **Issue #16:** enable/verify main branch protection, required successful CI check, conversation resolution and available secret-scanning/Dependabot controls in GitHub Settings.
-- **Report format:** current CLI provides CSV. Confirm whether PDF is explicitly required by the approved SRS; implement it only if required.
-- **Stretch issues #13 and #14:** remain outside the committed Sprint 1 scope.
+## 3. Work carried forward
 
-## 4. Team review — fill in during the review
+- **Issue #10 — Security/portability:** authorized live-interface startup/permission checks and target-platform security/performance verification remain M4 work.
+- **Issue #16 — Repository settings:** branch protection, required status check and available security settings remain a repository-admin action in GitHub Settings.
+- **Report format:** current CLI implements CSV. Confirm the approved SRS output format before making a PDF-support claim; implement PDF only if it is required.
+- **Stretch issues #13/#14:** suspicious-activity alerts and concurrent capture backends remain outside the committed core sprint scope.
 
-- Review/demo date and attendees: **[team to fill in]**
-- What the team demonstrated: **[team to confirm; CI evidence above is available]**
-- Stakeholder/evaluator feedback: **[team to fill in, or write “none received” if accurate]**
-- What was accepted: **[team to confirm]**
-- What was not accepted or remains incomplete: **[review and carry-over list above; team to confirm]**
+## 4. Retrospective findings and assigned improvements
 
-## 5. Retrospective — discussion prompts, not pre-filled team conclusions
+These are the maintainer's closeout decisions based on the work history. They are not presented as votes or comments from teammates who have not left a recorded review.
 
-These are candidate observations based on repository history. Discuss them as a team before recording them as the retrospective outcome:
+| Finding | Concrete action for Sprint 2 | Accountable owner | How to verify |
+|---|---|---|---|
+| The Analysis and Storage record classes have different responsibilities; an explicit application adapter was needed to preserve raw packet bytes without reversing layer dependencies. | Write cross-layer contracts/adapter boundaries before parallel layer changes and record material decisions in an ADR. | Vikas Kulakarni; review partners Shivanand and Shivakumara GP | Next cross-layer PR links a contract/ADR or explains why none is required. |
+| Integration proof arrived after separate layer tests; actual effort was not consistently recorded, so Sprint 1 estimate-vs-actual variance cannot be reconstructed. | Add a generated-fixture end-to-end test early for cross-layer work and record planned points plus actual effort (or explicitly record missing actuals) when closing an issue. | Sanjith R for integration-test coordination; Vikas Kulakarni for the closeout checklist | Next sprint's cross-layer ticket includes an e2e test before merge and an effort/variance entry at review. |
 
-- **Candidate improvement A:** agree cross-layer record/interface contracts before parallel layer work; the Analysis and Storage record types required an explicit application adapter.
-- **Candidate improvement B:** build one generated-fixture end-to-end test earlier, so integration mismatches are found before the end of the sprint.
-- Agreed improvement(s): **[team to choose and edit]**
-- Owner(s): **[team to assign]**
-- When/how the team will check improvement: **[team to agree]**
+## 5. Estimate versus actual effort
 
-## 6. Estimate versus actual
+The sprint plan recorded story-point estimates for the scoped issues. Historical person-hours/actual effort were not recorded consistently in the repository, so **no reliable estimate-versus-actual variance can be reported for Sprint 1**. No person-hours have been inferred from commit counts.
 
-Record actual effort only from the team's own notes or recollection; do not infer person-hours from commit counts.
+This is recorded as a process gap, with the second retrospective action above: capture actual effort or explicitly mark it unavailable at issue close starting in Sprint 2.
 
-| Work item | Estimate (points) | Actual effort / variance | Notes |
-|---|---:|---|---|
-| #1, #3, #4, #5, #9, #10, #11, #15, #16 | See issue/sprint plan | **[team to fill in]** | Use story points and effort units consistently; do not equate them automatically. |
+## 6. Closeout decision
 
-## 7. Closeout decision
-
-- Core implementation: delivered and merged to main; latest main CI passed with 81 tests.
-- Sprint review and retrospective: **pending team confirmation**.
-- Carry-over: #10 and #16, plus the PDF decision if the approved SRS requires it.
-- Do not mark Issue #15 complete until sections 4–6 reflect the actual team discussion.
+- **Core implementation:** complete and merged to `main`.
+- **Automated verification:** latest main CI passed; 81 tests passed.
+- **Documentation/traceability:** current in PR #25 on main.
+- **Carry-over:** #10 and #16 remain open for release/repository checks. #13/#14 remain stretch; PDF is a follow-up only if required by the approved SRS.
+- **Process decision:** use the two maintainer-selected improvements above for Sprint 2 planning. Review partners may revise them at kickoff.
+- **Limitations:** this is an asynchronous evidence-based maintainer review; it does not claim a synchronous team meeting or a live-network demo. The lack of actual effort data is explicitly preserved rather than fabricated.
