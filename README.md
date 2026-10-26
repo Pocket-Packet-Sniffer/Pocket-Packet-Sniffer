@@ -34,6 +34,14 @@ The SRS is the source of functional and non-functional requirements. The STP def
 
 See CONTRIBUTING.md for the detailed working agreement.
 
+## Team engineering resources
+
+- [GitHub operating guide](Docs/GITHUB_OPERATING_GUIDE.md) — issue labels, milestones, branching, reviews, merge rules, releases, and repository settings.
+- [Project process](Docs/PROJECT_PROCESS.md) — requirements authority, layer responsibilities, prioritization, and quality gates.
+- [Architecture Decision Record template](Docs/adr/0000-template.md) — record important design choices and their trade-offs.
+- [Contributing guide](CONTRIBUTING.md) — the expected issue-to-PR workflow.
+- [Security and safe use](SECURITY.md) — passive-only scope and sensitive capture-data handling.
+
 ## Safe use
 
 Only capture traffic on networks/devices you own or are explicitly authorized to monitor. This tool is intended to be passive: it must not inject, alter, or replay network traffic. Capture files may contain sensitive information; keep them local and protect them with suitable file permissions. The CLI must not silently upload captured data.
