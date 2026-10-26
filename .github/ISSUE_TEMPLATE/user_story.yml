@@ -1,7 +1,6 @@
 name: User story / engineering task
 description: Create a traceable backlog item with acceptance criteria
 title: "[REQ-] "
-labels: ["backlog"]
 body:
   - type: dropdown
     id: type
