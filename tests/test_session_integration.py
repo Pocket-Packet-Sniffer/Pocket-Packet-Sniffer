@@ -43,6 +43,12 @@ def captured(packet_bytes, *, timestamp, link_type=1):
 
 
 def test_capture_analysis_storage_statistics_query_and_csv_export_end_to_end(tmp_path):
+    """Exercise the PCAP-fixture path across Analysis, Storage, Query and CSV export.
+
+    Covers the controlled-fixture portions of STP TC-ANA-01, TC-STO-01,
+    TC-STO-02, TC-PRE-01 and TC-PRE-02. It does not replace live-interface
+    verification for TC-CAP-01.
+    """
     start = datetime(2026, 10, 26, 12, 0, tzinfo=UTC)
     frames = [
         captured(
