@@ -1,0 +1,2 @@
+# Optional dependency for live interface capture. PCAP replay uses only the standard library.
+scapy>=2.5
