@@ -1,0 +1,60 @@
+name: Feature request
+description: Propose a change or improvement
+title: "[FEATURE] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or user need
+      description: What user problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful outcome, not only a preferred implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Write observable outcomes as checkboxes.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: input
+    id: traceability
+    attributes:
+      label: SRS / STP / SASD traceability
+      description: Include relevant requirement and test-case IDs, or explain that this is a new proposal.
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - Core requirement
+        - Quality or maintenance
+        - Stretch / optional
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Dependencies, risks, and alternatives
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety and architecture
+      options:
+        - label: This proposal preserves authorized, passive-only capture.
+          required: true
+        - label: This proposal does not silently upload capture data.
+          required: true
+        - label: I checked for a similar issue.
+          required: true
