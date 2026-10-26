@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Event, Lock
 from typing import TextIO
-import sys
-import uuid
 
 from pocket_packet_sniffer.analysis.models import PacketRecord as AnalyzedPacket
 from pocket_packet_sniffer.analysis.parser import PacketParser
-from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline, PacketAnalyzer
+from pocket_packet_sniffer.analysis.pipeline import PacketAnalyzer
 from pocket_packet_sniffer.analysis.statistics import TrafficStatistics
 from pocket_packet_sniffer.capture import CapturedPacket, Capturer
 from pocket_packet_sniffer.presentation.capture_runner import (
