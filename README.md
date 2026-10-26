@@ -34,6 +34,18 @@ The SRS is the source of functional and non-functional requirements. The STP def
 
 See CONTRIBUTING.md for the detailed working agreement.
 
+## Development setup and tests
+
+Use Python 3.10 or newer. From the repository root:
+
+```bash
+python -m pip install -r requirements-dev.txt -r requirements-capture.txt
+PYTHONPATH=src pytest -q
+ruff check --select E4,E7,E9,F,I src tests
+```
+
+The tests use generated PCAP fixtures and mocked capture backends; they do not require root privileges or live network traffic. The current repository contains Capture, Storage/Query, a statistics renderer, and CSV report export. The complete Analysis layer and full CLI/session integration are still in progress, so these commands verify the available modules rather than an end-to-end product demo.
+
 ## Planning and traceability
 
 - [Requirement Traceability Matrix](Docs/REQUIREMENT_TRACEABILITY.md) — SRS-to-issue and STP-to-test mapping with verification status.
@@ -47,6 +59,8 @@ See CONTRIBUTING.md for the detailed working agreement.
 - [Architecture Decision Record template](Docs/adr/0000-template.md) — record important design choices and their trade-offs.
 - [Contributing guide](CONTRIBUTING.md) — the expected issue-to-PR workflow.
 - [Security and safe use](SECURITY.md) — passive-only scope and sensitive capture-data handling.
+- [Security validation record](Docs/SECURITY_VALIDATION.md) — automated permission checks and remaining manual platform verification.
+- [Capture Layer guide](Docs/CAPTURE_LAYER.md) — capture backends, typed failures, setup and limitations.
 
 ## Storage and query layer (PPS-04/PPS-05)
 
