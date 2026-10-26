@@ -6,30 +6,30 @@ This plan groups work into two delivery increments. Sprint dates and commitments
 
 **Goal:** establish a reviewable workflow and bring the base capture-to-storage pipeline together.
 
-| Issue | Work | Owner/coordinator | Intended outcome |
+| Issue | Work | Owner/coordinator | Estimate (points) | Intended outcome |
 |---|---|---|---|
-| #1 | Foundation workflow, CI and requirement traceability | Vikas coordinates; shared work | Workflow and traceability are documented; CI is active and passing on merged code. |
-| #3 | Raw packet capture via common Capturer interface | Vikas | Replay fixture backend and supported passive live capture implementation, reviewed and tested. |
-| #4 | Parse/classify packets into a common packet record | Shivanand | Agree the shared packet model with Capture and Storage; parsing tests pass. |
-| #5 | PCAP storage and Repository interface | Shivakumara GP | Persist packets/metadata and verify retrieval, after agreeing the shared model. |
-| #9 | Missing interface and permission failures | Vikas | Actionable typed errors; Presentation/CLI integration is handled with the owning layer. |
-| #10 | Start security/passive-use and portability checks | Vikas + Shivakumara, shared | Capture/storage safety review begins; evidence is recorded. |
-| #11 | Test scaffolding and CI setup | Sanjith coordinates, shared | Initial CI and unit tests run on PRs; end-to-end scope is planned. |
-| #15 | Sprint planning/review/retrospective records | Vikas coordinates; shared | Agree sprint commitment, note blockers, then record review and retrospective at sprint end. |
-| #16 | Repository configuration | Vikas | Complete contributor access check and remaining repository settings when prerequisites are ready. |
+| #1 | Foundation workflow, CI and requirement traceability | Vikas coordinates; shared work | 5 | Workflow and traceability are documented; CI is active and passing on merged code. |
+| #3 | Raw packet capture via common Capturer interface | Vikas | 5 | Replay fixture backend and supported passive live capture implementation, reviewed and tested. |
+| #4 | Parse/classify packets into a common packet record | Shivanand | 5 | Agree the shared packet model with Capture and Storage; parsing tests pass. |
+| #5 | PCAP storage and Repository interface | Shivakumara GP | 5 | Persist packets/metadata and verify retrieval, after agreeing the shared model. |
+| #9 | Missing interface and permission failures | Vikas | 3 | Actionable typed errors; Presentation/CLI integration is handled with the owning layer. |
+| #10 | Start security/passive-use and portability checks | Vikas + Shivakumara, shared | 5 | Capture/storage safety review begins; evidence is recorded. |
+| #11 | Test scaffolding and CI setup | Sanjith coordinates, shared | 5 | Initial CI and unit tests run on PRs; end-to-end scope is planned. |
+| #15 | Sprint planning/review/retrospective records | Vikas coordinates; shared | 2 | Agree sprint commitment, note blockers, then record review and retrospective at sprint end. |
+| #16 | Repository configuration | Vikas | TBD | Complete contributor access check and remaining repository settings when prerequisites are ready. |
 
 ## Sprint 2 — Query, presentation, integration and release readiness
 
 **Goal:** deliver a demonstrable end-to-end user flow and record verification evidence.
 
-| Issue | Work | Owner/coordinator | Intended outcome |
+| Issue | Work | Owner/coordinator | Estimate (points) | Intended outcome |
 |---|---|---|---|
-| #6 | Filter and query saved captures | Shivakumara GP | Search by protocol, address and time window using the agreed Repository API. |
-| #7 | Live traffic statistics in CLI | Sanjith R | Display packet rate, protocol breakdown and top five talkers using Analysis events/data. |
-| #8 | Export session reports | Sanjith R | Generate the required session report formats and test outputs. |
+| #6 | Filter and query saved captures | Shivakumara GP | 5 | Search by protocol, address and time window using the agreed Repository API. |
+| #7 | Live traffic statistics in CLI | Sanjith R | 5 | Display packet rate, protocol breakdown and top five talkers using Analysis events/data. |
+| #8 | Export session reports | Sanjith R | 3 | Generate the required session report formats and test outputs. |
 | #10 | Finish security and portability verification | Shared; Capture/Storage lead relevant checks | Review passive-only behaviour, privacy, local file permissions and target-platform limitations. |
 | #11 | Integration and end-to-end tests | Shared; Sanjith coordinates | Verify Capture → Analysis → Storage → Presentation using controlled PCAP fixtures; record actual test results. |
-| #12 | Architecture/setup/demo documentation | Sanjith R coordinates, shared contributions | Document installation, supported backends, safe demo steps, outputs, tests and known limitations. |
+| #12 | Architecture/setup/demo documentation | Sanjith R coordinates, shared contributions | 3 | Document installation, supported backends, safe demo steps, outputs, tests and known limitations. |
 
 Issues #10 and #11 can span both sprints. The team should carry unfinished work forward rather than mark it done to fit the plan. Issue #16 should remain open until its repository-level checklist is actually complete.
 
