@@ -28,22 +28,13 @@ This matrix connects the approved SRS requirements to GitHub work items and the 
 | Modularity and maintainability | [#1](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/1), [#11](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/11) | Review documented boundaries between Capture, Analysis, Storage and Presentation; check the cross-layer interfaces in integration tests. |
 | Setup, limitations and safe demo | [#12](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/12) | Fresh setup follows the README; demo instructions use controlled/synthetic traffic or an authorized interface. |
 
-## Snapshot notes
+## Current implementation and verification snapshot (2026-10-27)
 
-### Main baseline (2026-10-26)
-
-
-
-- Merged PRs: #17 Capture, #18 process/traceability documentation, #19 Storage/Query, #20 statistics renderer, #21 CSV exporter, #22 error/security helpers, #23 Analysis parser, and #24 end-to-end application integration.
-- Current main commit `cd80e958bf572c32126c3f222579aec638da04b7` (PR #29 merge) passed latest main CI [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511): Ruff passed and pytest reported **106 passed in 1.87s**.
-- Main includes AnalyzerPipeline, TrafficStatistics, CaptureSession, the CLI, architecture checks and generated-PCAP integration coverage. The Sprint 1 closeout and review record are in Docs/SPRINT_PLAN.md and Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md. Live interface/Wi-Fi monitor mode/BLE/Raspberry Pi verification and repository branch protection remain separate follow-ups.
-
-### SRS compliance branch (2026-10-27)
-
-- Branch: `feat/PPS-28-srs-compliance`.
-- Added implementation candidates for PDF export, metadata-only Observer alerting, concurrent capture, multi-link-type per-session storage, synthetic PCAP demo tooling, and source-context persistence.
-- Latest main CI (2026-10-27): [run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and reported **106 passed in 1.87s** after PR #29 merged. The replay benchmark is a local processing/storage measure, not a live packet-loss result; target-hardware verification remains pending.
-- This branch is not merged into `main`; its functional rows above describe review-branch code, not the current main release.
+- Backend SRS-completion changes were merged in PR #29 at main commit `cd80e958bf572c32126c3f222579aec638da04b7`.
+- Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and reported **106 passed in 1.87 seconds**.
+- Main includes per-session/per-link-type PCAP mapping, interface/backend metadata, session-scoped repository queries, CSV/PDF report export, metadata-only heuristic alerts, concurrent capture, synthetic PCAP demo tooling, and a replay throughput benchmark.
+- Automated tests use generated traffic and mocks. They do not establish live-interface permission behavior, actual Wi-Fi monitor-mode or BLE radio operation, Windows ACL behavior, Raspberry Pi throughput/drop rate, or simultaneous multi-radio behavior on target hardware.
+- Optional Zeek integration and the web dashboard remain unimplemented/deferred; do not claim either as part of the current implementation.
 
 ## Verification record
 
