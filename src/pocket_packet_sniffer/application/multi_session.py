@@ -11,7 +11,10 @@ from threading import Event, Lock, Thread
 from typing import Any
 
 from pocket_packet_sniffer.analysis.pipeline import PacketAnalyzer
-from pocket_packet_sniffer.application.session import CaptureSession, CaptureSessionResult
+from pocket_packet_sniffer.application.session import (
+    CaptureSession,
+    CaptureSessionResult,
+)
 from pocket_packet_sniffer.capture import CapturedPacket, Capturer
 from pocket_packet_sniffer.presentation.capture_runner import (
     EXIT_CAPTURE_ERROR,
