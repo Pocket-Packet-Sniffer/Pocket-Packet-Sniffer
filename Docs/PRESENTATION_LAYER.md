@@ -33,4 +33,4 @@ ruff check --select E4,E7,E9,F,I src tests
 pytest -q
 ```
 
-The feature branch `feat/PPS-28-srs-compliance` is being validated through CI and requires independent review before merge. Automated generated-PCAP tests do not prove live-interface throughput, Wi-Fi monitor mode, BLE hardware support, Windows ACLs, or Raspberry Pi packet-loss performance. The browser dashboard is deferred; the SRS names CLI as the primary interface and web dashboard as a stretch goal.
+Backend SRS-completion code is merged into `main` via PR #29. Latest main CI [run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and 106 tests in 1.87 seconds. Automated generated-PCAP tests do not prove live-interface throughput, Wi-Fi monitor mode, BLE hardware support, Windows ACLs, or Raspberry Pi packet-loss performance. The browser dashboard is deferred; the SRS names CLI as the primary interface and web dashboard as a stretch goal.
