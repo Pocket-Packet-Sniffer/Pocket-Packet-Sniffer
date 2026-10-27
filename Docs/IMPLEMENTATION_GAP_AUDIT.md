@@ -59,6 +59,8 @@ pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.p
 
 ## Verification gate
 
+The requirement-to-test execution record is published at [Docs/TEST_EXECUTION_REPORT.md](TEST_EXECUTION_REPORT.md). It separates automated CI results from not-yet-executed live-interface, Wi-Fi/BLE hardware, Windows ACL, and Raspberry Pi packet-loss checks.
+
 - [x] CI Ruff check passes — [run 40473733552](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40473733552), all selected checks passed.
 - [x] Full pytest suite passes — the same CI run reports **105 passed in 1.30s**, including alerts, concurrent capture, multi-link storage migration, CSV/PDF export, capture control, the synthetic demo, and the replay throughput benchmark.
 - [ ] A teammate reviews and approves the implementation PR before merge.
