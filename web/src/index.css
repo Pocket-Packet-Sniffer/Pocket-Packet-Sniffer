@@ -712,3 +712,57 @@ tbody tr:hover { background: #142337; }
 @media (max-width: 420px) {
   .metrics { grid-template-columns:minmax(0,1fr); }
 }
+
+
+/* Reference-inspired SOC dashboard modules: restrained, data-first, no synthetic telemetry */
+.activity-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(310px,1fr); gap:14px; margin:14px 0; }
+.activity-card,.signal-card { min-width:0; padding:20px; }
+.live-sample,.health-indicator { display:inline-flex; align-items:center; gap:7px; white-space:nowrap; color:#a7bbd1; font-size:11px; border:1px solid #2b4055; border-radius:7px; padding:6px 9px; background:#111e2d; }
+.live-sample i,.health-indicator i { display:block; width:7px; height:7px; border-radius:50%; background:#71849b; }
+.health-running { color:#6ff0d8; border-color:#28594f; background:#12342f; }
+.health-running i { background:#5eead4; box-shadow:0 0 10px #5eead477; }
+.activity-chart { display:grid; grid-template-columns:38px minmax(0,1fr); gap:10px; height:155px; margin-top:16px; padding:10px 0 0; border-bottom:1px solid #2b3d52; background:repeating-linear-gradient(to bottom,transparent 0,transparent 37px,#243449 38px,#243449 39px); }
+.activity-y { display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end; padding-bottom:21px; color:#71869e; font-size:9px; letter-spacing:.08em; }
+.activity-bars { display:grid; grid-template-columns:repeat(18,minmax(0,1fr)); align-items:end; gap:clamp(3px,.65vw,9px); min-width:0; }
+.activity-column { display:flex; height:100%; flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; min-width:0; }
+.activity-column i { display:block; width:min(100%,22px); min-height:2px; border-radius:4px 4px 1px 1px; background:linear-gradient(180deg,#6cebd5 0%,#299b9b 100%); box-shadow:0 0 12px #5eead40d; transition:height .25s ease,filter .2s ease; }
+.activity-column:hover i { filter:brightness(1.25); }
+.activity-column span { color:#6f8299; font-size:9px; padding-bottom:8px; }
+.activity-foot { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:13px; color:#8296ae; font-size:10px; }
+.activity-foot > span { display:inline-flex; align-items:center; gap:7px; }
+.legend-dot { width:7px; height:7px; display:inline-block; border-radius:50%; }
+.mint-dot { background:#5eead4; }
+.signal-card { display:flex; flex-direction:column; }
+.signal-main { display:flex; align-items:center; gap:12px; min-width:0; margin:21px 0 18px; }
+.signal-icon { flex:0 0 46px; width:46px; height:46px; display:grid; place-items:center; color:#5eead4; border:1px solid #28594f; border-radius:12px; background:linear-gradient(145deg,#163c36,#122b2c); }
+.signal-main > div:last-child { min-width:0; }
+.signal-main strong { display:block; color:#e7eff9; font-size:14px; font-weight:650; }
+.signal-main p { overflow-wrap:anywhere; margin:5px 0 0; color:#8398b0; font-size:11px; line-height:1.55; }
+.signal-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:auto; border:1px solid #26384d; border-radius:10px; background:#0b1420; }
+.signal-stats > div { min-width:0; padding:12px 10px; }
+.signal-stats > div+div { border-left:1px solid #26384d; }
+.signal-stats small { display:block; color:#8195ad; font-size:10px; margin-bottom:6px; }
+.signal-stats strong { color:#e3edf9; font-size:19px; font-variant-numeric:tabular-nums; }
+.signal-error { overflow-wrap:anywhere; color:#ffc0c8; background:#2b1a23; border:1px solid #663b47; border-radius:8px; padding:10px; font-size:11px; line-height:1.5; }
+.analytics { margin-top:14px; }
+.protocol-card,.talker-card,.recent-card,.explorer { padding:20px; }
+.protocol-list { margin-top:18px; }
+.protocol-row { padding-block:11px; }
+.talker { padding-block:12px; }
+.table-wrap { border-radius:10px; }
+th { letter-spacing:.075em; text-transform:uppercase; font-size:10px; }
+tbody tr { transition:background .15s ease; }
+.metric-number { letter-spacing:-.035em; }
+.card { border-radius:13px; }
+@media (max-width: 1080px) {
+  .activity-grid { grid-template-columns:minmax(0,1fr); }
+  .signal-card { min-height:unset; }
+}
+@media (max-width: 560px) {
+  .activity-card,.signal-card { padding:15px; }
+  .activity-chart { height:125px; grid-template-columns:30px minmax(0,1fr); gap:6px; }
+  .activity-bars { gap:3px; }
+  .activity-column span { font-size:8px; }
+  .activity-foot { font-size:9px; }
+  .signal-stats strong { font-size:16px; }
+}
