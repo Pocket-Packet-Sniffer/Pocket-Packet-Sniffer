@@ -14,7 +14,7 @@ from tools.create_demo_pcap import create_demo_pcap
 
 
 def write_one_packet_pcap(path: Path) -> None:
-    frame = bytes(Ether() / IP(src="192.0.2.5", dst="198.51.100.5") / TCP())
+    frame = bytes(Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP(src="192.0.2.5", dst="198.51.100.5") / TCP())
     with path.open("wb") as stream:
         stream.write(b"\xd4\xc3\xb2\xa1")
         stream.write(struct.pack("<HHIIII", 2, 4, 0, 0, 65535, 1))
