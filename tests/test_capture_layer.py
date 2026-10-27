@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 import struct
 import types
 from datetime import datetime, timezone
@@ -122,8 +123,13 @@ def test_callback_failure_is_reported_as_capture_error(tmp_path):
     def broken(_record):
         raise RuntimeError("analysis failed")
 
-    with pytest.raises(CaptureCallbackError, match="callback failed"):
+    with pytest.raises(CaptureCallbackError, match=r"callback failed.*RuntimeError") as error:
         PcapFileCapturer(pcap).capture(broken, Event())
+
+    # Arbitrary callback text can contain sensitive data; only its type is shown.
+    assert "analysis failed" not in str(error.value)
+    assert error.value.__cause__ is not None
+    assert isinstance(error.value.__cause__, RuntimeError)
 
 
 def test_invalid_count_is_rejected(tmp_path):
@@ -246,3 +252,48 @@ def test_keyboard_interrupt_stops_background_live_sniffer(monkeypatch):
     assert len(instances) == 1
     assert instances[0].stopped
     assert instances[0].running is False
+
+
+def test_project_owned_callback_error_includes_sanitized_reason(tmp_path):
+    from pocket_packet_sniffer.capture.errors import CaptureStartupError
+
+    pcap = make_pcap(tmp_path / "domain-callback.pcap", [b"frame"])
+
+    def broken(_record):
+        raise CaptureStartupError("storage directory is unavailable")
+
+    with pytest.raises(CaptureCallbackError, match=r"CaptureStartupError: storage directory is unavailable"):
+        PcapFileCapturer(pcap).capture(broken, Event())
+
+
+
+def test_callback_error_includes_safe_storage_root_cause(tmp_path):
+    from pocket_packet_sniffer.storage.errors import RepositoryError
+
+    pcap = make_pcap(tmp_path / "storage-cause.pcap", [b"frame"])
+
+    def broken(_record):
+        try:
+            raise sqlite3.OperationalError("no such table: capture_files")
+        except sqlite3.OperationalError as cause:
+            raise RepositoryError("metadata storage failed while saving packet") from cause
+
+    with pytest.raises(CaptureCallbackError) as error:
+        PcapFileCapturer(pcap).capture(broken, Event())
+
+    assert "RepositoryError: metadata storage failed while saving packet" in str(error.value)
+    assert "OperationalError: no such table: capture_files" in str(error.value)
+    assert error.value.__cause__ is not None
+
+
+def test_callback_error_does_not_disclose_arbitrary_custom_text(tmp_path):
+    pcap = make_pcap(tmp_path / "custom-cause.pcap", [b"secret-payload"])
+
+    def broken(_record):
+        raise RuntimeError("secret-payload must not appear in errors")
+
+    with pytest.raises(CaptureCallbackError) as error:
+        PcapFileCapturer(pcap).capture(broken, Event())
+
+    assert "RuntimeError" in str(error.value)
+    assert "secret-payload" not in str(error.value)

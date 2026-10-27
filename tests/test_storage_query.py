@@ -47,6 +47,16 @@ def record(
     )
 
 
+def test_relative_storage_directory_is_normalized_and_usable(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    repository = PcapSqliteRepository("relative-captures")
+    packet = record(session_id="relative-session")
+
+    assert repository.directory == (tmp_path / "relative-captures").resolve()
+    repository.save(packet)
+    assert repository.query_session("relative-session") == [packet]
+
+
 def test_save_writes_pcap_and_query_restores_packet(tmp_path):
     repository = PcapSqliteRepository(tmp_path)
     packet = record()

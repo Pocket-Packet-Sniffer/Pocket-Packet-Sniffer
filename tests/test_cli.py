@@ -14,7 +14,7 @@ from tools.create_demo_pcap import create_demo_pcap
 
 
 def write_one_packet_pcap(path: Path) -> None:
-    frame = bytes(Ether() / IP(src="192.0.2.5", dst="198.51.100.5") / TCP())
+    frame = bytes(Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP(src="192.0.2.5", dst="198.51.100.5") / TCP())
     with path.open("wb") as stream:
         stream.write(b"\xd4\xc3\xb2\xa1")
         stream.write(struct.pack("<HHIIII", 2, 4, 0, 0, 65535, 1))
@@ -206,3 +206,28 @@ def test_cli_query_requires_timezone_aware_dates(tmp_path):
         assert exc.code == 2
     else:
         raise AssertionError("argparse should reject naive timestamps")
+
+
+
+def test_cli_replay_supports_relative_storage_directory(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    source = tmp_path / "relative-demo.pcap"
+    create_demo_pcap(source)
+
+    code = main(
+        [
+            "capture",
+            "--pcap-file",
+            str(source),
+            "--storage-dir",
+            "demo-captures",
+            "--session-id",
+            "demo-session",
+        ]
+    )
+    result = capsys.readouterr()
+
+    assert code == 0
+    assert "seen=5 stored=5 ignored=0 exit_code=0" in result.out
+    repository = PcapSqliteRepository("demo-captures")
+    assert len(repository.query_session("demo-session")) == 5

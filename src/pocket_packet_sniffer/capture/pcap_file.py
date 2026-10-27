@@ -11,7 +11,7 @@ from threading import Event
 from typing import BinaryIO
 
 from .base import Capturer, PacketCallback
-from .errors import CaptureCallbackError, CaptureFileError
+from .errors import CaptureCallbackError, CaptureFileError, _callback_failure_detail
 from .models import CapturedPacket
 
 _GLOBAL_REMAINDER = struct.Struct("HHIIII")
@@ -64,8 +64,14 @@ class PcapFileCapturer(Capturer):
                         break
                     try:
                         on_packet(packet)
+                    except CaptureCallbackError:
+                        raise
                     except Exception as exc:
-                        raise CaptureCallbackError("Analysis callback failed while processing a replayed packet.") from exc
+                        detail = _callback_failure_detail(exc)
+                        raise CaptureCallbackError(
+                            "Analysis callback failed while processing a replayed packet "
+                            f"({detail})."
+                        ) from exc
                     delivered += 1
                     if self.delay and stop_event.wait(self.delay):
                         break

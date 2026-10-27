@@ -22,7 +22,7 @@ def captured(packet, link_type=1):
 
 
 def test_parse_tcp_packet():
-    packet = Ether() / IP(src="192.0.2.1", dst="198.51.100.2") / TCP()
+    packet = Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP(src="192.0.2.1", dst="198.51.100.2") / TCP()
     record = PacketParser().parse(captured(packet))
     assert record is not None
     assert record.source == "192.0.2.1"
@@ -31,14 +31,14 @@ def test_parse_tcp_packet():
 
 
 def test_parse_udp_packet():
-    packet = Ether() / IP(src="192.0.2.1", dst="198.51.100.2") / UDP()
+    packet = Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP(src="192.0.2.1", dst="198.51.100.2") / UDP()
     record = PacketParser().parse(captured(packet))
     assert record is not None
     assert record.protocol == "UDP"
 
 
 def test_parse_arp_packet():
-    packet = Ether() / ARP()
+    packet = Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / ARP()
     record = PacketParser().parse(captured(packet))
     assert record is not None
     assert record.protocol == "ARP"
@@ -47,7 +47,7 @@ def test_parse_arp_packet():
 
 
 def test_parse_icmp_packet():
-    packet = Ether() / IP() / ICMP()
+    packet = Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP() / ICMP()
     record = PacketParser().parse(captured(packet))
     assert record is not None
     assert record.protocol == "ICMP"
@@ -55,7 +55,7 @@ def test_parse_icmp_packet():
 
 def test_parse_dns_packet():
     packet = (
-        Ether()
+        Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02")
         / IP(src="192.0.2.1", dst="198.51.100.2")
         / UDP(sport=53000, dport=53)
         / DNS(rd=1, qd=DNSQR(qname="example.com"))
@@ -93,7 +93,7 @@ def test_parse_ble_advertisement_metadata():
 
 
 def test_unsupported_link_type_returns_none():
-    packet = captured(Ether() / IP() / TCP(), link_type=999)
+    packet = captured(Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP() / TCP(), link_type=999)
     assert PacketParser().parse(packet) is None
 
 
