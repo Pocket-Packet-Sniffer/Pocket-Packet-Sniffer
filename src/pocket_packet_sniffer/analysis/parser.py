@@ -2,7 +2,7 @@
 
 
 from scapy.config import conf
-from scapy.layers.bluetooth4LE import BTLE, BTLE_ADV
+from scapy.layers.bluetooth4LE import BTLE, BTLE_ADV, BTLE_RF
 from scapy.layers.dns import DNS
 from scapy.layers.dot11 import Dot11, Dot11Beacon
 from scapy.layers.inet import ICMP, IP, TCP, UDP
@@ -26,6 +26,8 @@ def _decode_packet(captured: CapturedPacket) -> Packet | None:
 
         if layer_class is None and captured.link_type == 251:
             layer_class = BTLE
+        elif layer_class is None and captured.link_type == 256:
+            layer_class = BTLE_RF
         if layer_class is None:
             return None
 
