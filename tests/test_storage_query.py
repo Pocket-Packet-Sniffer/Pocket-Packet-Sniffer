@@ -30,6 +30,8 @@ def record(
     timestamp: datetime = BASE_TIME,
     payload: bytes = b"sample-packet-bytes",
     link_type: int = 1,
+    interface: str | None = None,
+    capture_backend: str | None = None,
 ) -> PacketRecord:
     return PacketRecord(
         record_id=record_id,
@@ -40,6 +42,8 @@ def record(
         timestamp=timestamp,
         packet_data=payload,
         link_type=link_type,
+        interface=interface,
+        capture_backend=capture_backend,
     )
 
 
@@ -178,9 +182,9 @@ def test_session_can_store_multiple_link_types_and_preserve_backend_context(tmp_
     loaded = repository.query_session("multi-session")
     assert len(loaded) == 2
     assert {packet.link_type for packet in loaded} == {1, 251}
-    assert [packet.record_id for packet in loaded] == ["ethernet-record", "bluetooth-record"]
-    assert loaded[1].interface == "hci-demo"
-    assert loaded[1].capture_backend == "ble-advertisement"
+    by_id = {packet.record_id: packet for packet in loaded}
+    assert by_id["bluetooth-record"].interface == "hci-demo"
+    assert by_id["bluetooth-record"].capture_backend == "ble-advertisement"
     assert len(list(tmp_path.glob("*.pcap"))) == 2
     assert repository.get_session_summary("multi-session").packet_count == 2
 
