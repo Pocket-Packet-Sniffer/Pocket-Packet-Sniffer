@@ -8,6 +8,7 @@ from scapy.layers.inet import IP, TCP
 from scapy.layers.l2 import Ether
 
 from pocket_packet_sniffer.cli import main
+from pocket_packet_sniffer.presentation.capture_control import CaptureControl
 from pocket_packet_sniffer.storage import PcapSqliteRepository
 from tools.create_demo_pcap import create_demo_pcap
 
@@ -151,6 +152,42 @@ def test_cli_replay_reports_arp_conflict_as_heuristic_alert(tmp_path, capsys):
     assert "arp-address-conflict" in result.err
     assert "suspected" in result.err
     assert "stored=5" in result.out
+
+
+def test_cli_stop_command_requests_registered_session(tmp_path, capsys):
+    control = CaptureControl(tmp_path, "stop-cli-session", "synthetic")
+    control.activate()
+    try:
+        code = main(
+            [
+                "stop",
+                "--storage-dir",
+                str(tmp_path),
+                "--session-id",
+                "stop-cli-session",
+            ]
+        )
+        result = capsys.readouterr()
+        assert code == 0
+        assert "Stop requested" in result.out
+        assert control.stop_path.exists()
+    finally:
+        control.close()
+
+
+def test_cli_stop_reports_inactive_session(capsys, tmp_path):
+    code = main(
+        [
+            "stop",
+            "--storage-dir",
+            str(tmp_path),
+            "--session-id",
+            "missing-session",
+        ]
+    )
+    result = capsys.readouterr()
+    assert code == 2
+    assert "No active capture session" in result.err
 
 
 def test_cli_rejects_live_dashboard_for_file_replay(capsys, tmp_path):
