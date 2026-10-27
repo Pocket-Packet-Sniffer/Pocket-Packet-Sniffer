@@ -2,9 +2,9 @@
 
 **SRS:** v1.3  
 **STP:** v1.3  
-**Implementation under test:** PR #29, branch `feat/PPS-28-srs-compliance`  
-**Code revision at latest CI run:** `8303fb0ec42bf4aec26281f77b8e39cec970055b`  
-**CI evidence:** [GitHub Actions run 40478879386](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40478879386)  
+**Implementation under test:** `main` after PR #29 merge  
+**Code revision at latest CI run:** `cd80e958bf572c32126c3f222579aec638da04b7`  
+**CI evidence:** [GitHub Actions run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511)  
 **Run date:** 2026-10-27
 
 ## Automated result
@@ -12,8 +12,8 @@
 | Check | Environment / command | Result |
 |---|---|---|
 | Python lint | Ubuntu 24.04, Python 3.12; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — “All checks passed!” |
-| Unit and integration tests | `pytest -q` | PASS — **106 passed in 1.42 seconds** |
-| Full review merge gate | PR #29 | **Not complete** — an independent teammate approval is still required; PR is open and not merged. |
+| Unit and integration tests | `pytest -q` | PASS — **106 passed in 1.87 seconds** |
+| Main-branch verification | PR #29 | PASS — PR #29 is merged. Automated verification passed; target-hardware checks remain open. |
 
 CI uses generated PCAP fixtures and mocked capture backends. It does not require root/administrator privileges or send traffic.
 
@@ -55,4 +55,4 @@ CI uses generated PCAP fixtures and mocked capture backends. It does not require
 
 ## Overall disposition
 
-The code-level backend work and synthetic demo path pass CI run 40478879386: Ruff passed and 106 tests passed in 1.42 seconds. The SRS is **not yet fully hardware-verified**: live-source support, Raspberry Pi performance/drop behavior, and platform-specific checks remain open, and PR #29 must receive independent review before becoming merged `main` functionality.
+The backend and synthetic demo path are merged into `main`. Latest main CI run 40479490511 passed Ruff and 106 tests in 1.87 seconds. The SRS is **not yet fully hardware-verified**: live-source support, Raspberry Pi performance/drop behavior, Wi-Fi monitor mode, BLE-adapter behavior, Windows ACLs and other platform-specific checks remain open.
