@@ -19,14 +19,22 @@ Analysis owns creation of this snapshot; Presentation owns rendering and the
 refresh loop. The refresh interval defaults to two seconds and rejects values
 greater than two seconds.
 
-## Current integration limitation
+## Current integration
 
-The current main branch contains the Capture Layer but does not yet contain
-the Analysis metadata/statistics interface or a CLI/session entry point. This
-PR therefore supplies tested presentation helpers and the snapshot contract;
-it does not claim that live dashboard capture is end-to-end wired yet. Complete
-integration when the Analysis and session/CLI interfaces are available, then
-link the final integrated PR to issue #7.
+The integrated Capture → Analysis → Storage → Presentation/CLI path is available
+in `main` through the existing `CaptureSession`, `TrafficStatistics`, and CLI.
+Run `pocket-packet-sniffer capture --interface <authorized-interface> --live-dashboard`
+to show active live statistics with a two-second refresh. Stop the session with
+Ctrl+C. This is terminal output, not a web dashboard.
+
+Branch PR #31 adds observer alerts, concurrent capture sessions, session listing,
+capture-interface persistence, and synthetic multi-PCAP demo support. That branch
+passed Ruff and 95 tests in CI run 40477786175, but its changes remain subject to
+review and merge.
+
+Live-interface behavior depends on the OS, driver, hardware, and permissions.
+Fixture CI does not verify Wi-Fi monitor mode, BLE advertisement scanning, or
+Raspberry Pi performance.
 
 ## Local verification
 
