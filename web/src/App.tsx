@@ -3,10 +3,12 @@ import { Activity, ArrowDownToLine, Check, ChevronDown, Filter, HardDrive, Layou
 
 type Packet = { id:number; session_id:string; time:string; protocol:string; source:string; destination:string; length:number; info:string };
 type Overview = { total_packets:number; total_bytes:number; active_sessions:number; protocols:Record<string,number>; top_talkers:[string,number][] };
-type Session = { session_id:string; packet_count:number; first_packet_at:string|null; last_packet_at:string|null };\ntype CaptureStatus = { state:string; session_id:string|null; source:string|null; interface:string|null; started_at:string|null; result:{packets_seen:number;packets_stored:number;packets_ignored:number;exit_code:number}|null; error:string|null };
+type Session = { session_id:string; packet_count:number; first_packet_at:string|null; last_packet_at:string|null };
+type CaptureStatus = { state:string; session_id:string|null; source:string|null; interface:string|null; started_at:string|null; result:{packets_seen:number;packets_stored:number;packets_ignored:number;exit_code:number}|null; error:string|null };
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 const nav = [{label:"Overview",icon:LayoutDashboard},{label:"Packets",icon:Activity},{label:"Sessions",icon:Radio},{label:"Settings",icon:Settings}];
-const zero:Overview = {total_packets:0,total_bytes:0,active_sessions:0,protocols:{},top_talkers:[]};\nconst idleCapture:CaptureStatus = {state:"idle",session_id:null,source:null,interface:null,started_at:null,result:null,error:null};
+const zero:Overview = {total_packets:0,total_bytes:0,active_sessions:0,protocols:{},top_talkers:[]};
+const idleCapture:CaptureStatus = {state:"idle",session_id:null,source:null,interface:null,started_at:null,result:null,error:null};
 
 function exportCsv(rows:Packet[]) {
   const csv = [["ID","Time","Session","Protocol","Source","Destination","Length","Info"],...rows.map(p=>[p.id,p.time,p.session_id,p.protocol,p.source,p.destination,p.length,p.info])]
