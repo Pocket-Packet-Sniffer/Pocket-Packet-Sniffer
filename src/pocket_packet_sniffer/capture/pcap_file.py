@@ -65,7 +65,12 @@ class PcapFileCapturer(Capturer):
                     try:
                         on_packet(packet)
                     except Exception as exc:
-                        raise CaptureCallbackError("Analysis callback failed while processing a replayed packet.") from exc
+                        # Preserve actionable callback detail without including packet bytes.
+                        detail = f"{type(exc).__name__}: {exc}"
+                        raise CaptureCallbackError(
+                            "Analysis callback failed while processing a replayed packet "
+                            f"({detail})."
+                        ) from exc
                     delivered += 1
                     if self.delay and stop_event.wait(self.delay):
                         break
