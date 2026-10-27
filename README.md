@@ -65,7 +65,8 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 - [Security and safe use](SECURITY.md) — passive-only scope and sensitive capture-data handling.
 - [Security validation record](Docs/SECURITY_VALIDATION.md) — automated permission checks and remaining manual platform verification.
 - [Capture Layer guide](Docs/CAPTURE_LAYER.md) — capture backends, typed failures, setup and limitations.
-- [End-to-end guide](Docs/END_TO_END_GUIDE.md) — CLI install/usage, layer contracts, safe demo, tests and manual checks.
+- [End-to-end guide](Docs/END_TO_END_GUIDE.md) — CLI install/usage, layer contracts, tests and manual checks.
+- [End-to-end demo script](Docs/DEMO_SCRIPT.md) — reproducible PCAP replay, alerts, queries, CSV/PDF exports, and concurrent-capture demo.
 
 ## Storage and query layer (PPS-04/PPS-05)
 
