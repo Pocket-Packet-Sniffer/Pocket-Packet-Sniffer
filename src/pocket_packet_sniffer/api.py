@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from scapy.all import get_if_list
 
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
@@ -81,6 +82,15 @@ def health():
 @app.get("/api/capture/status")
 def get_capture_status():
     return capture_status()
+
+
+@app.get("/api/interfaces")
+def interfaces():
+    """Return capture interface names as Scapy sees them on this host."""
+    try:
+        return {"interfaces": get_if_list()}
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Could not enumerate capture interfaces: {exc}") from exc
 
 
 @app.post("/api/capture/start")
