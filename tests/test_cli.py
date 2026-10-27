@@ -43,7 +43,18 @@ def test_cli_capture_query_and_export_using_local_pcap(tmp_path, capsys):
     assert "stored=1" in captured.out
     assert "TCP" in captured.out
 
-    code = main(["query", "--storage-dir", str(storage), "--protocol", "TCP"])
+    code = main(["sessions", "--storage-dir", str(storage)])
+    sessions_result = capsys.readouterr()
+    assert code == 0
+    assert "cli-session" in sessions_result.out
+    assert "1 session(s)" in sessions_result.out
+
+    code = main(
+        [
+            "query", "--storage-dir", str(storage),
+            "--session-id", "cli-session", "--protocol", "TCP",
+        ]
+    )
     query_result = capsys.readouterr()
     assert code == 0
     assert "192.0.2.5" in query_result.out
