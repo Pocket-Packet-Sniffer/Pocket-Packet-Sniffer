@@ -50,6 +50,7 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 ## Planning and traceability
 
 - [Requirement Traceability Matrix](Docs/REQUIREMENT_TRACEABILITY.md) — SRS-to-issue and STP-to-test mapping with verification status.
+- [Implementation Gap Audit](Docs/IMPLEMENTATION_GAP_AUDIT.md) — direct SRS v1.3-to-code comparison, branch status, and outstanding hardware checks.
 - [Sprint Plan](Docs/SPRINT_PLAN.md) — proposed Sprint 1/Sprint 2 scope and review records.
 - [Sprint 1 review/retrospective draft](Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md) — verified deliveries and placeholders for actual team review outcomes.
 - [GitHub Operating Guide](Docs/GITHUB_OPERATING_GUIDE.md) — repository workflow, milestones, labels, reviews and security settings.
@@ -145,14 +146,6 @@ List saved sessions, then query one session's stored metadata and export reports
 ```bash
 pocket-packet-sniffer sessions --storage-dir captures
 pocket-packet-sniffer query --storage-dir captures --session-id live-session --protocol TCP --address 192.0.2.10
-pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv --format csv
-pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.pdf --format pdf
-```
-
-Query stored metadata and export a CSV session report:
-
-```bash
-pocket-packet-sniffer query --storage-dir captures --protocol TCP --address 192.0.2.10
 pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv --format csv
 pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.pdf --format pdf
 ```
