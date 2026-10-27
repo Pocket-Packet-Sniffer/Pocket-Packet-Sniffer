@@ -64,12 +64,24 @@ class CaptureControl:
 
     @staticmethod
     def _private_file(path: Path, content: str) -> None:
-        with path.open("x", encoding="utf-8") as stream:
-            stream.write(content)
-            stream.flush()
-            os.fsync(stream.fileno())
-        if os.name == "posix":
-            path.chmod(0o600)
+        """Create a private marker atomically with respect to its permissions."""
+        flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+        if hasattr(os, "O_BINARY"):
+            flags |= os.O_BINARY
+        descriptor = os.open(path, flags, 0o600)
+        try:
+            if os.name == "posix":
+                os.fchmod(descriptor, 0o600)
+            with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+                descriptor = -1
+                stream.write(content)
+                stream.flush()
+                os.fsync(stream.fileno())
+        except Exception:
+            if descriptor >= 0:
+                os.close(descriptor)
+            path.unlink(missing_ok=True)
+            raise
 
     def activate(self) -> None:
         """Register the active session, refusing a second owner for that ID."""
