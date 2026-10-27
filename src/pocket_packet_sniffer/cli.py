@@ -50,7 +50,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the command parser for the public CLI."""
     parser = argparse.ArgumentParser(
         prog="pocket-packet-sniffer",
-        description="Passively capture authorized traffic, query local captures, and export CSV reports.",
+        description="Passively capture authorized traffic, list sessions, query local captures, and export CSV/PDF reports.",
     )
     commands = parser.add_subparsers(dest="command", required=True)
 
@@ -78,7 +78,11 @@ def build_parser() -> argparse.ArgumentParser:
     multi.add_argument("--known-access-point", action="append", default=[], metavar="BSSID", help="known Wi-Fi access point; repeat for an allowlist")
 
     query = commands.add_parser("query", help="query local capture metadata")
+    sessions = commands.add_parser("sessions", help="list saved capture-session summaries")
+    sessions.add_argument("--storage-dir", type=Path, default=Path("captures"))
+
     query.add_argument("--storage-dir", type=Path, default=Path("captures"))
+    query.add_argument("--session-id", help="restrict results to one saved session")
     query.add_argument("--protocol")
     query.add_argument("--address")
     query.add_argument("--start", type=_aware_datetime)
@@ -209,13 +213,34 @@ def _run_capture_multi(args: argparse.Namespace) -> int:
     return result.exit_code
 
 
+def _run_sessions(args: argparse.Namespace) -> int:
+    """List locally persisted capture-session summaries."""
+    repository = PcapSqliteRepository(args.storage_dir)
+    summaries = repository.list_sessions()
+    if not summaries:
+        print("No stored capture sessions.")
+        return EXIT_SUCCESS
+    print("SESSION_ID\tPACKETS\tFIRST_PACKET\tLAST_PACKET")
+    for summary in summaries:
+        first = summary.first_packet_at.isoformat() if summary.first_packet_at else "-"
+        last = summary.last_packet_at.isoformat() if summary.last_packet_at else "-"
+        print(f"{summary.session_id}\t{summary.packet_count}\t{first}\t{last}")
+    print(f"{len(summaries)} session(s)")
+    return EXIT_SUCCESS
+
+
 def _run_query(args: argparse.Namespace) -> int:
     if args.start is not None and args.end is not None and args.start > args.end:
         print("error: --start must not be after --end", file=sys.stderr)
         return 2
     repository = PcapSqliteRepository(args.storage_dir)
     time_window = (args.start, args.end) if args.start is not None or args.end is not None else None
-    records = repository.query(protocol=args.protocol, address=args.address, time_window=time_window)
+    records = repository.query(
+        protocol=args.protocol,
+        address=args.address,
+        time_window=time_window,
+        session_id=args.session_id,
+    )
     if not records:
         print("No matching packets.")
         return EXIT_SUCCESS
@@ -248,6 +273,8 @@ def main(argv: list[str] | None = None) -> int:
             return _run_capture(args)
         if args.command == "capture-multi":
             return _run_capture_multi(args)
+        if args.command == "sessions":
+            return _run_sessions(args)
         if args.command == "query":
             return _run_query(args)
         if args.command == "export":
