@@ -19,7 +19,7 @@ class FixtureCapturer(Capturer):
         self.link_type = link_type
 
     def capture(self, on_packet, stop_event, count=None):
-        raw = bytes(Ether() / IP(src="192.0.2.1", dst="198.51.100.2") / TCP())
+        raw = bytes((Ether() / IP(src="192.0.2.1", dst="198.51.100.2") / TCP()) if self.link_type == 1 else (IP(src="192.0.2.1", dst="198.51.100.2") / TCP()))
         packet = CapturedPacket(
             timestamp=datetime.now(UTC),
             packet_data=raw,
