@@ -81,6 +81,16 @@ export default function App() {
   const filtered=useMemo(()=>rows.filter(p=>(!query||[p.protocol,p.source,p.destination,p.info,String(p.id),p.session_id].some(s=>s.toLowerCase().includes(query.toLowerCase())))&&(protocol==="All protocols"||p.protocol.toUpperCase()===protocol)),[rows,query,protocol]);
   const protocols=Object.entries(overview.protocols).sort((a,b)=>b[1]-a[1]);
   const maxTalker=Math.max(...overview.top_talkers.map(x=>x[1]),1);
+  const activityBins=useMemo(()=>{
+    const timestamps=rows.map(p=>Date.parse(p.time)).filter(Number.isFinite);
+    if(!timestamps.length)return Array.from({length:18},(_,i)=>({label:String(i+1),count:0}));
+    const min=Math.min(...timestamps), max=Math.max(...timestamps);
+    const span=Math.max(max-min, 17*1000);
+    const bins=Array.from({length:18},()=>0);
+    for(const time of timestamps){const index=Math.min(17,Math.floor(((time-min)/span)*18));bins[index]++;}
+    return bins.map((count,i)=>({label:String(i+1),count}));
+  },[rows]);
+  const maxActivity=Math.max(...activityBins.map(x=>x.count),1);
   const title=page==="Overview"?"Network overview":page==="Packets"?"Packet explorer":page==="Sessions"?"Capture sessions":page;
   return <div className="app-shell">
     {menu&&<button className="scrim" onClick={()=>setMenu(false)} aria-label="Close menu"/>}
@@ -114,6 +124,22 @@ export default function App() {
             <Metric title="Data captured" value={(overview.total_bytes/1048576).toFixed(2)+" MB"} sub="Stored packet bytes" icon={<HardDrive size={17}/>} color="blue"/>
             <Metric title="Packet rate" value="—" unit="not measured" sub="Not provided by current API" icon={<Radio size={17}/>} color="purple"/>
             <Metric title="Capture sessions" value={String(overview.active_sessions)} sub="Recorded sessions" icon={<Network size={17}/>} color="orange"/>
+          </section>
+          <section className="activity-grid">
+            <div className="card activity-card">
+              <div className="section-head"><div><h2>Traffic activity</h2><p>Packet distribution across the latest stored sample</p></div><span className="live-sample"><i/>{rows.length.toLocaleString()} sampled</span></div>
+              <div className="activity-chart" role="img" aria-label="Bar chart of packet counts across 18 chronological buckets">
+                <div className="activity-y"><span>HIGH</span><span>MED</span><span>LOW</span></div>
+                <div className="activity-bars">{activityBins.map((bin,i)=><div className="activity-column" key={bin.label} title={"Sample bucket "+bin.label+": "+bin.count+" packets"}><i style={{height:(bin.count?Math.max(5,bin.count/maxActivity*100):2)+"%"}}/><span>{String(i+1).padStart(2,"0")}</span></div>)}</div>
+              </div>
+              <div className="activity-foot"><span><i className="legend-dot mint-dot"/>Stored packet records</span><span>Visualization uses collected data only</span></div>
+            </div>
+            <div className="card signal-card">
+              <div className="section-head"><div><h2>Capture health</h2><p>Current collector state</p></div><span className={"health-indicator "+(capture.state==="running"?"health-running":"")}><i/>{capture.state==="running"?"Live":capture.state==="stopping"?"Stopping":capture.state==="error"?"Error":capture.state==="stopped"?"Stopped":"Idle"}</span></div>
+              <div className="signal-main"><div className="signal-icon"><Radio size={21}/></div><div><strong>{capture.state==="running"?"Collecting packets":capture.state==="stopping"?"Finishing capture":capture.state==="error"?"Capture needs attention":capture.state==="stopped"?"Last capture stopped":"Ready to capture"}</strong><p>{capture.interface||"Choose an adapter or replay a PCAP file"}</p></div></div>
+              <div className="signal-stats"><div><small>Seen</small><strong>{capture.result?.packets_seen?.toLocaleString()??"—"}</strong></div><div><small>Stored</small><strong>{capture.result?.packets_stored?.toLocaleString()??"—"}</strong></div><div><small>Ignored</small><strong>{capture.result?.packets_ignored?.toLocaleString()??"—"}</strong></div></div>
+              {capture.error&&<p className="signal-error">{capture.error}</p>}
+            </div>
           </section>
           <section className="analytics">
             <div className="card protocol-card"><div className="section-head"><div><h2>Protocol distribution</h2><p>Classification of stored packets</p></div></div><div className="protocol-total"><strong>{overview.total_packets.toLocaleString()}</strong><span>recorded packets</span></div><div className="stacked">{protocols.map(([n,c],i)=><i key={n} className={["mint","blue","purple","orange","gray"][i%5]} style={{width:(overview.total_packets?c/overview.total_packets*100:0)+"%"}}/>)}</div><div className="protocol-list">{protocols.map(([n,c],i)=><div className="protocol-row" key={n}><i className={["mint","blue","purple","orange","gray"][i%5]}/><span>{n}</span><strong>{c.toLocaleString()}</strong><small>{overview.total_packets?(c/overview.total_packets*100).toFixed(1):0}%</small></div>)}{!protocols.length&&<p>No protocol data yet.</p>}</div></div>
