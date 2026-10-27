@@ -130,6 +130,7 @@ class PcapFileCapturer(Capturer):
             interface=self.path.name,
             link_type=link_type,
             original_length=original_length,
+            capture_backend=self.name,
         )
 
 
