@@ -191,3 +191,27 @@ Known limitations remain: classic PCAP only; passive live capture depends on pla
 - The PDF report writer in this implementation uses the Python standard library. Zeek is mentioned as an optional integration in project materials but is not implemented or claimed as an integrated feature.
 
 Please retain third-party acknowledgements in project submissions and follow each dependency's distribution/licensing terms.
+## Local dashboard + API
+
+The React dashboard reads real stored packet metadata from the FastAPI API. It refreshes automatically; an empty dashboard is expected until a capture/replay session has stored records. The dashboard does not start capture itself yet.
+
+### Start on Windows (PowerShell)
+
+Terminal 1, from the repository root:
+
+```powershell
+python -m pip install -e .
+python -m uvicorn pocket_packet_sniffer.api:app --reload --host 127.0.0.1 --port 8000
+```
+
+Terminal 2:
+
+```powershell
+cd web
+npm install
+npm run dev
+```
+
+Open the Vite URL shown in the terminal (usually http://127.0.0.1:5173). The API health endpoint is http://127.0.0.1:8000/api/health.
+
+Optional: set `PPS_STORAGE_DIR` to choose the local PCAP/SQLite storage directory. The default is `captures` in the current working directory.
