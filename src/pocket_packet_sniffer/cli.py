@@ -60,6 +60,13 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="INTERFACE",
         help="passively capture two or more authorized interfaces concurrently",
     )
+    source.add_argument(
+        "--multi-pcap-file",
+        type=Path,
+        nargs="+",
+        metavar="PCAP",
+        help="replay two or more local classic-PCAP files concurrently for safe demos",
+    )
     capture.add_argument("--filter", dest="bpf_filter", help="optional BPF filter for live capture")
     capture.add_argument("--storage-dir", type=Path, default=Path("captures"))
     capture.add_argument("--session-id", default=None)
@@ -76,6 +83,9 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("--start", type=_aware_datetime)
     query.add_argument("--end", type=_aware_datetime)
 
+    sessions = commands.add_parser("sessions", help="list locally stored capture sessions")
+    sessions.add_argument("--storage-dir", type=Path, default=Path("captures"))
+
     export = commands.add_parser("export", help="export one local session to CSV")
     export.add_argument("--storage-dir", type=Path, default=Path("captures"))
     export.add_argument("--session-id", required=True)
@@ -85,12 +95,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _run_capture(args: argparse.Namespace) -> int:
-    has_live_source = bool(args.interface or args.multi_interface)
+    has_live_source = bool(args.interface or args.multi_interface or args.multi_pcap_file)
     if args.live_dashboard and not has_live_source:
-        print("error: --live-dashboard requires --interface or --multi-interface", file=sys.stderr)
+        print("error: --live-dashboard requires an interface or PCAP capture source", file=sys.stderr)
         return 2
     if args.multi_interface is not None and len(args.multi_interface) < 2:
         print("error: --multi-interface requires at least two interface names", file=sys.stderr)
+        return 2
+    if args.multi_pcap_file is not None and len(args.multi_pcap_file) < 2:
+        print("error: --multi-pcap-file requires at least two PCAP paths", file=sys.stderr)
         return 2
     if args.multi_interface is not None and args.pcap_file is not None:
         print("error: PCAP replay and multi-interface capture are separate modes", file=sys.stderr)
@@ -115,11 +128,14 @@ def _run_capture(args: argparse.Namespace) -> int:
             trusted_aps=args.trusted_ap,
         )
 
-    if args.multi_interface is not None:
-        capturers = [
-            ScapyCapturer(interface, bpf_filter=args.bpf_filter)
-            for interface in args.multi_interface
-        ]
+    if args.multi_interface is not None or args.multi_pcap_file is not None:
+        if args.multi_interface is not None:
+            capturers = [
+                ScapyCapturer(interface, bpf_filter=args.bpf_filter)
+                for interface in args.multi_interface
+            ]
+        else:
+            capturers = [PcapFileCapturer(path) for path in args.multi_pcap_file]
         session = MultiCaptureSession(
             capturers,
             repository,
@@ -171,7 +187,7 @@ def _run_capture(args: argparse.Namespace) -> int:
         f"stored={result.packets_stored} ignored={result.packets_ignored} "
         f"exit_code={result.exit_code}"
     )
-    if args.multi_interface is not None:
+    if args.multi_interface is not None or args.multi_pcap_file is not None:
         for child in result.sessions:
             print(
                 f"backend_session={child.session_id} seen={child.packets_seen} "
@@ -205,6 +221,20 @@ def _run_query(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def _run_sessions(args: argparse.Namespace) -> int:
+    repository = PcapSqliteRepository(args.storage_dir)
+    sessions = repository.list_sessions()
+    if not sessions:
+        print("No stored capture sessions.")
+        return EXIT_SUCCESS
+    print("session_id\tpackets\tfirst_packet_at\tlast_packet_at")
+    for summary in sessions:
+        first = summary.first_packet_at.isoformat() if summary.first_packet_at else "-"
+        last = summary.last_packet_at.isoformat() if summary.last_packet_at else "-"
+        print(f"{summary.session_id}\t{summary.packet_count}\t{first}\t{last}")
+    return EXIT_SUCCESS
+
+
 def _run_export(args: argparse.Namespace) -> int:
     repository = PcapSqliteRepository(args.storage_dir)
     summary = repository.get_session_summary(args.session_id)
@@ -223,6 +253,8 @@ def main(argv: list[str] | None = None) -> int:
             return _run_capture(args)
         if args.command == "query":
             return _run_query(args)
+        if args.command == "sessions":
+            return _run_sessions(args)
         if args.command == "export":
             return _run_export(args)
     except (RepositoryError, ReportExportError, OSError, ValueError) as exc:
