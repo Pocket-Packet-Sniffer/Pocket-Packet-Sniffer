@@ -255,3 +255,49 @@ def test_save_permission_failure_is_reported_without_adding_record(tmp_path, mon
     monkeypatch.setattr(type(pcap), "open", original_open)
     assert pcap.stat().st_size == pcap_size_before
     assert repository.query() == [existing]
+
+
+
+def test_query_session_filters_in_sql_and_preserves_interface(tmp_path):
+    repository = PcapSqliteRepository(tmp_path)
+    first = record(record_id="session-a-1", session_id="session-a")
+    second = record(record_id="session-b-1", session_id="session-b", protocol="UDP")
+    repository.save(first)
+    repository.save(second)
+
+    assert repository.query_session("session-a") == [first]
+    assert repository.query_session("session-a", protocol="UDP") == []
+    assert repository.query_session("session-b") == [second]
+    with pytest.raises(InvalidRecordError):
+        repository.query_session("  ")
+
+
+def test_legacy_database_is_migrated_with_unknown_interface_default(tmp_path):
+    database = tmp_path / "metadata.sqlite3"
+    with sqlite3.connect(database) as db:
+        db.executescript(
+            """
+            CREATE TABLE captures (
+                session_id TEXT PRIMARY KEY,
+                pcap_name TEXT NOT NULL,
+                link_type INTEGER NOT NULL
+            );
+            CREATE TABLE packets (
+                record_id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL REFERENCES captures(session_id),
+                protocol TEXT NOT NULL,
+                source_address TEXT,
+                destination_address TEXT,
+                timestamp_us INTEGER NOT NULL,
+                pcap_offset INTEGER NOT NULL,
+                captured_length INTEGER NOT NULL,
+                original_length INTEGER NOT NULL
+            );
+            """
+        )
+
+    repository = PcapSqliteRepository(tmp_path)
+    with sqlite3.connect(database) as db:
+        columns = {row[1] for row in db.execute("PRAGMA table_info(packets)")}
+    assert "interface" in columns
+    assert repository.query() == []

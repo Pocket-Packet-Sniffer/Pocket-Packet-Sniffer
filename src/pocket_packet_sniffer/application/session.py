@@ -49,6 +49,7 @@ class CaptureSession:
         analyzer: PacketAnalyzer | None = None,
         statistics: TrafficStatistics | None = None,
         on_record: Callable[[AnalyzedPacket], None] | None = None,
+        on_captured_packet: Callable[[CapturedPacket], None] | None = None,
     ) -> None:
         self.capturer = capturer
         self.repository = repository
@@ -58,6 +59,7 @@ class CaptureSession:
         self.analyzer = analyzer or PacketParser()
         self.statistics = statistics or TrafficStatistics()
         self.on_record = on_record
+        self.on_captured_packet = on_captured_packet
         self._lock = Lock()
         self._packets_seen = 0
         self._packets_stored = 0
@@ -67,6 +69,9 @@ class CaptureSession:
         """Analyze and store one raw packet; malformed/unsupported packets are skipped."""
         with self._lock:
             self._packets_seen += 1
+
+        if self.on_captured_packet is not None:
+            self.on_captured_packet(captured)
 
         backend = getattr(self.capturer, "name", type(self.capturer).__name__)
         analyzed = self.analyzer.parse(captured, backend=backend)
@@ -84,6 +89,7 @@ class CaptureSession:
             packet_data=captured.packet_data,
             link_type=captured.link_type,
             original_length=captured.original_length,
+            interface=analyzed.interface,
         )
         self.repository.save(stored)
         self.statistics.observe(analyzed)

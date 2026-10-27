@@ -82,6 +82,7 @@ def test_capture_analysis_storage_statistics_query_and_csv_export_end_to_end(tmp
     assert stored[0].source_address == "192.0.2.10"
     assert stored[0].destination_address == "198.51.100.20"
     assert stored[0].session_id == "integration-session"
+    assert stored[0].interface == "synthetic0.pcap"
 
     filtered = repository.query(protocol="TCP", address="192.0.2.10")
     assert len(filtered) == 1
