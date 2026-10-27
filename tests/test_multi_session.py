@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from threading import Event
-from time import sleep
 
 from scapy.layers.inet import IP, TCP
 from scapy.layers.l2 import Ether
