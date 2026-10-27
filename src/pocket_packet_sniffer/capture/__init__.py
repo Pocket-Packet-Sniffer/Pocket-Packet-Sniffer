@@ -25,6 +25,7 @@ __all__ = [
     "CaptureStartupError",
     "CapturedPacket",
     "Capturer",
+    "ConcurrentCapturer",
     "PacketCallback",
     "PcapFileCapturer",
     "ScapyCapturer",
