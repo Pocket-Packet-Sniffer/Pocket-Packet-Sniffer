@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pocket_packet_sniffer.analysis.alerts import AlertEvent, AlertPublisher, SuspiciousActivityDetector
+from pocket_packet_sniffer.analysis.alerts import (
+    AlertEvent,
+    AlertPublisher,
+    SuspiciousActivityDetector,
+)
 from pocket_packet_sniffer.analysis.models import PacketRecord
 
 
