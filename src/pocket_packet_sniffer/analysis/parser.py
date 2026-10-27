@@ -2,8 +2,8 @@
 
 
 from scapy.config import conf
-from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt
 from scapy.layers.dns import DNS
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt
 from scapy.layers.inet import ICMP, IP, TCP, UDP
 from scapy.layers.inet6 import (
     ICMPv6EchoReply,
