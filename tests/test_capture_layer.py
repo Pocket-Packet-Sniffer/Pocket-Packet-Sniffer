@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import struct
 import sqlite3
+import struct
 import types
 from datetime import datetime, timezone
 from pathlib import Path
