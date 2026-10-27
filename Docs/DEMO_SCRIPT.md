@@ -76,7 +76,7 @@ ruff check --select E4,E7,E9,F,I src tests tools
 pytest -q
 ```
 
-The latest GitHub Actions run for PR #29 passed Ruff and reported 104 passing tests: [CI run 40472573188](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40472573188). The PR must still receive independent review before merge.
+The latest feature/test GitHub Actions run for PR #29 passed Ruff and reported 105 passing tests: [CI run 40473733552](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40473733552). The PR must still receive independent review before merge.
 
 ## 7. Measure replay processing/storage throughput
 
