@@ -89,3 +89,60 @@ def test_concurrent_capture_requires_two_unique_backends():
         ConcurrentCapturer([single])
     with pytest.raises(ValueError, match="more than once"):
         ConcurrentCapturer([single, single])
+
+
+def test_keyboard_interrupt_stops_and_joins_all_concurrent_backends(monkeypatch):
+    import threading
+
+    import pocket_packet_sniffer.capture.concurrent as concurrent_module
+
+    real_event = threading.Event
+    finished_wait_calls = 0
+    stopped: list[str] = []
+
+    class InterruptingFinishedEvent:
+        def __init__(self):
+            self._event = real_event()
+
+        def set(self):
+            self._event.set()
+
+        def is_set(self):
+            return self._event.is_set()
+
+        def wait(self, timeout=None):
+            nonlocal finished_wait_calls
+            finished_wait_calls += 1
+            if finished_wait_calls == 1:
+                raise KeyboardInterrupt
+            return self._event.wait(timeout)
+
+    event_calls = 0
+
+    def event_factory():
+        nonlocal event_calls
+        event_calls += 1
+        if event_calls == 1:
+            return real_event()
+        if event_calls == 2:
+            return InterruptingFinishedEvent()
+        return real_event()
+
+    class WaitingForStopCapturer(Capturer):
+        def __init__(self, name):
+            self.name = name
+
+        def capture(self, on_packet, stop_event, count=None):
+            stop_event.wait()
+            stopped.append(self.name)
+
+    monkeypatch.setattr(concurrent_module, "Event", event_factory)
+    external_stop = real_event()
+
+    with pytest.raises(KeyboardInterrupt):
+        ConcurrentCapturer(
+            [WaitingForStopCapturer("first"), WaitingForStopCapturer("second")]
+        ).capture(lambda _packet: None, external_stop)
+
+    assert external_stop.is_set()
+    assert sorted(stopped) == ["first", "second"]
