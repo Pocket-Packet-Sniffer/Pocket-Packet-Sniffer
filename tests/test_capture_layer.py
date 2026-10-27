@@ -122,12 +122,13 @@ def test_callback_failure_is_reported_as_capture_error(tmp_path):
     def broken(_record):
         raise RuntimeError("analysis failed")
 
-    with pytest.raises(CaptureCallbackError, match="callback failed") as error:
+    with pytest.raises(CaptureCallbackError, match=r"callback failed.*RuntimeError") as error:
         PcapFileCapturer(pcap).capture(broken, Event())
 
-    assert "RuntimeError: analysis failed" in str(error.value)
+    # Arbitrary callback text can contain sensitive data; only its type is shown.
+    assert "analysis failed" not in str(error.value)
     assert error.value.__cause__ is not None
-    assert "frame" not in str(error.value)
+    assert isinstance(error.value.__cause__, RuntimeError)
 
 
 def test_invalid_count_is_rejected(tmp_path):
@@ -250,3 +251,15 @@ def test_keyboard_interrupt_stops_background_live_sniffer(monkeypatch):
     assert len(instances) == 1
     assert instances[0].stopped
     assert instances[0].running is False
+
+
+def test_project_owned_callback_error_includes_sanitized_reason(tmp_path):
+    from pocket_packet_sniffer.capture.errors import CaptureStartupError
+
+    pcap = make_pcap(tmp_path / "domain-callback.pcap", [b"frame"])
+
+    def broken(_record):
+        raise CaptureStartupError("storage directory is unavailable")
+
+    with pytest.raises(CaptureCallbackError, match=r"CaptureStartupError: storage directory is unavailable"):
+        PcapFileCapturer(pcap).capture(broken, Event())
