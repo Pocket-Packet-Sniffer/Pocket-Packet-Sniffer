@@ -16,6 +16,7 @@ from .errors import (
     CaptureInterfaceError,
     CapturePermissionError,
     CaptureStartupError,
+    _callback_failure_detail,
 )
 from .models import CapturedPacket
 from .pcap_file import _validate_capture_args
@@ -173,8 +174,9 @@ class ScapyCapturer(Capturer):
 
             if callback_error:
                 cause = callback_error[0]
-                # Preserve the callback failure instead of hiding it behind a generic error.
-                detail = f"{type(cause).__name__}: {cause}"
+                if isinstance(cause, CaptureCallbackError):
+                    raise cause
+                detail = _callback_failure_detail(cause)
                 raise CaptureCallbackError(
                     f"Analysis callback failed while processing a live packet ({detail})."
                 ) from cause
