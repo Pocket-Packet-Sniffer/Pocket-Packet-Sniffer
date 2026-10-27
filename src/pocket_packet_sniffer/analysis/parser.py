@@ -24,6 +24,8 @@ def _decode_packet(captured: CapturedPacket) -> Packet | None:
     try:
         layer_class = conf.l2types.get(captured.link_type)
 
+        if layer_class is None and captured.link_type == 251:
+            layer_class = BTLE
         if layer_class is None:
             return None
 
