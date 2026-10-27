@@ -12,7 +12,8 @@ const idleCapture:CaptureStatus = {state:"idle",session_id:null,source:null,inte
 
 function exportCsv(rows:Packet[]) {
   const csv = [["ID","Time","Session","Protocol","Source","Destination","Length","Info"],...rows.map(p=>[p.id,p.time,p.session_id,p.protocol,p.source,p.destination,p.length,p.info])]
-    .map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+    .map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r
+");
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   const a=document.createElement("a");a.href=url;a.download="pocket-packet-sniffer.csv";a.click();URL.revokeObjectURL(url);
 }
@@ -22,7 +23,12 @@ export default function App() {
   const [page,setPage]=useState("Overview");
   const [rows,setRows]=useState<Packet[]>([]);
   const [overview,setOverview]=useState<Overview>(zero);
-  const [sessions,setSessions]=useState<Session[]>([]);\n  const [capture,setCapture]=useState<CaptureStatus>(idleCapture);\n  const [captureMode,setCaptureMode]=useState("interface");\n  const [iface,setIface]=useState("Wi-Fi");\n  const [pcapPath,setPcapPath]=useState("");\n  const [captureBusy,setCaptureBusy]=useState(false);
+  const [sessions,setSessions]=useState<Session[]>([]);
+  const [capture,setCapture]=useState<CaptureStatus>(idleCapture);
+  const [captureMode,setCaptureMode]=useState("interface");
+  const [iface,setIface]=useState("Wi-Fi");
+  const [pcapPath,setPcapPath]=useState("");
+  const [captureBusy,setCaptureBusy]=useState(false);
   const [online,setOnline]=useState(false);
   const [error,setError]=useState("");
   const [query,setQuery]=useState("");
