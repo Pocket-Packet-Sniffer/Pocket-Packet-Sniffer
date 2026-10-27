@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Activity, ArrowDownToLine, Check, ChevronDown, Filter, HardDrive, LayoutDashboard, Menu, Network, Play, Radio, Search, Settings, ShieldCheck, Square, Wifi, FileText, X } from "lucide-react";
 
-type Packet = { id:number; session_id:string; time:string; protocol:string; source:string; destination:string; length:number; info:string };
+type Packet = { id:number; session_id:string; time:string; timestamp:number; protocol:string; source:string; destination:string; length:number; info:string };
 type Overview = { total_packets:number; total_bytes:number; active_sessions:number; protocols:Record<string,number>; top_talkers:[string,number][] };
 type Session = { session_id:string; packet_count:number; first_packet_at:string|null; last_packet_at:string|null };
 type CaptureStatus = { state:string; session_id:string|null; source:string|null; interface:string|null; started_at:string|null; result:{packets_seen:number;packets_stored:number;packets_ignored:number;exit_code:number|null}|null; error:string|null };
@@ -70,7 +70,7 @@ export default function App() {
         const [health,summary,packetResult,sessionResult,captureResult]=await Promise.all(rs.map(r=>r.json()));
         if(cancelled)return;
         setOnline(health.status==="ok");setOverview(summary);setSessions(sessionResult||[]);setCapture(captureResult||idleCapture);
-        setRows((packetResult.packets||[]).map((p:any)=>({id:p.id,session_id:p.session_id||"",time:date(p.time),protocol:p.protocol||"OTHER",source:p.source||"—",destination:p.destination||"—",length:p.length||0,info:p.info||`${p.protocol||"Packet"} packet`})));
+        setRows((packetResult.packets||[]).map((p:any)=>({id:p.id,session_id:p.session_id||"",time:date(p.time),timestamp:Date.parse(p.time),protocol:p.protocol||"OTHER",source:p.source||"—",destination:p.destination||"—",length:p.length||0,info:p.info||`${p.protocol||"Packet"} packet`})));
         setError("");
       }catch(e){if(cancelled)return;setOnline(false);setError(e instanceof Error?e.message:"Could not reach the backend.");}
     }
@@ -82,7 +82,7 @@ export default function App() {
   const protocols=Object.entries(overview.protocols).sort((a,b)=>b[1]-a[1]);
   const maxTalker=Math.max(...overview.top_talkers.map(x=>x[1]),1);
   const activityBins=useMemo(()=>{
-    const timestamps=rows.map(p=>Date.parse(p.time)).filter(Number.isFinite);
+    const timestamps=rows.map(p=>p.timestamp).filter(Number.isFinite);
     if(!timestamps.length)return Array.from({length:18},(_,i)=>({label:String(i+1),count:0}));
     const min=Math.min(...timestamps), max=Math.max(...timestamps);
     const span=Math.max(max-min, 17*1000);
