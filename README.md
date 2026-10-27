@@ -215,3 +215,15 @@ npm run dev
 Open the Vite URL shown in the terminal (usually http://127.0.0.1:5173). The API health endpoint is http://127.0.0.1:8000/api/health.
 
 Optional: set `PPS_STORAGE_DIR` to choose the local PCAP/SQLite storage directory. The default is `captures` in the current working directory.
+
+
+### Start and stop capture from the dashboard
+
+The dashboard's **Capture session** panel can start passive live capture or replay a local classic PCAP file. It uses the same Capture → Analysis → Storage pipeline as the CLI. Capture writes packet metadata to SQLite and packet bytes to per-session PCAP files under the configured storage directory.
+
+- **Live interface:** enter the exact interface name reported by Scapy (it may not be the friendly label “Wi-Fi”). On Windows, install a supported Npcap driver and run the terminal with the privileges required by your adapter/driver.
+- **PCAP replay:** enter a path to a local classic `.pcap` file accessible to the Python process. PCAPNG is not supported by the current replay reader.
+- Use **Stop capture** to request a graceful stop. Status and packet counters refresh automatically.
+- Only capture traffic on networks and interfaces you own or are authorized to monitor. Capture remains local; this API is intended for localhost development and is not authenticated for exposure to other machines.
+
+Capture API endpoints: `POST /api/capture/start`, `POST /api/capture/stop`, and `GET /api/capture/status`.
