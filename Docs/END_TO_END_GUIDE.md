@@ -93,7 +93,7 @@ CI runs the same checks. Generated-PCAP tests exercise the layers without root/a
 - The application `CaptureSession` maps analyzed metadata plus original raw bytes to the Storage `PacketRecord` contract.
 - Storage persists PCAP and indexed metadata in SQLite.
 - Presentation renders statistics and exports CSV/PDF without parsing packets; it also lists sessions and supports a local cross-terminal stop request.
-- An architecture test prevents Analysis from importing the concrete Storage implementation. The compliance branch adds heuristic metadata-only alerts and concurrent capture; those changes require CI plus an independent review before merge.
+- An architecture test prevents Analysis from importing the concrete Storage implementation. The compliance branch adds heuristic metadata-only alerts, concurrent capture, PDF export, session queries and explicit stop control. CI passed in [run 40472573188](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40472573188) (Ruff and 104 tests); independent teammate review is still required before merge.
 
 ## Remaining manual checks
 
