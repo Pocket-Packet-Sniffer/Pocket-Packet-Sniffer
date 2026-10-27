@@ -11,7 +11,7 @@ The design follows the four-layer architecture defined by the SRS and SASD:
 3. **Storage** — persists PCAP data and indexed metadata through a Repository interface.
 4. **Presentation** — provides the primary CLI for capture control, live statistics, queries, and reports.
 
-WiFi, Ethernet, and BLE are represented by the requirements. The review branch adds metadata decoding for supported Ethernet/IP, ARP, 802.11 beacon/frame, and BLE advertisement link types; passive live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on actual hardware. The branch also adds heuristic suspicious-activity events and concurrent capture for multiple supported backends. Zeek integration and the web dashboard remain optional/deferred; the dashboard comes after backend verification.
+WiFi, Ethernet, and BLE are represented by the requirements. PR #29 merged support for Ethernet/IP, ARP, conditional 802.11 beacon/frame metadata and conditional BLE advertisement metadata, plus heuristic alert events and concurrent capture. Actual live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. Zeek integration and the web dashboard remain optional/deferred; the dashboard comes after backend verification.
 
 ## Requirements and project documents
 
@@ -179,9 +179,9 @@ pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.p
 
 ## Current implementation status
 
-The integrated Capture → Analysis → Storage → Presentation/CLI workflow is merged into `main` (PR #24). The latest successful `main` CI run is [40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966): Ruff passed and `pytest -q` reported 81 passed.
+The Capture → Analysis → Storage → Presentation/CLI workflow and SRS backend-completion work are merged into `main` (PRs #24 and #29). Latest successful `main` CI: [run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511), Ruff passed and `pytest -q` reported **106 passed in 1.87s**.
 
-Known limitations remain: classic PCAP only; passive live capture depends on platform/driver/permissions; live Wi-Fi monitor-mode and BLE-adapter support are not hardware-verified; Raspberry Pi packet-loss/performance figures have not been measured; Windows ACL behavior remains unverified. The SRS-compliance changes are proposed in [PR #29](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/pull/29), not yet merged into `main`. Its latest feature/test CI run ([40473733552](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40473733552)) passed Ruff and all 105 tests; independent review and target-hardware checks remain pending. Repository branch protection and plan-available security settings still require maintainer UI verification.
+Known limitations remain: classic PCAP only; passive live capture depends on platform/driver/permissions; live Wi-Fi monitor-mode and BLE-adapter support are not hardware-verified; Raspberry Pi packet-loss/performance figures have not been measured; Windows ACL behavior remains unverified. PR #29 is merged into `main`; the latest main CI run ([40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511)) passed Ruff and all 106 tests. These automated checks do not replace target-hardware validation. Repository branch protection and plan-available security settings still require maintainer UI verification.
 
 ## Third-party acknowledgements
 

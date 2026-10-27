@@ -2,9 +2,9 @@
 
 **SRS:** v1.3  
 **STP:** v1.3  
-**Implementation under test:** PR #29, branch `feat/PPS-28-srs-compliance`  
-**Code revision at latest CI run:** `8303fb0ec42bf4aec26281f77b8e39cec970055b`  
-**CI evidence:** [GitHub Actions run 40478879386](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40478879386)  
+**Implementation under test:** `main` after PR #29 merge  
+**Code revision at latest CI run:** `cd80e958bf572c32126c3f222579aec638da04b7`  
+**CI evidence:** [GitHub Actions run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511)  
 **Run date:** 2026-10-27
 
 ## Automated result
@@ -12,8 +12,8 @@
 | Check | Environment / command | Result |
 |---|---|---|
 | Python lint | Ubuntu 24.04, Python 3.12; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — “All checks passed!” |
-| Unit and integration tests | `pytest -q` | PASS — **106 passed in 1.42 seconds** |
-| Full review merge gate | PR #29 | **Not complete** — an independent teammate approval is still required; PR is open and not merged. |
+| Unit and integration tests | `pytest -q` | PASS — **106 passed in 1.87 seconds** |
+| Main-branch verification | PR #29 | PASS — PR #29 is merged. Automated verification passed; target-hardware checks remain open. |
 
 CI uses generated PCAP fixtures and mocked capture backends. It does not require root/administrator privileges or send traffic.
 
@@ -51,8 +51,8 @@ CI uses generated PCAP fixtures and mocked capture backends. It does not require
 3. If BLE capture is claimed, test the actual BLE sniffer/HCI device and record the captured link type and decoded advertisement metadata. A parser fixture is not sufficient evidence.
 4. Run `python tools/benchmark_pipeline.py --repeats 1000 --storage-dir benchmark-captures` on the target device and record its output. Separately generate representative authorized live traffic and record packet/drop counters if the platform exposes them.
 5. Verify Windows ACLs if Windows is part of the approved support matrix.
-6. Have a teammate independently review PR #29, resolve any review feedback, and merge only after approval.
+6. Process note: PR #29 is already merged after teammate review comments were recorded (Shivanandgc: “reviewed”; sanjithramanjaneya-source: “go ahead”). They were COMMENTED reviews rather than formal APPROVE events. Confirm required-review settings in branch protection before future merges.
 
 ## Overall disposition
 
-The code-level backend work and synthetic demo path pass CI run 40478879386: Ruff passed and 106 tests passed in 1.42 seconds. The SRS is **not yet fully hardware-verified**: live-source support, Raspberry Pi performance/drop behavior, and platform-specific checks remain open, and PR #29 must receive independent review before becoming merged `main` functionality.
+The backend and synthetic demo path are merged into `main`. Latest main CI run 40479490511 passed Ruff and 106 tests in 1.87 seconds. The SRS is **not yet fully hardware-verified**: live-source support, Raspberry Pi performance/drop behavior, Wi-Fi monitor mode, BLE-adapter behavior, Windows ACLs and other platform-specific checks remain open.

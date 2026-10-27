@@ -1,6 +1,6 @@
 # Presentation Layer: capture-session report export
 
-This module implements CSV and PDF portions of PPS-07 (SRS REQ-8, STP TC-PRE-02) on branch `feat/PPS-28-srs-compliance`. It consumes a stored `SessionSummary` and `PacketRecord` values supplied by the caller, so exporting does not require a running capture.
+This module implements CSV and PDF portions of PPS-07 (SRS REQ-8, STP TC-PRE-02) on `main` following PR #29. It consumes a stored `SessionSummary` and `PacketRecord` values supplied by the caller, so exporting does not require a running capture.
 
 ## Usage
 
@@ -23,4 +23,4 @@ Both formats contain session summary and packet metadata only; captured payload 
 
 ## Validation
 
-Automated export tests verify format markers/content, session matching, count validation, payload exclusion for PDF, and no-overwrite behavior. Actual CI status for the compliance branch must be checked before this code is merged to `main`.
+Automated export tests verify format markers/content, session matching, count validation, payload exclusion for PDF, and no-overwrite behavior. Main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and 106 tests in 1.87 seconds.

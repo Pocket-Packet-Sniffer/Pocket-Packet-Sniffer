@@ -36,20 +36,20 @@ Issues #10 and #16 span foundation and release-readiness work. They remain open 
 
 **Main baseline before the compliance feature branch:** `6fdc3a70871f06ded17ee6c67d96e42fe95fa749` (PR #26 and Sprint 1 closeout documentation included).
 
-**Latest verified CI:** [Run 40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966) — Ruff passed and `pytest -q` reported **81 passed**. Tests use generated packet fixtures and mocks; they do not prove live hardware or target-platform behaviour.
+**Baseline CI before PR #29:** [Run 40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966) — Ruff passed and `pytest -q` reported **81 passed**. This is retained as the Sprint 1 baseline; the current main verification is recorded in the 2026-10-27 addendum below.
 
 ## Sprint 1 closeout decision
 
 The **core Sprint 1 engineering goal is complete**. The implementation and automated integration path are merged; requirements and setup documentation are aligned with the latest code; the final CI run is green.
 
-The following are **carry-over/release-readiness work**, not hidden blockers or falsely completed checks. The SRS compliance branch is under review and is not yet merged into main:
+The following are **carry-over/release-readiness work**, not hidden blockers or falsely completed checks. PR #29 has since merged the backend SRS-completion work; the platform-specific checks listed here remain open:
 
 | Carry-over | Status/action | Destination |
 |---|---|---|
 | #10 — live-interface/platform security | Run authorized live-interface startup/permission checks and target OS/driver/security checks; verify Windows ACLs, Wi-Fi mode/BLE support only if the platform is in scope, and Raspberry Pi performance if targeted. | M4 — Release Readiness |
 | #16 — repository protection/security controls | Maintainer must enable/verify main-branch PR review, conversation resolution, the observed `Lint and test` check, and available secret-scanning/Dependabot controls. | M4 — Release Readiness |
-| Report format | The approved SRS REQ-8 accepts CSV or PDF; the main baseline's CSV export satisfies that literal requirement. The compliance branch adds PDF as a second format. | PR #29 CI passed (Ruff + 105 tests); independent review pending |
-| #13 and #14 | Both are low-priority stretch requirements in the SRS. Implementations, synthetic tests and CLI wiring are on `feat/PPS-28-srs-compliance`; PR #29 passes CI (Ruff + 105 tests). They close after reviewed merge. Live Wi-Fi/BLE adapter validation remains separate. | Review branch; CI passed; independent review pending |
+| Report format | The approved SRS REQ-8 accepts CSV or PDF; main now provides both CSV and PDF export with session-scoped retrieval. | Implemented in PR #29; latest main CI passed (Ruff + 106 tests) |
+| #13 and #14 | Both are low-priority stretch requirements in the SRS. Metadata-only alert events and concurrent capture, including synthetic fan-in tests and CLI wiring, are implemented on main. Live Wi-Fi/BLE adapter validation remains separate. | Merged in PR #29; latest main CI passed (Ruff + 106 tests); target-hardware validation pending |
 
 ## Sprint 2 focus
 
@@ -62,3 +62,8 @@ Several items originally planned for Sprint 2 were delivered early in PRs #19–
 
 The review/retrospective evidence and limitations are recorded in `Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md`. The record is an asynchronous maintainer closeout from repository evidence, not a claim that a live team meeting or external stakeholder demo occurred.
 
+## Addendum — 2026-10-27 backend SRS completion
+
+PR #29 (`feat: complete SRS backend functionality and demo workflow`) has since been merged into `main` at `cd80e958bf572c32126c3f222579aec638da04b7`. It adds the remaining backend features described in `Docs/IMPLEMENTATION_GAP_AUDIT.md`, including PDF export, session-scoped retrieval, metadata-only heuristic alerts, concurrent capture, and synthetic demo/benchmark tooling.
+
+Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and **106 tests in 1.87 seconds**. This is automated evidence only. Live Wi-Fi monitor mode/BLE adapter behavior, Windows ACLs, Raspberry Pi throughput/drop performance, and real simultaneous multi-interface capture remain pending target-environment validation. The web dashboard is still deferred until final backend verification and is tracked in issue #27.

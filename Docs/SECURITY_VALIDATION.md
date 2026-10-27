@@ -29,4 +29,4 @@ This document separates automated/code-reviewed safeguards from target-environme
 - Windows ACL review if Windows is a supported target.
 - Final security review on the supported target after hardware smoke tests.
 
-The compliance implementation is on `feat/PPS-28-srs-compliance`. PR #29 CI passed on [run 40473733552](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40473733552) (Ruff and 105 tests). A replay throughput benchmark is available, but independent review and target-environment verification are still required before the changes should be described as merged or hardware-validated functionality.
+PR #29 merged the backend compliance implementation into `main`. Latest main CI [run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and 106 tests in 1.87 seconds. A replay throughput benchmark is available, but this is not evidence of live packet-loss performance. Target-environment checks listed above remain unverified until recorded from the actual device/adapter/OS.

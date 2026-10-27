@@ -24,7 +24,7 @@ Establish the repository workflow and CI, implement passive raw packet capture a
 | Packet Analysis parser and controlled protocol tests | PR #23 |
 | Application session, Analysis-to-Storage adapter, rolling statistics, CLI, architecture checks and generated-PCAP end-to-end tests | PR #24 |
 | Closeout documentation, RTM and this review record | PR #25 |
-| Latest CI on main | [Run 40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966): Ruff passed; pytest reported **81 passed** |
+| Sprint 1 baseline CI (2026-10-26) | [Run 40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966): Ruff passed; pytest reported **81 passed** |
 
 ### Demonstration record
 
