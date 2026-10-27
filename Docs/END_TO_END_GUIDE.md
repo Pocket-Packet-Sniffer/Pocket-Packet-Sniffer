@@ -6,7 +6,7 @@ Use Python 3.10 or newer.
 
 ```bash
 python -m pip install -e .
-python -m pip install -r requirements-dev.txt
+python -m pip install -r requirements-dev.txt -r requirements-capture.txt
 pocket-packet-sniffer --help
 ```
 
@@ -23,21 +23,28 @@ This reads a classic PCAP, parses supported frames, stores the original bytes an
 ## Capture an authorized live interface
 
 ```bash
-pocket-packet-sniffer capture --interface eth0 --storage-dir captures --live-dashboard
+pocket-packet-sniffer capture --interface eth0 --storage-dir captures --session-id lab-session --live-dashboard
 ```
 
-Use only a network/device you own or have explicit permission to monitor. Live capture depends on the operating system, capture driver, interface and privileges. Ctrl+C requests shutdown and stops the background Scapy sniffer. Verify this on the actual target OS/driver before a demo.
+Use only a network/device you own or have explicit permission to monitor. Live capture depends on the operating system, capture driver, interface and privileges. The command prints its session ID. Press Ctrl+C or, from another terminal in the same working directory, run:
+
+```bash
+pocket-packet-sniffer stop --storage-dir captures --session-id lab-session
+```
+
+Both methods request cooperative shutdown. Verify live startup/stop behavior on the actual target OS/driver before a demo.
 
 An optional BPF filter can be supplied with `--filter "tcp port 443"` if the driver supports it and permissions are sufficient.
 
-## Query local captures
+## List and query saved sessions
 
 ```bash
-pocket-packet-sniffer query --storage-dir captures --protocol TCP --address 192.0.2.10
+pocket-packet-sniffer sessions --storage-dir captures
+pocket-packet-sniffer query --storage-dir captures --session-id lab-session --protocol TCP --address 192.0.2.10
 pocket-packet-sniffer query --storage-dir captures --start 2026-10-26T12:00:00+00:00 --end 2026-10-26T13:00:00+00:00
 ```
 
-Filters can be combined. Dates must be timezone-aware ISO-8601 values. Query output displays metadata, not raw packet payloads.
+Filters can be combined, including protocol, address, session ID and time window. Dates must be timezone-aware ISO-8601 values. Dates must be timezone-aware ISO-8601 values. Query output displays metadata, not raw packet payloads.
 
 ## Export a session
 
@@ -73,7 +80,7 @@ pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.p
 ## Test
 
 ```bash
-ruff check --select E4,E7,E9,F,I src tests
+ruff check --select E4,E7,E9,F,I src tests tools
 pytest -q
 ```
 
@@ -85,8 +92,8 @@ CI runs the same checks. Generated-PCAP tests exercise the layers without root/a
 - Analysis returns normalized metadata using `PacketParser` or the configurable `AnalyzerPipeline`.
 - The application `CaptureSession` maps analyzed metadata plus original raw bytes to the Storage `PacketRecord` contract.
 - Storage persists PCAP and indexed metadata in SQLite.
-- Presentation renders statistics and exports CSV without parsing packets.
-- An architecture test prevents Analysis from importing the concrete Storage implementation.
+- Presentation renders statistics and exports CSV/PDF without parsing packets; it also lists sessions and supports a local cross-terminal stop request.
+- An architecture test prevents Analysis from importing the concrete Storage implementation. The compliance branch adds heuristic metadata-only alerts and concurrent capture; those changes require CI plus an independent review before merge.
 
 ## Remaining manual checks
 
