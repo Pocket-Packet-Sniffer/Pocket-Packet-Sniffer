@@ -41,7 +41,7 @@ Use Python 3.10 or newer. From the repository root:
 ```bash
 python -m pip install -e .
 python -m pip install -r requirements-dev.txt
-ruff check --select E4,E7,E9,F,I src tests
+ruff check --select E4,E7,E9,F,I src tests tools
 pytest -q
 ```
 
@@ -129,7 +129,24 @@ pocket-packet-sniffer capture --pcap-file sample.pcap --storage-dir captures --s
 Passively capture an interface you are authorized to monitor and refresh the dashboard every two seconds:
 
 ```bash
-pocket-packet-sniffer capture --interface eth0 --storage-dir captures --live-dashboard
+pocket-packet-sniffer capture --interface eth0 --storage-dir captures --session-id live-session --live-dashboard
+```
+
+The capture process prints its session ID. From a second terminal in the same working directory, request a graceful stop with:
+
+```bash
+pocket-packet-sniffer stop --storage-dir captures --session-id live-session
+```
+
+Pressing Ctrl+C in the capture terminal also stops it. The explicit stop command writes a local session-specific control marker; it does not send network packets.
+
+List saved sessions, then query one session's stored metadata and export reports:
+
+```bash
+pocket-packet-sniffer sessions --storage-dir captures
+pocket-packet-sniffer query --storage-dir captures --session-id live-session --protocol TCP --address 192.0.2.10
+pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv --format csv
+pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.pdf --format pdf
 ```
 
 Query stored metadata and export a CSV session report:
@@ -148,7 +165,8 @@ The query command accepts optional timezone-aware `--start` and `--end` ISO-8601
 python -m pip install -r requirements-dev.txt -r requirements-capture.txt
 python tools/create_demo_pcap.py demo.pcap
 pocket-packet-sniffer capture --pcap-file demo.pcap --storage-dir demo-captures --session-id demo-session
-pocket-packet-sniffer query --storage-dir demo-captures --protocol TCP
+pocket-packet-sniffer sessions --storage-dir demo-captures
+pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --protocol TCP
 pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.csv --format csv
 pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.pdf --format pdf
 ```
