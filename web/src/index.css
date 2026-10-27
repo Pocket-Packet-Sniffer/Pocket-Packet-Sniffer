@@ -855,3 +855,9 @@ tbody tr { transition:background .15s ease; }
   .network-grid .flow-canvas { grid-template-columns:minmax(0,1fr); }
   .sidebar-filters { display:none; }
 }
+
+/* Adapter selector: friendly labels in the control, native Scapy ID stays internal */
+.adapter-hint { display:block; margin:7px 2px 0; color:#7f94ac; font-size:10px; line-height:1.5; }
+.adapter-error { display:block; margin:6px 2px 0; color:#ffb7c0; font-size:10px; line-height:1.45; }
+.field select { text-overflow:ellipsis; }
+.field select:disabled { cursor:not-allowed; opacity:.78; }
