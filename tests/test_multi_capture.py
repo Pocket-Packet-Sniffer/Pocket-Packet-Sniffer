@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from time import sleep
 from threading import Event
+from time import sleep
 
 import pytest
 
-from pocket_packet_sniffer.capture import Capturer, CapturedPacket
+from pocket_packet_sniffer.capture import CapturedPacket, Capturer
 from pocket_packet_sniffer.capture.errors import CaptureStartupError
 from pocket_packet_sniffer.capture.multi import MultiCapturer
 
