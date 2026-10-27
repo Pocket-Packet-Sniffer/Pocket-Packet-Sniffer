@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-import json
 from threading import Event
 from time import monotonic, sleep
 
 import pytest
 
-from pocket_packet_sniffer.presentation.capture_control import CaptureControl, CaptureControlError
+from pocket_packet_sniffer.presentation.capture_control import (
+    CaptureControl,
+    CaptureControlError,
+)
 
 
 def test_stop_request_from_another_cli_context_sets_stop_event(tmp_path):
