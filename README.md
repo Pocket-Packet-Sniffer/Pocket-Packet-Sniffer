@@ -183,9 +183,9 @@ Known limitations remain: classic PCAP only; passive live capture depends on pla
 
 ## Third-party acknowledgements
 
-- **Scapy** provides the project's live-capture integration and supported packet/link-layer decoding.
-- **pytest** runs the automated unit and integration tests.
-- **Ruff** checks Python source, tests, and demo tooling for the configured lint rules.
+- **[Scapy](https://scapy.readthedocs.io/)** provides the project's live-capture integration and supported packet/link-layer decoding.
+- **[pytest](https://docs.pytest.org/)** runs the automated unit and integration tests.
+- **[Ruff](https://docs.astral.sh/ruff/)** checks Python source, tests, and demo tooling for the configured lint rules.
 - The PDF report writer in this implementation uses the Python standard library. Zeek is mentioned as an optional integration in project materials but is not implemented or claimed as an integrated feature.
 
 Please retain third-party acknowledgements in project submissions and follow each dependency's distribution/licensing terms.
