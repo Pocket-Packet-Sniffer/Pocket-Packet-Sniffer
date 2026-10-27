@@ -170,14 +170,20 @@ def interfaces():
                 win.get("InterfaceDescription") or win.get("Name")
                 or item.get("description") or item.get("network_name") or name
             )
+            status = win.get("Status") or "Unknown"
+            friendly_name = win.get("Name") or description
+            is_pseudo = any(token in f"{description} {friendly_name} {name}".casefold() for token in ("wan miniport", "network monitor", "loopback", "wi-fi direct"))
+            ipv4 = any(isinstance(ip, str) and ip.count(".") == 3 and not ip.startswith(("127.", "169.254.")) for ip in ips)
             result.append({
                 "name": name,
                 "description": description,
-                "friendly_name": win.get("Name") or description,
+                "friendly_name": friendly_name,
                 "ips": ips,
                 "mac": win.get("MacAddress") or item.get("mac"),
-                "status": win.get("Status") or "Unknown",
+                "status": status,
                 "interface_guid": guid or None,
+                "capture_candidate": status == "Up" and not is_pseudo,
+                "recommended": status == "Up" and not is_pseudo and ipv4 and bool(win.get("InterfaceDescription")),
             })
         return {"interfaces": result}
     except Exception as exc:
@@ -200,6 +206,23 @@ def start_capture(request: CaptureStart):
             source = "pcap"
             interface = str(pcap_path)
         else:
+            try:
+                available = set(get_if_list())
+            except Exception as exc:
+                raise HTTPException(status_code=503, detail=f"Could not enumerate Scapy capture interfaces: {exc}") from exc
+            if request.interface not in available:
+                raise HTTPException(status_code=422, detail="The selected adapter is no longer available. Refresh the interface list and select an active adapter.")
+            if platform.system() == "Windows" and get_windows_if_list is not None:
+                try:
+                    details = get_windows_if_list() or []
+                    selected = next((item for item in details if str(item.get("name") or "").strip().casefold() == request.interface.strip().casefold()), {})
+                    description = str(selected.get("description") or selected.get("network_name") or "")
+                    if any(token in description.casefold() for token in ("wan miniport", "network monitor", "loopback", "wi-fi direct")):
+                        raise HTTPException(status_code=422, detail=f"'{description}' is a Windows pseudo-interface, not a normal network adapter. Select your connected Wi-Fi or Ethernet adapter.")
+                except HTTPException:
+                    raise
+                except Exception:
+                    pass
             try:
                 capturer = ScapyCapturer(request.interface, bpf_filter=request.bpf_filter)
             except ValueError as exc:
