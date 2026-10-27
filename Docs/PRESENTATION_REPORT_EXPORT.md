@@ -1,7 +1,6 @@
 # Presentation Layer: capture-session report export
 
-This module implements the CSV portion of PPS-07 (SRS REQ-8, STP TC-PRE-02).
-It consumes a stored `SessionSummary` and `PacketRecord` values supplied by the caller, so exporting does not require a running capture.
+This module implements CSV and PDF portions of PPS-07 (SRS REQ-8, STP TC-PRE-02) on branch `feat/PPS-28-srs-compliance`. It consumes a stored `SessionSummary` and `PacketRecord` values supplied by the caller, so exporting does not require a running capture.
 
 ## Usage
 
@@ -10,10 +9,18 @@ from pocket_packet_sniffer.presentation.report_export import export_session_repo
 
 path = export_session_report_csv(summary, stored_records, "reports/session-123.csv")
 print(f"Report saved to {path}")
+
+from pocket_packet_sniffer.presentation.report_pdf import export_session_report_pdf
+pdf_path = export_session_report_pdf(summary, stored_records, "reports/session-123.pdf")
+print(f"Report saved to {pdf_path}")
 ```
 
 The destination must not already exist. A `ReportExportError` describes invalid data, a mismatched session, an existing destination, or a write failure. The exporter does not silently overwrite files.
 
-## Integration note
+## Data and safety
 
-The caller should obtain the summary and records from the storage/query layer before calling the exporter. The current repository API exposes `get_session_summary` and filtered `query`, but `query` does not yet accept a session ID filter. Full integration therefore requires the storage layer to expose a session-scoped record retrieval method (or another agreed query contract). This module intentionally does not invent or modify that storage API.
+Both formats contain session summary and packet metadata only; captured payload bytes are never written into the report. Both use exclusive file creation and refuse to overwrite an existing destination. The CLI obtains records through `Repository.query_session(session_id)`, avoiding report code that reaches into private SQLite tables.
+
+## Validation
+
+Automated export tests verify format markers/content, session matching, count validation, payload exclusion for PDF, and no-overwrite behavior. Actual CI status for the compliance branch must be checked before this code is merged to `main`.
