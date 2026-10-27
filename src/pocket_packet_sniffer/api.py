@@ -59,7 +59,21 @@ def capture_status():
     with _capture_lock:
         thread = _capture.get("thread")
         state = _capture["state"]
-        if state == "running" and thread is not None and not thread.is_alive():
+        if state in ("running", "stopping") and thread is not None and not thread.is_alive():
+            # Reconcile the public state with the actual worker lifecycle. In
+            # particular, a completed worker must never leave the UI stuck at
+            # "stopping" just because the final status update raced a poll.
+            if _capture.get("result") is None:
+                session = _capture.get("session")
+                if session is not None:
+                    progress = session.result(0)
+                    _capture["result"] = {
+                        "session_id": progress.session_id,
+                        "packets_seen": progress.packets_seen,
+                        "packets_stored": progress.packets_stored,
+                        "packets_ignored": progress.packets_ignored,
+                        "exit_code": 0,
+                    }
             _capture["state"] = "stopped"
             state = "stopped"
         result = _capture["result"]
@@ -213,7 +227,10 @@ def stop_capture():
         stop_event = _capture.get("stop_event")
         if stop_event is not None:
             stop_event.set()
-        return {"state":"stopping","session_id":_capture["session_id"]}
+        thread = _capture.get("thread")
+        # Report promptly; the capture worker performs driver shutdown and
+        # persists final counters without blocking this HTTP request.
+        return {"state":"stopping","session_id":_capture["session_id"],"stop_requested":True,"worker_alive":bool(thread and thread.is_alive())}
 
 
 @app.get("/api/sessions")
