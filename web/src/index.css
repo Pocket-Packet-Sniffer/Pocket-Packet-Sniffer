@@ -766,3 +766,36 @@ tbody tr { transition:background .15s ease; }
   .activity-foot { font-size:9px; }
   .signal-stats strong { font-size:16px; }
 }
+
+/* Command-center redesign: high-density network flow visualization */
+.crumb strong { letter-spacing:-.02em; }
+.content { max-width:1800px; padding-top:24px; }
+.page-heading { margin-bottom:22px; }
+.page-heading h1 { font-size:clamp(30px,2.6vw,42px); letter-spacing:-.045em; }
+.metrics { gap:12px; }
+.metric { min-height:154px; padding:19px; position:relative; overflow:hidden; }
+.metric:after { content:""; position:absolute; right:-25px; bottom:-50px; width:125px; height:95px; border:1px solid #5eead41b; border-radius:50%; box-shadow:0 0 0 12px #5eead407,0 0 0 24px #5eead405; pointer-events:none; }
+.metric-number { font-size:clamp(27px,2.3vw,35px); }
+.flow-panel { margin:14px 0; padding:20px 22px 18px; background:radial-gradient(ellipse at 50% 48%,#14303a55 0%,transparent 55%),linear-gradient(135deg,#111d2b,#0d1723); }
+.section-kicker { display:block; margin-bottom:7px; color:#5eead4; font-size:9px; font-weight:800; letter-spacing:.17em; }
+.flow-canvas { display:grid; grid-template-columns:minmax(0,1fr) minmax(130px,.6fr) minmax(0,1fr); align-items:center; gap:15px; min-height:210px; margin-top:15px; padding:15px 10px; border:1px solid #22364a; border-radius:11px; background:linear-gradient(180deg,#0a1420b8,#0b1723b8),repeating-linear-gradient(0deg,transparent,transparent 31px,#28405721 32px),repeating-linear-gradient(90deg,transparent,transparent 31px,#28405721 32px); }
+.flow-column { display:flex; flex-direction:column; gap:11px; min-width:0; }
+.flow-label { margin-bottom:2px; color:#7f94ac; font-size:9px; font-weight:800; letter-spacing:.15em; }
+.flow-node { position:relative; display:flex; align-items:center; gap:9px; min-width:0; padding:10px 11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#d1e1f1; font-size:11px; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; border:1px solid #2a4055; border-radius:7px; background:#132235e8; box-shadow:0 5px 12px #00000013; }
+.flow-node i { display:block; flex:0 0 7px; width:7px; height:7px; border-radius:50%; background:#5eead4; box-shadow:0 0 9px #5eead455; }
+.destination-node i { background:#7ab7ff; box-shadow:0 0 9px #7ab7ff55; }
+.flow-tone-1 i { background:#f0b35d; }.flow-tone-2 i { background:#b4a0ff; }.flow-tone-3 i { background:#fb7185; }
+.flow-middle { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px; }
+.flow-lines { position:absolute; inset:12px -24px; display:flex; flex-direction:column; justify-content:space-around; pointer-events:none; }
+.flow-lines i { display:block; height:1px; width:100%; background:linear-gradient(90deg,#5eead43d,#5eead4b5,#7ab7ffb0); box-shadow:0 0 7px #5eead416; }
+.flow-lines i:nth-child(2) { transform:rotate(8deg); background:linear-gradient(90deg,#7ab7ff45,#7ab7ffba); }
+.flow-lines i:nth-child(3) { transform:rotate(-8deg); background:linear-gradient(90deg,#b4a0ff45,#b4a0ffba); }
+.flow-lines i:nth-child(4) { background:linear-gradient(90deg,#f0b35d45,#f0b35db0); }
+.flow-core { z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; width:98px; height:98px; color:#5eead4; text-align:center; border:1px solid #3b7776; border-radius:50%; background:radial-gradient(circle,#173d42,#0e202c 72%); box-shadow:0 0 0 8px #5eead40a,0 0 28px #5eead418; }
+.flow-core span { color:#b9d9e2; font-size:8px; font-weight:800; letter-spacing:.09em; line-height:1.4; }
+.flow-footnote { margin-top:12px; color:#647d96; font-size:8px; font-weight:700; letter-spacing:.13em; }
+.flow-empty { padding:12px; color:#7389a1; font-size:11px; border:1px dashed #2a4055; border-radius:7px; }
+.activity-grid { margin-top:14px; }
+.protocol-card,.talker-card,.recent-card,.explorer { padding:21px; }
+.warning { margin-bottom:20px; }
+@media(max-width:760px) { .flow-panel { padding:15px; } .flow-canvas { grid-template-columns:minmax(0,1fr); gap:15px; } .flow-middle { min-height:95px; } .flow-lines { inset:0 10%; flex-direction:column; } .flow-core { width:76px;height:76px; } .flow-column { gap:8px; } .flow-node { font-size:10px; } .flow-footnote { margin-top:6px; } }
