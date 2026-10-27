@@ -52,11 +52,11 @@ def test_capture_analysis_storage_statistics_query_and_csv_export_end_to_end(tmp
     start = datetime(2026, 10, 26, 12, 0, tzinfo=UTC)
     frames = [
         captured(
-            bytes(Ether() / IP(src="192.0.2.10", dst="198.51.100.20") / TCP()),
+            bytes(Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP(src="192.0.2.10", dst="198.51.100.20") / TCP()),
             timestamp=start,
         ),
         captured(
-            bytes(Ether() / IP(src="192.0.2.10", dst="198.51.100.30") / UDP()),
+            bytes(Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP(src="192.0.2.10", dst="198.51.100.30") / UDP()),
             timestamp=start + timedelta(seconds=1),
         ),
         captured(b"unsupported-link", timestamp=start + timedelta(seconds=2), link_type=99999),
