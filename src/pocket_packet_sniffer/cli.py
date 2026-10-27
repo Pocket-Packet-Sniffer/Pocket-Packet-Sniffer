@@ -140,6 +140,19 @@ def _run_capture(args: argparse.Namespace) -> int:
     stop_event = Event()
     dashboard_stop = Event()
     dashboard_thread: Thread | None = None
+    control = CaptureControl(
+        args.storage_dir,
+        session.session_id,
+        "pcap-file" if args.pcap_file is not None else "scapy-live",
+    )
+    try:
+        control.activate()
+        control.start_watcher(stop_event)
+    except (CaptureControlError, OSError, ValueError) as exc:
+        control.close()
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(f"capture_started session={session.session_id}; stop with Ctrl+C or the CLI stop command")
 
     if args.live_dashboard:
         dashboard_thread = Thread(
@@ -160,6 +173,7 @@ def _run_capture(args: argparse.Namespace) -> int:
         dashboard_stop.set()
         if dashboard_thread is not None:
             dashboard_thread.join(timeout=2.5)
+        control.close()
 
     print(
         f"session={result.session_id} seen={result.packets_seen} "
