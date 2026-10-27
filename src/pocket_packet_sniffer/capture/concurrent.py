@@ -6,7 +6,7 @@ from dataclasses import replace
 from threading import Event, Lock, Thread
 
 from .base import Capturer, PacketCallback
-from .errors import CaptureStartupError
+from .errors import CaptureCallbackError, CaptureStartupError, _callback_failure_detail
 from .models import CapturedPacket
 from .pcap_file import _validate_capture_args
 
@@ -62,7 +62,15 @@ class ConcurrentCapturer(Capturer):
                     if packet.capture_backend
                     else replace(packet, capture_backend=str(backend_name))
                 )
-                on_packet(tagged_packet)
+                try:
+                    on_packet(tagged_packet)
+                except CaptureCallbackError:
+                    raise
+                except Exception as exc:
+                    detail = _callback_failure_detail(exc)
+                    raise CaptureCallbackError(
+                        f"Analysis callback failed while processing a concurrent packet ({detail})."
+                    ) from exc
                 delivered += 1
                 if count is not None and delivered >= count:
                     backend_stop.set()
