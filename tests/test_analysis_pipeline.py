@@ -10,7 +10,7 @@ from pocket_packet_sniffer.capture.models import CapturedPacket
 
 
 def captured_tcp():
-    raw = bytes(Ether() / IP(src="192.0.2.10", dst="198.51.100.20") / TCP())
+    raw = bytes(Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP(src="192.0.2.10", dst="198.51.100.20") / TCP())
     return CapturedPacket(
         timestamp=datetime.now(UTC),
         packet_data=raw,
