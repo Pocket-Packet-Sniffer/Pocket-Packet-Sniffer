@@ -132,13 +132,14 @@ class CaptureControl:
                 return
 
     def close(self) -> None:
-        """Stop the watcher and remove local control markers on session exit."""
+        """Stop the watcher and remove only control markers owned by this instance."""
         self._watcher_stop.set()
         if self._thread is not None:
             self._thread.join(timeout=max(1.0, self.poll_interval * 4))
-        self.stop_path.unlink(missing_ok=True)
-        self.active_path.unlink(missing_ok=True)
-        self._activated = False
+        if self._activated:
+            self.stop_path.unlink(missing_ok=True)
+            self.active_path.unlink(missing_ok=True)
+            self._activated = False
 
     @classmethod
     def request_stop(
