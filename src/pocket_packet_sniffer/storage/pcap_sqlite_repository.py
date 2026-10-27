@@ -117,7 +117,10 @@ class PcapSqliteRepository(Repository):
                     timestamp_us INTEGER NOT NULL,
                     pcap_offset INTEGER NOT NULL,
                     captured_length INTEGER NOT NULL,
-                    original_length INTEGER NOT NULL
+                    original_length INTEGER NOT NULL,
+                    link_type INTEGER NOT NULL DEFAULT 1,
+                    interface_name TEXT,
+                    capture_backend TEXT
                 );
                 CREATE INDEX IF NOT EXISTS idx_packets_protocol_time
                     ON packets(protocol, timestamp_us);
@@ -128,6 +131,31 @@ class PcapSqliteRepository(Repository):
                 CREATE INDEX IF NOT EXISTS idx_packets_session_time
                     ON packets(session_id, timestamp_us);
                 """
+            )
+            # Backward-compatible metadata migration for local databases created
+            # before concurrent, mixed-link-type sessions and source context.
+            columns = {row["name"] for row in db.execute("PRAGMA table_info(packets)")}
+            if "link_type" not in columns:
+                db.execute("ALTER TABLE packets ADD COLUMN link_type INTEGER NOT NULL DEFAULT 1")
+                db.execute(
+                    "UPDATE packets SET link_type = COALESCE((SELECT link_type FROM captures "
+                    "WHERE captures.session_id = packets.session_id), 1)"
+                )
+            if "interface_name" not in columns:
+                db.execute("ALTER TABLE packets ADD COLUMN interface_name TEXT")
+            if "capture_backend" not in columns:
+                db.execute("ALTER TABLE packets ADD COLUMN capture_backend TEXT")
+            db.execute(
+                """CREATE TABLE IF NOT EXISTS capture_files (
+                    session_id TEXT NOT NULL REFERENCES captures(session_id),
+                    link_type INTEGER NOT NULL,
+                    pcap_name TEXT NOT NULL UNIQUE,
+                    PRIMARY KEY (session_id, link_type)
+                )"""
+            )
+            db.execute(
+                "INSERT OR IGNORE INTO capture_files(session_id, link_type, pcap_name) "
+                "SELECT session_id, link_type, pcap_name FROM captures"
             )
 
     @staticmethod
@@ -181,10 +209,9 @@ class PcapSqliteRepository(Repository):
                     "SELECT pcap_name, link_type FROM captures WHERE session_id = ?",
                     (record.session_id,),
                 ).fetchone()
-                if capture is not None and (capture["pcap_name"] != pcap_name or capture["link_type"] != record.link_type):
-                    raise InvalidRecordError("link_type cannot change within a capture session")
-
                 if capture is None:
+                    pcap_name = self._pcap_name(record.session_id)
+                    pcap_path = self._pcap_path(pcap_name)
                     try:
                         self._new_pcap(pcap_path, record.link_type)
                     except FileExistsError as exc:
@@ -194,8 +221,32 @@ class PcapSqliteRepository(Repository):
                         "INSERT INTO captures(session_id, pcap_name, link_type) VALUES (?, ?, ?)",
                         (record.session_id, pcap_name, record.link_type),
                     )
-
-                pcap_path = self._pcap_path(capture["pcap_name"] if capture is not None else pcap_name)
+                    db.execute(
+                        "INSERT INTO capture_files(session_id, link_type, pcap_name) VALUES (?, ?, ?)",
+                        (record.session_id, record.link_type, pcap_name),
+                    )
+                else:
+                    capture_file = db.execute(
+                        "SELECT pcap_name FROM capture_files WHERE session_id = ? AND link_type = ?",
+                        (record.session_id, record.link_type),
+                    ).fetchone()
+                    if capture_file is None:
+                        pcap_name = self._pcap_name(f"{record.session_id}:{record.link_type}")
+                        pcap_path = self._pcap_path(pcap_name)
+                        try:
+                            self._new_pcap(pcap_path, record.link_type)
+                        except FileExistsError as exc:
+                            raise StorageCorruptionError(
+                                "PCAP file exists without matching session/link-type metadata"
+                            ) from exc
+                        created_pcap = True
+                        db.execute(
+                            "INSERT INTO capture_files(session_id, link_type, pcap_name) VALUES (?, ?, ?)",
+                            (record.session_id, record.link_type, pcap_name),
+                        )
+                    else:
+                        pcap_name = capture_file["pcap_name"]
+                pcap_path = self._pcap_path(pcap_name)
                 self._restrict_permissions(pcap_path)
                 with pcap_path.open("r+b") as stream:
                     header = stream.read(_GLOBAL_HEADER.size)
@@ -219,12 +270,14 @@ class PcapSqliteRepository(Repository):
 
                 db.execute(
                     """INSERT INTO packets(record_id, session_id, protocol, source_address,
-                       destination_address, timestamp_us, pcap_offset, captured_length, original_length)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                       destination_address, timestamp_us, pcap_offset, captured_length, original_length,
+                       link_type, interface_name, capture_backend)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         record.record_id, record.session_id, record.protocol,
                         record.source_address, record.destination_address,
-                        _timestamp_us(record.timestamp), offset, len(record.packet_data), record.original_length,
+                        _timestamp_us(record.timestamp), offset, len(record.packet_data),
+                        record.original_length, record.link_type, record.interface, record.capture_backend,
                     ),
                 )
                 db.commit()
@@ -339,8 +392,9 @@ class PcapSqliteRepository(Repository):
         if end_us is not None:
             clauses.append("p.timestamp_us <= ?")
             params.append(end_us)
-        sql = """SELECT p.*, c.pcap_name, c.link_type FROM packets p
-                 JOIN captures c ON c.session_id = p.session_id"""
+        sql = """SELECT p.*, cf.pcap_name, cf.link_type AS file_link_type
+                 FROM packets p JOIN capture_files cf
+                 ON cf.session_id = p.session_id AND cf.link_type = p.link_type"""
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
         sql += " ORDER BY p.timestamp_us, p.record_id"
@@ -365,7 +419,7 @@ class PcapSqliteRepository(Repository):
                 if len(header) != _GLOBAL_HEADER.size:
                     raise StorageCorruptionError("PCAP global header is truncated")
                 magic, major, minor, _, _, snaplen, link_type = _GLOBAL_HEADER.unpack(header)
-                if (magic, major, minor) != (_PCAP_MAGIC, *_PCAP_VERSION) or link_type != row["link_type"]:
+                if (magic, major, minor) != (_PCAP_MAGIC, *_PCAP_VERSION) or link_type != row["file_link_type"]:
                     raise StorageCorruptionError("PCAP header is invalid or inconsistent")
                 offset = row["pcap_offset"]
                 file_size = path.stat().st_size
@@ -396,6 +450,7 @@ class PcapSqliteRepository(Repository):
                         protocol=row["protocol"], source_address=row["source_address"],
                         destination_address=row["destination_address"], timestamp=timestamp,
                         packet_data=data, link_type=link_type, original_length=original,
+                        interface=row["interface_name"], capture_backend=row["capture_backend"],
                     )
                 except InvalidRecordError as exc:
                     raise StorageCorruptionError("indexed packet metadata is malformed") from exc
@@ -405,6 +460,29 @@ class PcapSqliteRepository(Repository):
             raise StorageUnavailableError(f"capture file is missing: {path.name}") from exc
         except (OverflowError, OSError, TypeError, ValueError, struct.error) as exc:
             raise StorageCorruptionError("PCAP record or indexed metadata is malformed") from exc
+
+    def query_session(self, session_id: str) -> list[PacketRecord]:
+        """Load records for one session using indexed SQL filters."""
+        if not isinstance(session_id, str) or not session_id.strip():
+            raise InvalidRecordError("session_id must be a non-empty string")
+        try:
+            with self._connection() as db:
+                rows = db.execute(
+                    """SELECT p.*, cf.pcap_name, cf.link_type AS file_link_type
+                       FROM packets p JOIN capture_files cf
+                       ON cf.session_id = p.session_id AND cf.link_type = p.link_type
+                       WHERE p.session_id = ? ORDER BY p.timestamp_us, p.record_id""",
+                    (session_id,),
+                ).fetchall()
+            return [self._load_record(row) for row in rows]
+        except PermissionError as exc:
+            raise StorageAccessError("permission denied while querying session") from exc
+        except FileNotFoundError as exc:
+            raise StorageUnavailableError("metadata or capture file is unavailable") from exc
+        except sqlite3.Error as exc:
+            raise RepositoryError("session query failed") from exc
+        except OSError as exc:
+            raise RepositoryError("PCAP read failed") from exc
 
     def get_session_summary(self, session_id: str) -> SessionSummary:
         if not isinstance(session_id, str) or not session_id.strip():
