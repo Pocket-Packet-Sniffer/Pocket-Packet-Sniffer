@@ -158,7 +158,7 @@ python tools/create_demo_pcaps.py --output-dir demo-data
 Run concurrent replay through Capture, Analysis, Storage, combined statistics and the alert event bus:
 
 ~~~bash
-pocket-packet-sniffer capture --multi-pcap-file demo-data/ethernet-demo.pcap demo-data/wifi-beacon-demo.pcap --storage-dir demo-captures --session-id demo-run --alerts --trusted-device 02:00:00:00:00:01 --trusted-ap 02:00:00:00:00:01 --replay-delay 0.25 --live-dashboard
+pocket-packet-sniffer capture --multi-pcap-file demo-data/ethernet-demo.pcap demo-data/wifi-beacon-demo.pcap --storage-dir demo-captures --session-id demo-run --alerts --trusted-device 02:00:00:00:00:01 --trusted-ap 02:00:00:00:00:01 --replay-delay 0.25
 pocket-packet-sniffer sessions --storage-dir demo-captures
 ~~~
 
