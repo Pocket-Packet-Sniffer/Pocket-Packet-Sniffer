@@ -417,6 +417,32 @@ class PcapSqliteRepository(Repository):
         except (OverflowError, OSError, TypeError, ValueError, struct.error) as exc:
             raise StorageCorruptionError("PCAP record or indexed metadata is malformed") from exc
 
+    def list_sessions(self) -> list[SessionSummary]:
+        """Return stored sessions ordered by most recent packet first."""
+        try:
+            with self._connection() as db:
+                rows = db.execute(
+                    """SELECT c.session_id, COUNT(p.record_id) AS packet_count,
+                       MIN(p.timestamp_us) AS first_us, MAX(p.timestamp_us) AS last_us
+                       FROM captures c LEFT JOIN packets p ON p.session_id = c.session_id
+                       GROUP BY c.session_id ORDER BY last_us DESC, c.session_id"""
+                ).fetchall()
+            return [
+                SessionSummary(
+                    session_id=row["session_id"],
+                    packet_count=row["packet_count"],
+                    first_packet_at=_from_timestamp_us(row["first_us"]) if row["first_us"] is not None else None,
+                    last_packet_at=_from_timestamp_us(row["last_us"]) if row["last_us"] is not None else None,
+                )
+                for row in rows
+            ]
+        except PermissionError as exc:
+            raise StorageAccessError("permission denied while listing capture sessions") from exc
+        except sqlite3.Error as exc:
+            raise RepositoryError("metadata session listing failed") from exc
+        except OSError as exc:
+            raise StorageUnavailableError("metadata database is unavailable") from exc
+
     def get_session_summary(self, session_id: str) -> SessionSummary:
         if not isinstance(session_id, str) or not session_id.strip():
             raise InvalidRecordError("session_id must be a non-empty string")
