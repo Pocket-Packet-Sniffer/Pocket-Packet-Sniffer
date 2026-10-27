@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from threading import Event, Thread
 
+from pocket_packet_sniffer.analysis.alerts import AlertBus, ArpAddressConflictDetector
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.application.session import CaptureSession
@@ -57,6 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
     capture.add_argument("--session-id", default=None)
     capture.add_argument("--count", type=_positive_int, default=None)
     capture.add_argument("--live-dashboard", action="store_true", help="refresh live statistics while capturing")
+    capture.add_argument("--detect-suspicious", action="store_true", help="enable experimental ARP address-conflict alerts")
 
     query = commands.add_parser("query", help="query local capture metadata")
     query.add_argument("--storage-dir", type=Path, default=Path("captures"))
@@ -85,11 +87,18 @@ def _run_capture(args: argparse.Namespace) -> int:
         else ScapyCapturer(args.interface, bpf_filter=args.bpf_filter)
     )
     analyzer = AnalyzerPipeline([PacketParser()])
+    alert_bus = AlertBus()
+    detector = ArpAddressConflictDetector(alert_bus) if args.detect_suspicious else None
+    if detector is not None:
+        alert_bus.subscribe(lambda event: print(
+            f"ALERT [{event.severity}] {event.rule_id}: {event.description}", file=sys.stderr
+        ))
     session = CaptureSession(
         capturer,
         repository,
         session_id=args.session_id,
         analyzer=analyzer,
+        on_captured_packet=detector.observe if detector is not None else None,
     )
     stop_event = Event()
     dashboard_stop = Event()
