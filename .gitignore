@@ -19,6 +19,8 @@ venv/
 *.sqlite3-shm
 *.sqlite3-wal
 captures/
+.pps-active-*.json
+.pps-stop-*.request
 
 # Logs and build output
 *.log
