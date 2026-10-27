@@ -31,5 +31,9 @@ class Repository(ABC):
         """
 
     @abstractmethod
+    def list_sessions(self) -> list[SessionSummary]:
+        """Return all stored sessions, most recent first."""
+
+    @abstractmethod
     def get_session_summary(self, session_id: str) -> SessionSummary:
         """Return the count and timestamp bounds for a session."""
