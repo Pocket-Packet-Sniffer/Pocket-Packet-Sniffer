@@ -4,10 +4,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import uuid
 from pathlib import Path
 from threading import Event, Thread
 from time import time
-import uuid
 
 
 class CaptureControlError(RuntimeError):
