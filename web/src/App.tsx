@@ -98,6 +98,12 @@ export default function App() {
       <div className="brand"><div className="brand-icon"><Network size={21}/></div><div><strong>pocket<span>sniff</span></strong><small>NETWORK OBSERVABILITY</small></div><button className="icon-btn side-close" onClick={()=>setMenu(false)} aria-label="Close menu"><X size={17}/></button></div>
       <div className="side-label">WORKSPACE</div><div className="workspace"><div className="work-icon"><ShieldCheck size={17}/></div><div><strong>Local workstation</strong><small>Private environment</small></div></div>
       <nav><div className="nav-caption">MONITOR</div>{nav.slice(0,3).map(({label,icon:Icon})=><button key={label} className={"nav-item "+(page===label?"active":"")} onClick={()=>{setPage(label);setMenu(false)}}><Icon size={17}/><span>{label}</span>{label==="Packets"&&<small>{rows.length}</small>}</button>)}<div className="nav-caption manage">MANAGE</div>{nav.slice(3).map(({label,icon:Icon})=><button key={label} className={"nav-item "+(page===label?"active":"")} onClick={()=>{setPage(label);setMenu(false)}}><Icon size={17}/><span>{label}</span></button>)}</nav>
+      <div className="sidebar-filters">
+        <div className="nav-caption">PROTOCOL FILTERS</div>
+        <button className={"side-filter "+(protocol==="All protocols"?"chosen":"")} onClick={()=>{setProtocol("All protocols");setPage("Packets");}}><span className="filter-check">{protocol==="All protocols"?"✓":""}</span><span>All traffic</span><small>{overview.total_packets.toLocaleString()}</small></button>
+        {protocols.slice(0,5).map(([name,count],i)=><button key={name} className={"side-filter "+(protocol===name.toUpperCase()?"chosen":"")} onClick={()=>{setProtocol(name.toUpperCase());setPage("Packets");}}><span className={"filter-check filter-color-"+(i%4)}>{protocol===name.toUpperCase()?"✓":""}</span><span>{name}</span><small>{count.toLocaleString()}</small></button>)}
+        <div className="sidebar-filter-note"><ShieldCheck size={13}/> Filters use stored packet metadata</div>
+      </div>
       <div className="sidebar-bottom"><div className="privacy-card"><ShieldCheck size={17}/><div><strong>Privacy first</strong><small>Local processing</small></div><Check size={15}/></div><div className="operator"><div className="avatar">VK</div><div><strong>Local operator</strong><small>Personal workspace</small></div></div></div>
     </aside>
     <main className="main">
