@@ -97,16 +97,29 @@ class ConcurrentCapturer(Capturer):
         for thread in threads:
             thread.start()
 
-        while not stop_event.is_set() and not backend_stop.is_set() and not finished.wait(0.02):
-            pass
-        backend_stop.set()
-        for thread in threads:
-            thread.join(timeout=5.0)
+        interrupted = False
+        try:
+            while (
+                not stop_event.is_set()
+                and not backend_stop.is_set()
+                and not finished.wait(0.02)
+            ):
+                pass
+        except KeyboardInterrupt:
+            # Preserve Ctrl+C semantics while the finally block shuts down peers.
+            interrupted = True
+            stop_event.set()
+        finally:
+            backend_stop.set()
+            for thread in threads:
+                thread.join(timeout=5.0)
 
         stuck = [thread.name for thread in threads if thread.is_alive()]
         if stuck:
             raise CaptureStartupError(
                 "Capture backend did not stop after cancellation: " + ", ".join(stuck)
             )
+        if interrupted:
+            raise KeyboardInterrupt
         if errors:
             raise errors[0]
