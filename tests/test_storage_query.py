@@ -157,14 +157,32 @@ def test_invalid_packet_record_is_rejected():
         record(payload=b"x" * 65536)
 
 
-def test_records_cannot_change_link_type_within_a_session(tmp_path):
+def test_session_can_store_multiple_link_types_and_preserve_backend_context(tmp_path):
     repository = PcapSqliteRepository(tmp_path)
-    repository.save(record(link_type=1))
+    ethernet = record(
+        record_id="ethernet-record",
+        session_id="multi-session",
+        link_type=1,
+    )
+    bluetooth = record(
+        record_id="bluetooth-record",
+        session_id="multi-session",
+        link_type=251,
+        interface="hci-demo",
+        capture_backend="ble-advertisement",
+    )
 
-    with pytest.raises(InvalidRecordError):
-        repository.save(record(record_id="different", link_type=101))
+    repository.save(ethernet)
+    repository.save(bluetooth)
 
-    assert len(repository.query()) == 1
+    loaded = repository.query_session("multi-session")
+    assert len(loaded) == 2
+    assert {packet.link_type for packet in loaded} == {1, 251}
+    assert [packet.record_id for packet in loaded] == ["ethernet-record", "bluetooth-record"]
+    assert loaded[1].interface == "hci-demo"
+    assert loaded[1].capture_backend == "ble-advertisement"
+    assert len(list(tmp_path.glob("*.pcap"))) == 2
+    assert repository.get_session_summary("multi-session").packet_count == 2
 
 
 def test_missing_pcap_file_is_reported(tmp_path):
