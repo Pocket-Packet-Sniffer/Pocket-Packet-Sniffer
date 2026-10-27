@@ -65,11 +65,11 @@ export default function App() {
     let cancelled=false;
     async function refresh(){
       try{
-        const rs=await Promise.all([fetch(`${API}/api/health`),fetch(`${API}/api/overview`),fetch(`${API}/api/packets?limit=500`),fetch(`${API}/api/sessions`),fetch(`${API}/api/capture/status`)]);
+        const rs=await Promise.all([fetch(`${API}/api/health`),fetch(`${API}/api/overview`),fetch(`${API}/api/packets?limit=500`),fetch(`${API}/api/sessions`)]);
         if(rs.some(r=>!r.ok)) throw new Error("API request failed. Check the Python backend terminal.");
-        const [health,summary,packetResult,sessionResult,captureResult]=await Promise.all(rs.map(r=>r.json()));
+        const [health,summary,packetResult,sessionResult]=await Promise.all(rs.map(r=>r.json()));
         if(cancelled)return;
-        setOnline(health.status==="ok");setOverview(summary);setSessions(sessionResult||[]);setCapture(captureResult||idleCapture);
+        setOnline(health.status==="ok");setOverview(summary);setSessions(sessionResult||[]);
         setRows((packetResult.packets||[]).map((p:any)=>({id:p.id,session_id:p.session_id||"",time:date(p.time),timestamp:Date.parse(p.time),protocol:p.protocol||"OTHER",source:p.source||"—",destination:p.destination||"—",length:p.length||0,info:p.info||`${p.protocol||"Packet"} packet`})));
         setError("");
       }catch(e){if(cancelled)return;setOnline(false);setError(e instanceof Error?e.message:"Could not reach the backend.");}
@@ -77,6 +77,29 @@ export default function App() {
     void refresh();const t=window.setInterval(()=>void refresh(),2500);
     return()=>{cancelled=true;window.clearInterval(t);};
   },[]);
+  useEffect(()=>{
+    let cancelled=false;
+    let timer:number|undefined;
+    const poll=async()=>{
+      try{
+        const response=await fetch(`${API}/api/capture/status`,{cache:"no-store"});
+        if(!response.ok)throw new Error("Capture status request failed");
+        const status=await response.json() as CaptureStatus;
+        if(!cancelled)setCapture(current=>{
+          // Do not let a late status poll roll back a newer button action.
+          if(current.session_id&&status.session_id&&current.session_id!==status.session_id&&
+             (current.state==="running"||current.state==="stopping"))return current;
+          return status;
+        });
+      }catch{/* The regular health poll reports backend connectivity. */}
+      if(!cancelled){
+        const active=capture.state==="running"||capture.state==="stopping"||capture.state==="starting";
+        timer=window.setTimeout(poll,active?350:1500);
+      }
+    };
+    void poll();
+    return()=>{cancelled=true;if(timer!==undefined)window.clearTimeout(timer);};
+  },[capture.state,capture.session_id]);
   useEffect(()=>{if(!toast)return;const t=window.setTimeout(()=>setToast(""),2800);return()=>window.clearTimeout(t);},[toast]);
   const filtered=useMemo(()=>rows.filter(p=>(!query||[p.protocol,p.source,p.destination,p.info,String(p.id),p.session_id].some(s=>s.toLowerCase().includes(query.toLowerCase())))&&(protocol==="All protocols"||p.protocol.toUpperCase()===protocol)),[rows,query,protocol]);
   const protocols=Object.entries(overview.protocols).sort((a,b)=>b[1]-a[1]);
@@ -112,11 +135,11 @@ export default function App() {
         <div className="warning"><div className="warning-icon"><Activity size={17}/></div><div><strong>{online?"Python backend connected":"Python backend unavailable"}</strong><p>{online?`Auto-refreshing stored data · ${overview.total_packets.toLocaleString()} packets`:error||"Start the API with: python -m uvicorn pocket_packet_sniffer.api:app --reload"}</p></div><span className="offline-tag">{online?"BACKEND ONLINE":"BACKEND OFFLINE"}</span></div>
         <div className="page-heading"><div><div className="eyebrow"><span/> LOCAL NETWORK MONITOR</div><h1>{title}<em>.</em></h1><p>Inspect stored packet metadata and capture sessions.</p></div><div className="heading-buttons"><button className="btn secondary" onClick={()=>exportCsv(filtered)}><ArrowDownToLine size={16}/> Export CSV</button><button className="btn primary" onClick={()=>setPage("Packets")}><Search size={16}/> Explore packets</button></div></div>
         {(page==="Overview"||page==="Packets")&&<section className="capture card">
-          <div className="capture-head"><div className="capture-title"><div className="capture-symbol"><Radio size={19}/></div><div><h2>Capture session</h2><p>Start passive capture on an authorized interface or replay a local classic PCAP file.</p></div></div><span className={"status "+(capture.state==="running"?"running":capture.state==="error"?"failed":capture.state==="stopped"?"stopped":"")}><i/>{capture.state==="running"?"Capturing":capture.state==="stopping"?"Stopping":capture.state==="error"?"Capture error":capture.state==="stopped"?"Stopped":"Idle"}</span></div>
+          <div className="capture-head"><div className="capture-title"><div className="capture-symbol"><Radio size={19}/></div><div><h2>Capture session</h2><p>Start passive capture on an authorized interface or replay a local classic PCAP file.</p></div></div><span className={"status "+(capture.state==="running"?"running":capture.state==="error"?"failed":capture.state==="stopped"?"stopped":"")}><i/>{capture.state==="running"?"Capturing":capture.state==="starting"?"Starting":capture.state==="stopping"?"Stopping":capture.state==="error"?"Capture error":capture.state==="stopped"?"Stopped":"Idle"}</span></div>
           <div className="capture-row">
-            <div className="mode-switch"><button className={captureMode==="interface"?"selected":""} disabled={captureBusy||capture.state==="running"||capture.state==="stopping"} onClick={()=>setCaptureMode("interface")}><Wifi size={16}/> Live interface</button><button className={captureMode==="pcap"?"selected":""} disabled={captureBusy||capture.state==="running"||capture.state==="stopping"} onClick={()=>setCaptureMode("pcap")}><FileText size={16}/> PCAP replay</button></div>
+            <div className="mode-switch"><button className={captureMode==="interface"?"selected":""} disabled={captureBusy||capture.state==="running"||capture.state==="starting"||capture.state==="stopping"} onClick={()=>setCaptureMode("interface")}><Wifi size={16}/> Live interface</button><button className={captureMode==="pcap"?"selected":""} disabled={captureBusy||capture.state==="running"||capture.state==="starting"||capture.state==="stopping"} onClick={()=>setCaptureMode("pcap")}><FileText size={16}/> PCAP replay</button></div>
             {captureMode==="interface"?<label className="field"><small>INTERFACE NAME (SCAPY)</small><div className="select-wrap"><select value={iface} onChange={e=>setIface(e.target.value)} disabled={captureBusy||capture.state==="running"||capture.state==="stopping"||!interfaces.length}><option value="" disabled>Select a network adapter</option>{interfaces.map(item=><option key={item.name} value={item.name}>{item.friendly_name||item.description}{item.ips?.length?" · "+item.ips.filter(ip=>/^\d{1,3}(?:\.\d{1,3}){3}$/.test(ip)).join(", "):""} · {item.status||"Unknown"} · {item.name}</option>)}</select></div></label>:<label className="field"><small>LOCAL PCAP FILE PATH</small><div className="select-wrap"><input value={pcapPath} onChange={e=>setPcapPath(e.target.value)} placeholder="C:\\captures\\sample.pcap" disabled={captureBusy||capture.state==="running"||capture.state==="stopping"}/></div></label>}
-            <div className="capture-action">{capture.state==="running"||capture.state==="stopping"?<button className="btn danger" disabled={captureBusy||capture.state==="stopping"} onClick={async()=>{setCaptureBusy(true);try{const r=await fetch(`${API}/api/capture/stop`,{method:"POST"});const data=await r.json();if(!r.ok)throw new Error(data.detail||"Could not stop capture");setCapture(data);setToast("Stop requested.");}catch(e){setToast(e instanceof Error?e.message:"Stop failed");}finally{setCaptureBusy(false);}}}><Square size={14} fill="currentColor"/> Stop capture</button>:<button className="btn primary" disabled={captureBusy||!online||(captureMode==="interface"?(!iface.trim()||!interfaces.some(item=>item.name===iface)):!pcapPath.trim())} onClick={async()=>{setCaptureBusy(true);try{const r=await fetch(`${API}/api/capture/start`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(captureMode==="interface"?{mode:"interface",interface:iface.trim()}:{mode:"pcap",pcap_path:pcapPath.trim(),delay:0.01})});const data=await r.json();if(!r.ok)throw new Error(data.detail||"Could not start capture");setCapture(data);setToast(captureMode==="pcap"?"PCAP replay started.":"Capture start requested.");}catch(e){setToast(e instanceof Error?e.message:"Capture failed");}finally{setCaptureBusy(false);}}}><Play size={14} fill="currentColor"/> {captureMode==="pcap"?"Replay PCAP":"Start capture"}</button>}<small><ShieldCheck size={13}/> Passive capture · local only</small></div>
+            <div className="capture-action">{capture.state==="running"||capture.state==="stopping"?<button className="btn danger" disabled={captureBusy} onClick={async()=>{setCaptureBusy(true);setCapture(current=>({...current,state:"stopping",error:null}));try{const r=await fetch(`${API}/api/capture/stop`,{method:"POST",cache:"no-store"});const data=await r.json();if(!r.ok)throw new Error(data.detail||"Could not stop capture");setCapture(current=>({...current,state:data.state||"stopping"}));setToast("Stop requested.");}catch(e){setToast(e instanceof Error?e.message:"Stop failed");}finally{setCaptureBusy(false);}}}><Square size={14} fill="currentColor"/> Stop capture</button>:<button className="btn primary" disabled={captureBusy||!online||(captureMode==="interface"?(!iface.trim()||!interfaces.some(item=>item.name===iface)):!pcapPath.trim())} onClick={async()=>{setCaptureBusy(true);setCapture(current=>({...current,state:"starting",source:captureMode,interface:captureMode==="interface"?iface.trim():pcapPath.trim(),result:null,error:null}));try{const r=await fetch(`${API}/api/capture/start`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(captureMode==="interface"?{mode:"interface",interface:iface.trim()}:{mode:"pcap",pcap_path:pcapPath.trim(),delay:0})});const data=await r.json();if(!r.ok)throw new Error(data.detail||"Could not start capture");setCapture(data);setToast(captureMode==="pcap"?"PCAP replay started.":"Capture start requested.");}catch(e){const message=e instanceof Error?e.message:"Capture failed";setCapture(current=>({...current,state:"error",error:message}));setToast(message);}finally{setCaptureBusy(false);}}}><Play size={14} fill="currentColor"/> {captureMode==="pcap"?"Replay PCAP":"Start capture"}</button>}<small><ShieldCheck size={13}/> Passive capture · local only</small></div>
           </div>
           {captureMode==="interface"&&interfaceError&&<p>{interfaceError}</p>}
           {capture.error&&<p role="alert">{capture.error}</p>}
