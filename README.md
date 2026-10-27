@@ -178,4 +178,13 @@ pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.p
 
 The integrated Capture → Analysis → Storage → Presentation/CLI workflow is merged into `main` (PR #24). The latest successful `main` CI run is [40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966): Ruff passed and `pytest -q` reported 81 passed.
 
-Known limitations remain: classic PCAP only; passive live capture depends on platform/driver/permissions; live Wi-Fi monitor-mode and BLE-adapter support are not hardware-verified; Raspberry Pi packet-loss/performance figures have not been measured; Windows ACL behavior remains unverified. The new SRS compliance work is on `feat/PPS-28-srs-compliance` pending CI and independent review, not yet a claim about the current `main` branch. Repository branch protection and plan-available security settings still require maintainer UI verification.
+Known limitations remain: classic PCAP only; passive live capture depends on platform/driver/permissions; live Wi-Fi monitor-mode and BLE-adapter support are not hardware-verified; Raspberry Pi packet-loss/performance figures have not been measured; Windows ACL behavior remains unverified. The SRS-compliance changes are proposed in [PR #29](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/pull/29), not yet merged into `main`. Its latest CI run ([40472573188](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40472573188)) passed Ruff and all 104 tests; independent review and target-hardware checks remain pending. Repository branch protection and plan-available security settings still require maintainer UI verification.
+
+## Third-party acknowledgements
+
+- **Scapy** provides the project's live-capture integration and supported packet/link-layer decoding.
+- **pytest** runs the automated unit and integration tests.
+- **Ruff** checks Python source, tests, and demo tooling for the configured lint rules.
+- The PDF report writer in this implementation uses the Python standard library. Zeek is mentioned as an optional integration in project materials but is not implemented or claimed as an integrated feature.
+
+Please retain third-party acknowledgements in project submissions and follow each dependency's distribution/licensing terms.
