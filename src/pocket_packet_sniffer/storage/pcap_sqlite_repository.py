@@ -328,11 +328,16 @@ class PcapSqliteRepository(Repository):
         protocol: str | None,
         address: str | None,
         time_window: Sequence[datetime | None] | None,
-    ) -> tuple[str | None, str | None, int | None, int | None]:
+        session_id: str | None = None,
+    ) -> tuple[str | None, str | None, int | None, int | None, str | None]:
         if protocol is not None and (not isinstance(protocol, str) or not protocol.strip()):
             raise InvalidRecordError("protocol filter must be a non-empty string or None")
         if address is not None and (not isinstance(address, str) or not address.strip()):
             raise InvalidRecordError("address filter must be a non-empty string or None")
+        if session_id is not None and (
+            not isinstance(session_id, str) or not session_id.strip()
+        ):
+            raise InvalidRecordError("session_id filter must be a non-empty string or None")
         start_us = end_us = None
         if time_window is not None:
             if isinstance(time_window, (str, bytes)):
@@ -369,6 +374,7 @@ class PcapSqliteRepository(Repository):
             address.strip() if address is not None else None,
             start_us,
             end_us,
+            session_id.strip() if session_id is not None else None,
         )
 
     def query(
@@ -376,8 +382,11 @@ class PcapSqliteRepository(Repository):
         protocol: str | None = None,
         address: str | None = None,
         time_window: Sequence[datetime | None] | None = None,
+        session_id: str | None = None,
     ) -> list[PacketRecord]:
-        protocol, address, start_us, end_us = self._validate_query(protocol, address, time_window)
+        protocol, address, start_us, end_us, session_id = self._validate_query(
+            protocol, address, time_window, session_id
+        )
         clauses: list[str] = []
         params: list[object] = []
         if protocol is not None:
@@ -386,6 +395,9 @@ class PcapSqliteRepository(Repository):
         if address is not None:
             clauses.append("(p.source_address = ? OR p.destination_address = ?)")
             params.extend((address, address))
+        if session_id is not None:
+            clauses.append("p.session_id = ?")
+            params.append(session_id)
         if start_us is not None:
             clauses.append("p.timestamp_us >= ?")
             params.append(start_us)
@@ -483,6 +495,32 @@ class PcapSqliteRepository(Repository):
             raise RepositoryError("session query failed") from exc
         except OSError as exc:
             raise RepositoryError("PCAP read failed") from exc
+
+    def list_sessions(self) -> list[SessionSummary]:
+        """Return indexed summaries for saved sessions, newest packet first."""
+        try:
+            with self._connection() as db:
+                rows = db.execute(
+                    """SELECT session_id, COUNT(*) AS packet_count,
+                       MIN(timestamp_us) AS first_us, MAX(timestamp_us) AS last_us
+                       FROM packets GROUP BY session_id
+                       ORDER BY last_us DESC, session_id ASC"""
+                ).fetchall()
+            return [
+                SessionSummary(
+                    session_id=row["session_id"],
+                    packet_count=row["packet_count"],
+                    first_packet_at=_from_timestamp_us(row["first_us"]),
+                    last_packet_at=_from_timestamp_us(row["last_us"]),
+                )
+                for row in rows
+            ]
+        except PermissionError as exc:
+            raise StorageAccessError("permission denied while listing sessions") from exc
+        except FileNotFoundError as exc:
+            raise StorageUnavailableError("metadata database is unavailable") from exc
+        except sqlite3.Error as exc:
+            raise RepositoryError("session listing failed") from exc
 
     def get_session_summary(self, session_id: str) -> SessionSummary:
         if not isinstance(session_id, str) or not session_id.strip():
