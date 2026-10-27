@@ -8,8 +8,10 @@ from datetime import datetime
 from pathlib import Path
 from threading import Event, Thread
 
+from pocket_packet_sniffer.analysis.alerts import AlertBus, SuspiciousActivityDetector
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
+from pocket_packet_sniffer.application.multi_session import MultiCaptureSession
 from pocket_packet_sniffer.application.session import CaptureSession
 from pocket_packet_sniffer.capture import PcapFileCapturer, ScapyCapturer
 from pocket_packet_sniffer.presentation import (
@@ -52,11 +54,20 @@ def build_parser() -> argparse.ArgumentParser:
     source = capture.add_mutually_exclusive_group(required=True)
     source.add_argument("--pcap-file", type=Path, help="replay a local classic PCAP file (does not transmit packets)")
     source.add_argument("--interface", help="passively listen on this authorized interface")
+    source.add_argument(
+        "--multi-interface",
+        nargs="+",
+        metavar="INTERFACE",
+        help="passively capture two or more authorized interfaces concurrently",
+    )
     capture.add_argument("--filter", dest="bpf_filter", help="optional BPF filter for live capture")
     capture.add_argument("--storage-dir", type=Path, default=Path("captures"))
     capture.add_argument("--session-id", default=None)
     capture.add_argument("--count", type=_positive_int, default=None)
     capture.add_argument("--live-dashboard", action="store_true", help="refresh live statistics while capturing")
+    capture.add_argument("--alerts", action="store_true", help="enable supported heuristic alert rules")
+    capture.add_argument("--trusted-device", action="append", default=[], metavar="MAC", help="trusted device MAC; repeat as needed")
+    capture.add_argument("--trusted-ap", action="append", default=[], metavar="BSSID", help="trusted Wi-Fi AP BSSID; repeat as needed")
 
     query = commands.add_parser("query", help="query local capture metadata")
     query.add_argument("--storage-dir", type=Path, default=Path("captures"))
@@ -74,23 +85,63 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _run_capture(args: argparse.Namespace) -> int:
-    if args.live_dashboard and not args.interface:
-        print("error: --live-dashboard requires --interface", file=sys.stderr)
+    has_live_source = bool(args.interface or args.multi_interface)
+    if args.live_dashboard and not has_live_source:
+        print("error: --live-dashboard requires --interface or --multi-interface", file=sys.stderr)
+        return 2
+    if args.multi_interface is not None and len(args.multi_interface) < 2:
+        print("error: --multi-interface requires at least two interface names", file=sys.stderr)
+        return 2
+    if args.multi_interface is not None and args.pcap_file is not None:
+        print("error: PCAP replay and multi-interface capture are separate modes", file=sys.stderr)
         return 2
 
     repository = PcapSqliteRepository(args.storage_dir)
-    capturer = (
-        PcapFileCapturer(args.pcap_file)
-        if args.pcap_file is not None
-        else ScapyCapturer(args.interface, bpf_filter=args.bpf_filter)
-    )
     analyzer = AnalyzerPipeline([PacketParser()])
-    session = CaptureSession(
-        capturer,
-        repository,
-        session_id=args.session_id,
-        analyzer=analyzer,
-    )
+    alert_bus = None
+    detector = None
+    if args.alerts:
+        alert_bus = AlertBus()
+        alert_bus.subscribe(
+            lambda alert: print(
+                f"ALERT [{alert.severity}] {alert.rule_id} interface={alert.interface} "
+                f"subject={alert.subject or '-'}: {alert.message} "
+                f"{alert.evidence or ''}".rstrip(),
+                file=sys.stderr,
+            )
+        )
+        detector = SuspiciousActivityDetector(
+            trusted_devices=args.trusted_device,
+            trusted_aps=args.trusted_ap,
+        )
+
+    if args.multi_interface is not None:
+        capturers = [
+            ScapyCapturer(interface, bpf_filter=args.bpf_filter)
+            for interface in args.multi_interface
+        ]
+        session = MultiCaptureSession(
+            capturers,
+            repository,
+            session_id=args.session_id,
+            analyzer=analyzer,
+            alert_bus=alert_bus,
+            detector=detector,
+        )
+    else:
+        capturer = (
+            PcapFileCapturer(args.pcap_file)
+            if args.pcap_file is not None
+            else ScapyCapturer(args.interface, bpf_filter=args.bpf_filter)
+        )
+        session = CaptureSession(
+            capturer,
+            repository,
+            session_id=args.session_id,
+            analyzer=analyzer,
+            alert_bus=alert_bus,
+            detector=detector,
+        )
     stop_event = Event()
     dashboard_stop = Event()
     dashboard_thread: Thread | None = None
@@ -120,6 +171,13 @@ def _run_capture(args: argparse.Namespace) -> int:
         f"stored={result.packets_stored} ignored={result.packets_ignored} "
         f"exit_code={result.exit_code}"
     )
+    if args.multi_interface is not None:
+        for child in result.sessions:
+            print(
+                f"backend_session={child.session_id} seen={child.packets_seen} "
+                f"stored={child.packets_stored} ignored={child.packets_ignored} "
+                f"exit_code={child.exit_code}"
+            )
     if not args.live_dashboard:
         print(render_stats(session.statistics_snapshot()))
     return result.exit_code
@@ -139,7 +197,7 @@ def _run_query(args: argparse.Namespace) -> int:
         print(
             f"{record.timestamp.isoformat()}\t{record.protocol}\t"
             f"{record.source_address or '-'}\t{record.destination_address or '-'}\t"
-            f"{record.original_length}\t{record.session_id}"
+            f"{record.original_length}\t{record.interface}\t{record.session_id}"
         )
     print(f"{len(records)} packet(s)")
     return EXIT_SUCCESS
@@ -148,7 +206,7 @@ def _run_query(args: argparse.Namespace) -> int:
 def _run_export(args: argparse.Namespace) -> int:
     repository = PcapSqliteRepository(args.storage_dir)
     summary = repository.get_session_summary(args.session_id)
-    records = [record for record in repository.query() if record.session_id == args.session_id]
+    records = repository.query(session_id=args.session_id)
     path = export_session_report_csv(summary, records, args.output)
     print(f"exported {summary.packet_count} packet(s) to {path}")
     return EXIT_SUCCESS
