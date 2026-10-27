@@ -1,7 +1,6 @@
 from datetime import UTC, datetime
 
-from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt
-from scapy.layers.l2 import RadioTap
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, RadioTap
 
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.capture.models import CapturedPacket
