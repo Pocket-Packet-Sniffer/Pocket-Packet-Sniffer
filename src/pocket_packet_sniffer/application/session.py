@@ -87,6 +87,8 @@ class CaptureSession:
             packet_data=captured.packet_data,
             link_type=captured.link_type,
             original_length=captured.original_length,
+            interface=captured.interface,
+            capture_backend=backend,
         )
         self.repository.save(stored)
         self.statistics.observe(analyzed)
