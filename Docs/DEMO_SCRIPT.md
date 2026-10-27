@@ -78,7 +78,19 @@ pytest -q
 
 The latest GitHub Actions run for PR #29 passed Ruff and reported 104 passing tests: [CI run 40472573188](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40472573188). The PR must still receive independent review before merge.
 
-## 7. Optional authorized live-capture check
+## 7. Measure replay processing/storage throughput
+
+Run the synthetic pipeline benchmark on the machine whose performance you want to record:
+
+```powershell
+python tools/benchmark_pipeline.py --repeats 1000 --storage-dir benchmark-captures
+```
+
+The default five-packet fixture repeated 1,000 times produces 5,000 synthetic packets. The tool prints input/seen/stored counts, elapsed seconds, and stored packets per second for PCAP replay → Analysis → local PCAP/SQLite persistence. Use a fresh session ID for each run if supplying one explicitly. The benchmark refuses to append to a session that already contains packets.
+
+For a useful target-hardware record, note the actual device/CPU (e.g. Raspberry Pi model), OS, Python version, storage medium, repeats, elapsed time, and stored-packet rate. This is a **file-replay throughput measurement**, not evidence of zero packet loss on a live interface. Live capture drops require a separate test on the actual adapter/driver with representative authorized traffic.
+
+## 8. Optional authorized live-capture check
 
 Only use a device/network you own or are explicitly authorized to monitor. Confirm the interface name and capture driver for your OS before running:
 
