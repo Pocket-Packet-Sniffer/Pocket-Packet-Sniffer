@@ -12,6 +12,7 @@ htmlcov/
 venv/
 
 # Local capture data and metadata: packet payloads can contain sensitive data
+benchmark-captures/
 *.pcap
 *.pcapng
 *.cap
