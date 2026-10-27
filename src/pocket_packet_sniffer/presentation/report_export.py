@@ -20,6 +20,7 @@ class ReportExportError(Exception):
 
 _FIELDS = (
     "session_id",
+    "interface",
     "packet_count",
     "first_packet_at",
     "last_packet_at",
@@ -75,6 +76,7 @@ def export_session_report_csv(
     for record in stored_records:
         rows.append({
             "session_id": summary.session_id,
+            "interface": record.interface,
             "packet_count": summary.packet_count,
             "first_packet_at": timestamp(summary.first_packet_at),
             "last_packet_at": timestamp(summary.last_packet_at),
@@ -89,6 +91,7 @@ def export_session_report_csv(
     if not rows:
         rows.append({
             "session_id": summary.session_id,
+            "interface": "",
             "packet_count": summary.packet_count,
             "first_packet_at": timestamp(summary.first_packet_at),
             "last_packet_at": timestamp(summary.last_packet_at),
