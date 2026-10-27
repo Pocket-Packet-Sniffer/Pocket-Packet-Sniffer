@@ -114,6 +114,7 @@ class PcapSqliteRepository(Repository):
                     protocol TEXT NOT NULL,
                     source_address TEXT,
                     destination_address TEXT,
+                    interface TEXT NOT NULL DEFAULT 'unknown',
                     timestamp_us INTEGER NOT NULL,
                     pcap_offset INTEGER NOT NULL,
                     captured_length INTEGER NOT NULL,
@@ -129,6 +130,9 @@ class PcapSqliteRepository(Repository):
                     ON packets(session_id, timestamp_us);
                 """
             )
+            columns = {row["name"] for row in db.execute("PRAGMA table_info(packets)").fetchall()}
+            if "interface" not in columns:
+                db.execute("ALTER TABLE packets ADD COLUMN interface TEXT NOT NULL DEFAULT 'unknown'")
 
     @staticmethod
     def _restrict_permissions(path: Path) -> None:
@@ -219,11 +223,11 @@ class PcapSqliteRepository(Repository):
 
                 db.execute(
                     """INSERT INTO packets(record_id, session_id, protocol, source_address,
-                       destination_address, timestamp_us, pcap_offset, captured_length, original_length)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                       destination_address, interface, timestamp_us, pcap_offset, captured_length, original_length)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         record.record_id, record.session_id, record.protocol,
-                        record.source_address, record.destination_address,
+                        record.source_address, record.destination_address, record.interface,
                         _timestamp_us(record.timestamp), offset, len(record.packet_data), record.original_length,
                     ),
                 )
@@ -323,13 +327,19 @@ class PcapSqliteRepository(Repository):
         protocol: str | None = None,
         address: str | None = None,
         time_window: Sequence[datetime | None] | None = None,
+        session_id: str | None = None,
     ) -> list[PacketRecord]:
         protocol, address, start_us, end_us = self._validate_query(protocol, address, time_window)
+        if session_id is not None and (not isinstance(session_id, str) or not session_id.strip()):
+            raise InvalidRecordError("session_id filter must be a non-empty string or None")
         clauses: list[str] = []
         params: list[object] = []
         if protocol is not None:
             clauses.append("p.protocol = ?")
             params.append(protocol)
+        if session_id is not None:
+            clauses.append("p.session_id = ?")
+            params.append(session_id.strip())
         if address is not None:
             clauses.append("(p.source_address = ? OR p.destination_address = ?)")
             params.extend((address, address))
@@ -396,6 +406,7 @@ class PcapSqliteRepository(Repository):
                         protocol=row["protocol"], source_address=row["source_address"],
                         destination_address=row["destination_address"], timestamp=timestamp,
                         packet_data=data, link_type=link_type, original_length=original,
+                        interface=row["interface"],
                     )
                 except InvalidRecordError as exc:
                     raise StorageCorruptionError("indexed packet metadata is malformed") from exc
