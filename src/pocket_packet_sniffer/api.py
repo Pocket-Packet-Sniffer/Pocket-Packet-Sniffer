@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import io
 import os
+import platform
+import subprocess
+import json
 import threading
 import uuid
 from pathlib import Path
@@ -108,20 +111,60 @@ def interfaces():
         details = get_windows_if_list() if get_windows_if_list is not None else []
         def normalize(value):
             return str(value or "").strip().replace("/", "\\\\").casefold()
+
+        # Scapy's Windows helper can expose only NPF names on some installs.
+        # Ask Windows for its own adapter inventory and correlate NPF GUIDs.
+        windows_by_guid = {}
+        if platform.system() == "Windows":
+            ps = (
+                "$ErrorActionPreference='Stop'; "
+                "$a=Get-NetAdapter -IncludeHidden | ForEach-Object { "
+                "$ips=@(Get-NetIPAddress -InterfaceIndex $_.ifIndex -ErrorAction SilentlyContinue | "
+                "Where-Object {$_.IPAddress} | ForEach-Object {$_.IPAddress}); "
+                "[PSCustomObject]@{Name=$_.Name; InterfaceDescription=$_.InterfaceDescription; "
+                "InterfaceGuid=([string]$_.InterfaceGuid); Status=[string]$_.Status; "
+                "MacAddress=$_.MacAddress; IPs=$ips} }; "
+                "$a | ConvertTo-Json -Depth 4 -Compress"
+            )
+            try:
+                proc = subprocess.run(
+                    ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps],
+                    capture_output=True, text=True, timeout=5, check=True,
+                )
+                inventory = json.loads(proc.stdout.strip() or "[]")
+                if isinstance(inventory, dict):
+                    inventory = [inventory]
+                for adapter in inventory:
+                    guid = str(adapter.get("InterfaceGuid") or "").strip().strip("{}").casefold()
+                    if guid:
+                        windows_by_guid[guid] = adapter
+            except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+                windows_by_guid = {}
+
         by_name = {normalize(item.get("name")): item for item in details if item.get("name")}
         result = []
         for name in raw_names:
             item = by_name.get(normalize(name), {})
-            ips = item.get("ips") or []
-            description = item.get("description") or item.get("network_name") or ""
+            guid = ""
+            if name.upper().startswith("\\\\DEVICE\\\\NPF_{") and name.endswith("}"):
+                guid = name[name.find("{") + 1:-1].casefold()
+            win = windows_by_guid.get(guid, {})
+            ips = item.get("ips") or win.get("IPs") or []
+            if isinstance(ips, str):
+                ips = [ips]
+            description = (
+                win.get("InterfaceDescription") or win.get("Name")
+                or item.get("description") or item.get("network_name") or name
+            )
             result.append({
                 "name": name,
                 "description": description,
+                "friendly_name": win.get("Name") or description,
                 "ips": ips,
-                "mac": item.get("mac"),
+                "mac": win.get("MacAddress") or item.get("mac"),
+                "status": win.get("Status") or "Unknown",
+                "interface_guid": guid or None,
             })
-        # Prefer Scapy's Windows adapter metadata when its device name is
-        # available; retain raw Scapy names as a safe fallback.
         return {"interfaces": result}
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Could not enumerate capture interfaces: {exc}") from exc
