@@ -71,6 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     capture.add_argument("--storage-dir", type=Path, default=Path("captures"))
     capture.add_argument("--session-id", default=None)
     capture.add_argument("--count", type=_positive_int, default=None)
+    capture.add_argument("--replay-delay", type=float, default=0.0, help="seconds between replayed packets; useful for observing statistics")
     capture.add_argument("--live-dashboard", action="store_true", help="refresh live statistics while capturing")
     capture.add_argument("--alerts", action="store_true", help="enable supported heuristic alert rules")
     capture.add_argument("--trusted-device", action="append", default=[], metavar="MAC", help="trusted device MAC; repeat as needed")
@@ -95,7 +96,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _run_capture(args: argparse.Namespace) -> int:
-    has_live_source = bool(args.interface or args.multi_interface or args.multi_pcap_file)
+    has_live_source = bool(args.interface or args.multi_interface or args.multi_pcap_file or args.pcap_file)
     if args.live_dashboard and not has_live_source:
         print("error: --live-dashboard requires an interface or PCAP capture source", file=sys.stderr)
         return 2
@@ -113,6 +114,9 @@ def _run_capture(args: argparse.Namespace) -> int:
     analyzer = AnalyzerPipeline([PacketParser()])
     alert_bus = None
     detector = None
+    if not args.alerts and (args.trusted_device or args.trusted_ap):
+        print("error: --trusted-device and --trusted-ap require --alerts", file=sys.stderr)
+        return 2
     if args.alerts:
         alert_bus = AlertBus()
         alert_bus.subscribe(
@@ -135,7 +139,7 @@ def _run_capture(args: argparse.Namespace) -> int:
                 for interface in args.multi_interface
             ]
         else:
-            capturers = [PcapFileCapturer(path) for path in args.multi_pcap_file]
+            capturers = [PcapFileCapturer(path, delay=args.replay_delay) for path in args.multi_pcap_file]
         session = MultiCaptureSession(
             capturers,
             repository,
@@ -146,7 +150,7 @@ def _run_capture(args: argparse.Namespace) -> int:
         )
     else:
         capturer = (
-            PcapFileCapturer(args.pcap_file)
+            PcapFileCapturer(args.pcap_file, delay=args.replay_delay)
             if args.pcap_file is not None
             else ScapyCapturer(args.interface, bpf_filter=args.bpf_filter)
         )
