@@ -28,6 +28,8 @@ _FIELDS = (
     "protocol",
     "source_address",
     "destination_address",
+    "interface",
+    "capture_backend",
     "captured_length",
     "original_length",
 )
@@ -83,6 +85,8 @@ def export_session_report_csv(
             "protocol": record.protocol,
             "source_address": record.source_address or "",
             "destination_address": record.destination_address or "",
+            "interface": record.interface or "",
+            "capture_backend": record.capture_backend or "",
             "captured_length": len(record.packet_data),
             "original_length": record.original_length,
         })
@@ -97,6 +101,8 @@ def export_session_report_csv(
             "protocol": "",
             "source_address": "",
             "destination_address": "",
+            "interface": "",
+            "capture_backend": "",
             "captured_length": "",
             "original_length": "",
         })
