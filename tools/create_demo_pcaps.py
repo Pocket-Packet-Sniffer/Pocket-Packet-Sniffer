@@ -9,8 +9,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from scapy.layers.dns import DNS, DNSQR
 from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, RadioTap
+from scapy.layers.dns import DNS, DNSQR
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.l2 import ARP, Ether
 from scapy.utils import wrpcap
