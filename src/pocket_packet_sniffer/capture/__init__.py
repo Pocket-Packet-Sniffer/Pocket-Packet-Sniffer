@@ -11,6 +11,7 @@ from .errors import (
     CaptureStartupError,
 )
 from .models import CapturedPacket
+from .multi import MultiCapturer
 from .pcap_file import PcapFileCapturer
 from .scapy_live import ScapyCapturer
 
@@ -23,6 +24,7 @@ __all__ = [
     "CapturePermissionError",
     "CaptureStartupError",
     "CapturedPacket",
+    "MultiCapturer",
     "Capturer",
     "PacketCallback",
     "PcapFileCapturer",
