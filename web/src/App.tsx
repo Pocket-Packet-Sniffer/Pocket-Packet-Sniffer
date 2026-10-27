@@ -12,8 +12,7 @@ const idleCapture:CaptureStatus = {state:"idle",session_id:null,source:null,inte
 
 function exportCsv(rows:Packet[]) {
   const csv = [["ID","Time","Session","Protocol","Source","Destination","Length","Info"],...rows.map(p=>[p.id,p.time,p.session_id,p.protocol,p.source,p.destination,p.length,p.info])]
-    .map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r
-");
+    .map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\\r\\n");
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   const a=document.createElement("a");a.href=url;a.download="pocket-packet-sniffer.csv";a.click();URL.revokeObjectURL(url);
 }
