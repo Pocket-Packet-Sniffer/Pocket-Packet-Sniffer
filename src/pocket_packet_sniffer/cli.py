@@ -24,7 +24,10 @@ from pocket_packet_sniffer.presentation import (
     render_stats,
     run_live_dashboard,
 )
-from pocket_packet_sniffer.presentation.capture_control import CaptureControl, CaptureControlError
+from pocket_packet_sniffer.presentation.capture_control import (
+    CaptureControl,
+    CaptureControlError,
+)
 from pocket_packet_sniffer.presentation.report_pdf import export_session_report_pdf
 from pocket_packet_sniffer.storage import PcapSqliteRepository
 from pocket_packet_sniffer.storage.errors import RepositoryError
