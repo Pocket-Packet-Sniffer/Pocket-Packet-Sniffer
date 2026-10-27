@@ -1,6 +1,7 @@
 """Public Capture Layer API."""
 
 from .base import Capturer, PacketCallback
+from .concurrent import ConcurrentCapturer
 from .errors import (
     CaptureBackendUnavailableError,
     CaptureCallbackError,
