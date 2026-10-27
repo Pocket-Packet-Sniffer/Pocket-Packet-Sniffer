@@ -54,3 +54,27 @@ def test_unreadable_active_marker_fails_closed(tmp_path):
             second.activate()
     finally:
         first.close()
+
+
+
+def test_private_file_publishes_complete_marker_atomically(tmp_path, monkeypatch):
+    target = tmp_path / ".stop.request"
+    expected = '{"session_id":"session-one","requested_unix":1}'
+    original_link = __import__("os").link
+    observed = []
+
+    def checked_link(source, destination, *args, **kwargs):
+        source_path = Path(source)
+        destination_path = Path(destination)
+        assert not destination_path.exists()
+        assert source_path.read_text(encoding="utf-8") == expected
+        observed.append(True)
+        return original_link(source, destination, *args, **kwargs)
+
+    monkeypatch.setattr("os.link", checked_link)
+    CaptureControl._private_file(target, expected)
+
+    assert observed == [True]
+    assert target.read_text(encoding="utf-8") == expected
+    assert not list(tmp_path.glob("*.tmp"))
+    assert not list(tmp_path.glob(".*.tmp"))
