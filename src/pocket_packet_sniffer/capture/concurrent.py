@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import replace
 from threading import Event, Lock, Thread
+
 from .base import Capturer, PacketCallback
 from .errors import CaptureStartupError
 from .models import CapturedPacket
