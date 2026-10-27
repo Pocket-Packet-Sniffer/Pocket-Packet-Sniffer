@@ -102,13 +102,24 @@ class ScapyCapturer(Capturer):
                     timestamp = datetime.fromtimestamp(float(packet_time), tz=timezone.utc)
                 sniffed_on = getattr(packet, "sniffed_on", None) or self.interface
                 layer_map = getattr(getattr(conf, "l2types", None), "layer2num", {})
-                link_type = layer_map.get(type(packet), 1)
+                link_type = layer_map.get(type(packet))
+                if link_type is None:
+                    packet_type = type(packet).__name__
+                    if packet_type == "BTLE_RF":
+                        link_type = 256
+                    elif packet_type.startswith("BTLE"):
+                        link_type = 251
+                    elif packet_type.startswith("Dot11"):
+                        link_type = 105
+                    else:
+                        link_type = 1
                 record = CapturedPacket(
                     timestamp=timestamp,
                     packet_data=raw,
                     interface=str(sniffed_on),
                     link_type=int(link_type),
                     original_length=max(len(raw), int(getattr(packet, "wirelen", len(raw)) or len(raw))),
+                    capture_backend=self.name,
                 )
                 on_packet(record)
                 with count_lock:

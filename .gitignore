@@ -12,6 +12,7 @@ htmlcov/
 venv/
 
 # Local capture data and metadata: packet payloads can contain sensitive data
+benchmark-captures/
 *.pcap
 *.pcapng
 *.cap
@@ -19,6 +20,8 @@ venv/
 *.sqlite3-shm
 *.sqlite3-wal
 captures/
+.pps-active-*.json
+.pps-stop-*.request
 
 # Logs and build output
 *.log

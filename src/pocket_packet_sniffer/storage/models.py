@@ -31,6 +31,8 @@ class PacketRecord:
     link_type: int = 1  # Ethernet, the PCAP/pcap-linktypes default.
     original_length: int | None = None
     record_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    interface: str | None = None
+    capture_backend: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.session_id, str) or not self.session_id.strip():
@@ -61,8 +63,10 @@ class PacketRecord:
                 value.encode("utf-8")
             except UnicodeEncodeError as exc:
                 raise InvalidRecordError(f"{name} must be valid UTF-8 text") from exc
-        for name, value in (("source_address", self.source_address), ("destination_address", self.destination_address)):
+        for name, value in (("source_address", self.source_address), ("destination_address", self.destination_address), ("interface", self.interface), ("capture_backend", self.capture_backend)):
             if value is not None:
+                if not isinstance(value, str) or not value.strip():
+                    raise InvalidRecordError(f"{name} must be a non-empty string or None")
                 try:
                     value.encode("utf-8")
                 except UnicodeEncodeError as exc:

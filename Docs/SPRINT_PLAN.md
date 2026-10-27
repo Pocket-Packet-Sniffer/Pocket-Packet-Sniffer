@@ -17,7 +17,7 @@
 | #9 | Missing interface and permission failures | Vikas | 3 | **Closed for the implemented path.** Typed errors and stable CLI/session exit handling are merged. Live-driver behaviour remains a manual release-readiness check. |
 | #10 | Security/passive-use and portability checks | Vikas + Shivakumara | 5 | **Carried into M4.** Automated POSIX permissions, passive-use constraints and local-only CLI behaviour are covered. Authorized live-interface, Windows ACL and target-hardware checks remain open in #10. |
 | #11 | Test scaffolding and end-to-end tests | Sanjith; shared | 5 | **Closed for automated fixture coverage.** CI runs lint and tests; generated-PCAP tests exercise Capture → Analysis → Storage → query/statistics/CSV export. |
-| #15 | Sprint review/retrospective and process record | Vikas; shared | 2 | **Closeout record prepared; PR #26 pending review/merge.** The asynchronous review record and two Sprint 2 process actions are documented in PR #26. Historical actual effort was not captured; the gap and next-sprint action are recorded without invented values. This is not represented as a synchronous team meeting. Issue #15 remains open until the reviewed document is merged. |
+| #15 | Sprint review/retrospective and process record | Vikas; shared | 2 | **Closed.** PR #26 merged the asynchronous evidence review and two Sprint 2 process actions. Historical actual effort was not captured; the gap is documented without invented values. This is not represented as a synchronous team meeting. |
 | #16 | Repository configuration | Vikas | TBD | **Carried into M4.** Access, labels, milestones, CODEOWNERS and use of the existing board are recorded. Main branch protection and plan-available security controls need a repository-admin UI action. |
 
 Issues #10 and #16 span foundation and release-readiness work. They remain open as carry-overs and should not be represented as completed technical checks.
@@ -34,7 +34,7 @@ Issues #10 and #16 span foundation and release-readiness work. They remain open 
 - **PR #24 — End-to-end application:** AnalyzerPipeline, CaptureSession, storage adapter, rolling statistics, CLI commands, architecture checks and generated-PCAP integration tests.
 - **PR #25 — Documentation closeout:** updated README, RTM, sprint plan and security/process notes; adds this review/retrospective source document.
 
-**Latest main commit:** `240e9a1dfc4f4120866c89e797cf7ffad9d9f90d` (PR #25 merge).
+**Main baseline before the compliance feature branch:** `6fdc3a70871f06ded17ee6c67d96e42fe95fa749` (PR #26 and Sprint 1 closeout documentation included).
 
 **Latest verified CI:** [Run 40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966) — Ruff passed and `pytest -q` reported **81 passed**. Tests use generated packet fixtures and mocks; they do not prove live hardware or target-platform behaviour.
 
@@ -42,14 +42,14 @@ Issues #10 and #16 span foundation and release-readiness work. They remain open 
 
 The **core Sprint 1 engineering goal is complete**. The implementation and automated integration path are merged; requirements and setup documentation are aligned with the latest code; the final CI run is green.
 
-The following are **carry-over/release-readiness work**, not hidden blockers or falsely completed checks:
+The following are **carry-over/release-readiness work**, not hidden blockers or falsely completed checks. The SRS compliance branch is under review and is not yet merged into main:
 
 | Carry-over | Status/action | Destination |
 |---|---|---|
 | #10 — live-interface/platform security | Run authorized live-interface startup/permission checks and target OS/driver/security checks; verify Windows ACLs, Wi-Fi mode/BLE support only if the platform is in scope, and Raspberry Pi performance if targeted. | M4 — Release Readiness |
 | #16 — repository protection/security controls | Maintainer must enable/verify main-branch PR review, conversation resolution, the observed `Lint and test` check, and available secret-scanning/Dependabot controls. | M4 — Release Readiness |
-| Report format | CLI currently exports CSV. Confirm the approved SRS's required report formats; create scoped work for PDF only if required. | Sprint 2/release scope |
-| #13 and #14 | Suspicious-activity alerts and concurrent capture backends remain optional stretch issues. | Stretch backlog |
+| Report format | The approved SRS REQ-8 accepts CSV or PDF; the main baseline's CSV export satisfies that literal requirement. The compliance branch adds PDF as a second format. | PR #29 CI passed (Ruff + 105 tests); independent review pending |
+| #13 and #14 | Both are low-priority stretch requirements in the SRS. Implementations, synthetic tests and CLI wiring are on `feat/PPS-28-srs-compliance`; PR #29 passes CI (Ruff + 105 tests). They close after reviewed merge. Live Wi-Fi/BLE adapter validation remains separate. | Review branch; CI passed; independent review pending |
 
 ## Sprint 2 focus
 

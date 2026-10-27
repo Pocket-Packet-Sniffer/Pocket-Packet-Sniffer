@@ -30,6 +30,8 @@ def record(
     timestamp: datetime = BASE_TIME,
     payload: bytes = b"sample-packet-bytes",
     link_type: int = 1,
+    interface: str | None = None,
+    capture_backend: str | None = None,
 ) -> PacketRecord:
     return PacketRecord(
         record_id=record_id,
@@ -40,6 +42,8 @@ def record(
         timestamp=timestamp,
         packet_data=payload,
         link_type=link_type,
+        interface=interface,
+        capture_backend=capture_backend,
     )
 
 
@@ -82,6 +86,32 @@ def test_query_filters_protocol_address_and_inclusive_time_window(tmp_path):
     assert repository.query(time_window=(BASE_TIME, BASE_TIME)) == [first]
     assert repository.query(protocol="UDP", time_window=(BASE_TIME, None)) == [second]
     assert repository.query(protocol="ICMP") == []
+
+
+def test_session_scoped_query_and_session_listing(tmp_path):
+    repository = PcapSqliteRepository(tmp_path)
+    older = record(
+        record_id="older-record",
+        session_id="older-session",
+        timestamp=BASE_TIME,
+    )
+    newer = record(
+        record_id="newer-record",
+        session_id="newer-session",
+        timestamp=BASE_TIME + timedelta(seconds=5),
+    )
+    repository.save(older)
+    repository.save(newer)
+
+    assert repository.query(session_id="older-session") == [older]
+    assert repository.query(session_id="newer-session", protocol="tcp") == [newer]
+    with pytest.raises(InvalidRecordError, match="session_id filter"):
+        repository.query(session_id="  ")
+
+    sessions = repository.list_sessions()
+    assert [summary.session_id for summary in sessions] == ["newer-session", "older-session"]
+    assert [summary.packet_count for summary in sessions] == [1, 1]
+    assert sessions[0].last_packet_at == newer.timestamp
 
 
 def test_query_matches_source_and_destination_addresses(tmp_path):
@@ -157,14 +187,32 @@ def test_invalid_packet_record_is_rejected():
         record(payload=b"x" * 65536)
 
 
-def test_records_cannot_change_link_type_within_a_session(tmp_path):
+def test_session_can_store_multiple_link_types_and_preserve_backend_context(tmp_path):
     repository = PcapSqliteRepository(tmp_path)
-    repository.save(record(link_type=1))
+    ethernet = record(
+        record_id="ethernet-record",
+        session_id="multi-session",
+        link_type=1,
+    )
+    bluetooth = record(
+        record_id="bluetooth-record",
+        session_id="multi-session",
+        link_type=251,
+        interface="hci-demo",
+        capture_backend="ble-advertisement",
+    )
 
-    with pytest.raises(InvalidRecordError):
-        repository.save(record(record_id="different", link_type=101))
+    repository.save(ethernet)
+    repository.save(bluetooth)
 
-    assert len(repository.query()) == 1
+    loaded = repository.query_session("multi-session")
+    assert len(loaded) == 2
+    assert {packet.link_type for packet in loaded} == {1, 251}
+    by_id = {packet.record_id: packet for packet in loaded}
+    assert by_id["bluetooth-record"].interface == "hci-demo"
+    assert by_id["bluetooth-record"].capture_backend == "ble-advertisement"
+    assert len(list(tmp_path.glob("*.pcap"))) == 2
+    assert repository.get_session_summary("multi-session").packet_count == 2
 
 
 def test_missing_pcap_file_is_reported(tmp_path):

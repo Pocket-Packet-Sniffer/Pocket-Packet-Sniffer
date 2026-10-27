@@ -28,3 +28,5 @@ class PacketRecord:
     interface: str
     link_type: int
     capture_backend: str | None = None
+    source_mac: str | None = None
+    destination_mac: str | None = None

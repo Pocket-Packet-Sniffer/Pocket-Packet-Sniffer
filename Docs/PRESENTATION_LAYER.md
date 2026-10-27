@@ -1,36 +1,36 @@
-# Presentation Layer: live statistics display
+# Presentation Layer
 
-This module provides the presentation-only portion of PPS-06 (SRS REQ-7,
-STP TC-PRE-01). It renders a statistics snapshot and refreshes the display
-without parsing raw packets or calculating aggregation counters.
+The Presentation Layer provides the CLI for capture control, live statistics, stored-record queries and report export. It consumes application/session, statistics and repository interfaces; it does not parse raw packets or calculate aggregation counters.
 
-## Snapshot contract
+## Live statistics
 
-The renderer accepts a mapping with these keys:
+The renderer consumes a snapshot containing:
 
-- total_packets: cumulative packet count
-- total_bytes: cumulative byte count
-- packets_per_sec: recent packet rate
-- protocols: iterable of (protocol, count) pairs
-- top_talkers: iterable of (source endpoint, count) pairs
+- `total_packets`: cumulative successfully analyzed/stored packet count
+- `total_bytes`: cumulative original packet bytes
+- `packets_per_sec`: recent packet rate
+- `protocols`: protocol/count pairs
+- `top_talkers`: up to five source endpoint/count pairs
 
-The shape mirrors the reference implementation's StatsAggregator snapshot.
-Analysis owns creation of this snapshot; Presentation owns rendering and the
-refresh loop. The refresh interval defaults to two seconds and rejects values
-greater than two seconds.
+The current CLI supports `capture --interface ... --live-dashboard` and `capture-multi ... --live-dashboard`. The refresh loop is configured for two seconds. The file-replay command prints a final statistics snapshot; replay is finite and does not pretend to be live monitoring.
 
-## Current integration limitation
+## Query and reports
 
-The current main branch contains the Capture Layer but does not yet contain
-the Analysis metadata/statistics interface or a CLI/session entry point. This
-PR therefore supplies tested presentation helpers and the snapshot contract;
-it does not claim that live dashboard capture is end-to-end wired yet. Complete
-integration when the Analysis and session/CLI interfaces are available, then
-link the final integrated PR to issue #7.
+- `query` accepts protocol, address and timezone-aware inclusive time-window filters. Multiple filters use AND semantics.
+- `export --format csv` writes session summary and packet metadata as CSV.
+- `export --format pdf` writes the same summary and metadata as a local PDF.
+- Exports use the storage repository's session-scoped retrieval method and refuse to overwrite an existing output.
+- Report output never contains the raw packet payload.
 
-## Local verification
+## Stretch: Observer alerts
 
-Run:
+The Analysis layer exposes `AlertPublisher`, `AlertEvent` and `SuspiciousActivityDetector`. Presentation subscribes using a callback; the CLI prints only a concise alert event summary. Supported rules are deliberately heuristic: ARP IP/MAC conflict; unrecognized source MAC when a device allowlist is configured; and unrecognized 802.11 beacon BSSID when an AP allowlist is configured. These are investigatory signals, not proof of an attack. AP rule needs actual decoded Wi-Fi beacon frames.
 
-    PYTHONPATH=src pytest -q tests/test_presentation_dashboard.py
-    ruff check --select E4,E7,E9,F,I src tests
+## Verification and limitations
+
+```bash
+ruff check --select E4,E7,E9,F,I src tests
+pytest -q
+```
+
+The feature branch `feat/PPS-28-srs-compliance` is being validated through CI and requires independent review before merge. Automated generated-PCAP tests do not prove live-interface throughput, Wi-Fi monitor mode, BLE hardware support, Windows ACLs, or Raspberry Pi packet-loss performance. The browser dashboard is deferred; the SRS names CLI as the primary interface and web dashboard as a stretch goal.
