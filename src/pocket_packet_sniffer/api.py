@@ -146,7 +146,7 @@ def interfaces():
         for name in raw_names:
             item = by_name.get(normalize(name), {})
             guid = ""
-            if name.upper().startswith("\\\\DEVICE\\\\NPF_{") and name.endswith("}"):
+            if "NPF_" in name.upper() and "{" in name and name.endswith("}"):
                 guid = name[name.find("{") + 1:-1].casefold()
             win = windows_by_guid.get(guid, {})
             ips = item.get("ips") or win.get("IPs") or []
