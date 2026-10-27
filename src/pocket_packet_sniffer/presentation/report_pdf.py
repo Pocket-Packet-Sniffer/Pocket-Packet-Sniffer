@@ -6,8 +6,8 @@ import textwrap
 from pathlib import Path
 from typing import Iterable
 
+from pocket_packet_sniffer.presentation.report_export import ReportExportError
 from pocket_packet_sniffer.storage.models import PacketRecord, SessionSummary
-from .report_export import ReportExportError
 
 
 def _pdf_text(value: object) -> str:
