@@ -1,6 +1,7 @@
 """Local API for dashboard reads and explicit capture start/stop controls."""
 from __future__ import annotations
 
+import io
 import os
 import threading
 import uuid
@@ -10,6 +11,10 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from scapy.all import get_if_list
+try:
+    from scapy.arch.windows import get_windows_if_list
+except ImportError:
+    get_windows_if_list = None
 
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
@@ -28,7 +33,7 @@ app.add_middleware(
 )
 
 _capture_lock = threading.RLock()
-_capture: dict = {"state": "idle", "session_id": None, "source": None, "interface": None, "started_at": None, "result": None, "error": None, "thread": None, "stop_event": None}
+_capture: dict = {"state": "idle", "session_id": None, "source": None, "interface": None, "started_at": None, "result": None, "error": None, "thread": None, "stop_event": None, "session": None}
 
 
 class CaptureStart(BaseModel):
@@ -54,16 +59,27 @@ def capture_status():
         if state == "running" and thread is not None and not thread.is_alive():
             _capture["state"] = "stopped"
             state = "stopped"
-        return {k: _capture[k] for k in ("state", "session_id", "source", "interface", "started_at", "result", "error")}
+        result = _capture["result"]
+        session = _capture.get("session")
+        if state == "running" and session is not None:
+            progress = session.result(0)
+            result = {"session_id": progress.session_id, "packets_seen": progress.packets_seen, "packets_stored": progress.packets_stored, "packets_ignored": progress.packets_ignored, "exit_code": None}
+        return {"state": state, "session_id": _capture["session_id"], "source": _capture["source"], "interface": _capture["interface"], "started_at": _capture["started_at"], "result": result, "error": _capture["error"]}
 
 
 def _run_capture(session, stop_event):
+    diagnostics = io.StringIO()
     try:
-        result = session.run(stop_event)
+        result = session.run(stop_event, stderr=diagnostics)
+        detail = diagnostics.getvalue().strip()
         with _capture_lock:
             _capture["result"] = {"session_id": result.session_id, "packets_seen": result.packets_seen, "packets_stored": result.packets_stored, "packets_ignored": result.packets_ignored, "exit_code": result.exit_code}
-            if _capture["state"] != "error":
+            if result.exit_code != 0:
+                _capture["state"] = "error"
+                _capture["error"] = detail or f"Capture stopped with exit code {result.exit_code}."
+            else:
                 _capture["state"] = "stopped"
+                _capture["error"] = None
     except Exception as exc:
         with _capture_lock:
             _capture["state"] = "error"
@@ -88,7 +104,16 @@ def get_capture_status():
 def interfaces():
     """Return capture interface names as Scapy sees them on this host."""
     try:
-        return {"interfaces": get_if_list()}
+        raw_names = list(get_if_list())
+        details = get_windows_if_list() if get_windows_if_list is not None else []
+        by_name = {item.get("name"): item for item in details if item.get("name")}
+        result = []
+        for name in raw_names:
+            item = by_name.get(name, {})
+            ips = item.get("ips") or []
+            description = item.get("description") or item.get("network_name") or name
+            result.append({"name": name, "description": description, "ips": ips, "mac": item.get("mac")})
+        return {"interfaces": result}
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Could not enumerate capture interfaces: {exc}") from exc
 
@@ -122,7 +147,7 @@ def start_capture(request: CaptureStart):
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Could not initialize capture storage: {exc}") from exc
         thread = threading.Thread(target=_run_capture, args=(session, stop_event), name=f"pps-capture-{session_id[:8]}", daemon=True)
-        _capture.update({"state":"running","session_id":session_id,"source":source,"interface":interface,"started_at":__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),"result":None,"error":None,"thread":thread,"stop_event":stop_event})
+        _capture.update({"state":"running","session_id":session_id,"source":source,"interface":interface,"started_at":__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),"result":None,"error":None,"thread":thread,"stop_event":stop_event,"session":session})
         thread.start()
         return capture_status()
 
