@@ -4,6 +4,8 @@ import csv
 import struct
 from pathlib import Path
 
+from tools.create_demo_pcap import create_demo_pcap
+
 from scapy.layers.inet import IP, TCP
 from scapy.layers.l2 import Ether
 
@@ -65,6 +67,81 @@ def test_cli_capture_query_and_export_using_local_pcap(tmp_path, capsys):
         rows = list(csv.DictReader(handle))
     assert len(rows) == 1
     assert rows[0]["protocol"] == "TCP"
+
+    pdf_report = tmp_path / "report.pdf"
+    code = main(
+        [
+            "export",
+            "--storage-dir",
+            str(storage),
+            "--session-id",
+            "cli-session",
+            "--output",
+            str(pdf_report),
+            "--format",
+            "pdf",
+        ]
+    )
+    pdf_result = capsys.readouterr()
+    assert code == 0
+    assert "PDF" in pdf_result.out
+    assert pdf_report.read_bytes().startswith(b"%PDF-1.4")
+
+
+def test_cli_concurrent_replay_and_synthetic_alert_demo(tmp_path, capsys):
+    source_a = tmp_path / "source-a.pcap"
+    source_b = tmp_path / "source-b.pcap"
+    create_demo_pcap(source_a)
+    create_demo_pcap(source_b)
+    storage = tmp_path / "captures"
+    code = main(
+        [
+            "capture-multi",
+            "--pcap-file",
+            str(source_a),
+            "--pcap-file",
+            str(source_b),
+            "--storage-dir",
+            str(storage),
+            "--session-id",
+            "multi-session",
+            "--count",
+            "6",
+        ]
+    )
+    result = capsys.readouterr()
+    assert code == 0
+    assert "stored=6" in result.out
+    repository = __import__(
+        "pocket_packet_sniffer.storage", fromlist=["PcapSqliteRepository"]
+    ).PcapSqliteRepository(storage)
+    records = repository.query_session("multi-session")
+    assert len(records) == 6
+    assert {record.interface for record in records} == {"source-a.pcap", "source-b.pcap"}
+    assert {record.capture_backend for record in records} == {"pcap-file"}
+    assert {record.link_type for record in records} == {1}
+
+
+def test_cli_replay_reports_arp_conflict_as_heuristic_alert(tmp_path, capsys):
+    source = tmp_path / "suspicious-demo.pcap"
+    create_demo_pcap(source)
+    storage = tmp_path / "captures"
+    code = main(
+        [
+            "capture",
+            "--pcap-file",
+            str(source),
+            "--storage-dir",
+            str(storage),
+            "--session-id",
+            "alert-session",
+        ]
+    )
+    result = capsys.readouterr()
+    assert code == 0
+    assert "arp-address-conflict" in result.err
+    assert "suspected" in result.err
+    assert "stored=5" in result.out
 
 
 def test_cli_rejects_live_dashboard_for_file_replay(capsys, tmp_path):
