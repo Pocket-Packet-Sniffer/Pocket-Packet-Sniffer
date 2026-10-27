@@ -49,6 +49,6 @@ For every acceptance criterion, record:
 Status changes must be based on evidence, not on an issue being assigned, a branch existing, or a PR being opened. Keep this matrix synchronized as issues and tests evolve.
 
 
-## Latest backend compliance branch verification
+## Current backend compliance verification on main
 
 PR #29 merged into `main` as commit `cd80e958bf572c32126c3f222579aec638da04b7`. The resulting main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and reported 106 passed in 1.87s. Target-hardware validation remains required.
