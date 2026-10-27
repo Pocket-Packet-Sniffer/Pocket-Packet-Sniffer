@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from threading import Event, Lock
 from typing import TextIO
 
+from pocket_packet_sniffer.analysis.alerts import SuspiciousActivityDetector
 from pocket_packet_sniffer.analysis.models import PacketRecord as AnalyzedPacket
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import PacketAnalyzer
@@ -49,6 +50,7 @@ class CaptureSession:
         analyzer: PacketAnalyzer | None = None,
         statistics: TrafficStatistics | None = None,
         on_record: Callable[[AnalyzedPacket], None] | None = None,
+        alert_detector: SuspiciousActivityDetector | None = None,
     ) -> None:
         self.capturer = capturer
         self.repository = repository
@@ -58,6 +60,7 @@ class CaptureSession:
         self.analyzer = analyzer or PacketParser()
         self.statistics = statistics or TrafficStatistics()
         self.on_record = on_record
+        self.alert_detector = alert_detector
         self._lock = Lock()
         self._packets_seen = 0
         self._packets_stored = 0
@@ -68,7 +71,7 @@ class CaptureSession:
         with self._lock:
             self._packets_seen += 1
 
-        backend = getattr(self.capturer, "name", type(self.capturer).__name__)
+        backend = captured.capture_backend or getattr(self.capturer, "name", type(self.capturer).__name__)
         analyzed = self.analyzer.parse(captured, backend=backend)
         if analyzed is None:
             with self._lock:
@@ -87,6 +90,8 @@ class CaptureSession:
         )
         self.repository.save(stored)
         self.statistics.observe(analyzed)
+        if self.alert_detector is not None:
+            self.alert_detector.inspect(analyzed)
         with self._lock:
             self._packets_stored += 1
 
