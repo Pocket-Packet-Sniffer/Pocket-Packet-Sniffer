@@ -47,6 +47,8 @@ This matrix connects the approved SRS requirements to GitHub work items and the 
 
 ## Verification record
 
+See [Docs/TEST_EXECUTION_REPORT.md](TEST_EXECUTION_REPORT.md) for the current CI run, STP test-case mapping, and unexecuted target-environment checks.
+
 For every acceptance criterion, record:
 - the implementing PR/commit;
 - the command or test case run and its result;
