@@ -42,10 +42,33 @@ Filters can be combined. Dates must be timezone-aware ISO-8601 values. Query out
 ## Export a session
 
 ```bash
-pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv
+pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv --format csv
+pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.pdf --format pdf
 ```
 
-The export writes local CSV and does not overwrite an existing destination. PDF output is not implemented in this CLI version; confirm whether CSV alone satisfies the agreed report deliverable.
+The export writes a session summary and packet metadata to a local CSV or PDF file. It does not include raw packet payloads and refuses to overwrite an existing destination. Session-scoped retrieval uses the Repository contract.
+
+## Synthetic end-to-end demo
+
+```bash
+python -m pip install -r requirements-dev.txt -r requirements-capture.txt
+python tools/create_demo_pcap.py demo.pcap
+pocket-packet-sniffer capture --pcap-file demo.pcap --storage-dir demo-captures --session-id demo-session
+pocket-packet-sniffer query --storage-dir demo-captures --protocol TCP
+pocket-packet-sniffer query --storage-dir demo-captures --address 192.0.2.1
+pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.csv --format csv
+pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.pdf --format pdf
+```
+
+The generated fixture is synthetic, contains TCP, DNS/UDP, ICMP and conflicting ARP claims, and is intended to demonstrate parser/statistics/reporting and a heuristic alert. Replay reads it locally and does not send packets. The generator refuses to overwrite an existing file.
+
+For concurrent fan-in without privileged capture:
+
+```bash
+python tools/create_demo_pcap.py demo-a.pcap
+python tools/create_demo_pcap.py demo-b.pcap
+pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.pcap --storage-dir demo-multi-captures --session-id multi-demo --count 6
+```
 
 ## Test
 
