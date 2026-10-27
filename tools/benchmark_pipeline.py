@@ -21,7 +21,7 @@ from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.application.session import CaptureSession
 from pocket_packet_sniffer.capture import PcapFileCapturer
 from pocket_packet_sniffer.storage import PcapSqliteRepository
-from tools.create_demo_pcap import build_demo_packets
+from create_demo_pcap import build_demo_packets
 
 
 def _positive_int(value: str) -> int:
