@@ -4,7 +4,10 @@ from threading import Event
 import pytest
 
 from pocket_packet_sniffer.capture.base import Capturer
-from pocket_packet_sniffer.capture.concurrent import ConcurrentCaptureError, ConcurrentCaptureRunner
+from pocket_packet_sniffer.capture.concurrent import (
+    ConcurrentCaptureError,
+    ConcurrentCaptureRunner,
+)
 from pocket_packet_sniffer.capture.models import CapturedPacket
 
 
