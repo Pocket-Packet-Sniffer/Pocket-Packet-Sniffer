@@ -22,6 +22,7 @@ class Repository(ABC):
         protocol: str | None = None,
         address: str | None = None,
         time_window: Sequence[datetime | None] | None = None,
+        session_id: str | None = None,
     ) -> list[PacketRecord]:
         """Return records matching every supplied filter, oldest first.
 
