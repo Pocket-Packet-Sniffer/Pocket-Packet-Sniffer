@@ -6,17 +6,44 @@ from __future__ import annotations
 def _callback_failure_detail(exc: Exception) -> str:
     """Return safe diagnostic context for an exception raised by a packet callback.
 
-    Project-owned exceptions use sanitized domain messages. Arbitrary callback
-    exceptions expose only their type so custom code cannot accidentally print
-    captured data to the terminal.
+    Project-owned exceptions and SQLite errors use sanitized domain messages.
+    Arbitrary callback exception text is intentionally omitted so custom code
+    cannot accidentally print captured data to the terminal. Follow a short
+    cause chain to show the underlying storage error when available.
     """
-    error_type = type(exc)
-    name = error_type.__name__
-    if error_type.__module__.startswith("pocket_packet_sniffer."):
-        detail = " ".join(str(exc).split())[:240]
-        if detail:
-            return f"{name}: {detail}"
-    return name
+    def safe_detail(error: Exception) -> str:
+        error_type = type(error)
+        name = error_type.__name__
+        module = error_type.__module__
+        if module.startswith("pocket_packet_sniffer.") or module == "sqlite3":
+            detail = " ".join(str(error).split())[:180]
+            if detail:
+                return f"{name}: {detail}"
+        return name
+
+    details: list[str] = []
+    current: BaseException | None = exc
+    seen: set[int] = set()
+    for _ in range(3):
+        if current is None or id(current) in seen:
+            break
+        seen.add(id(current))
+        if isinstance(current, Exception):
+            detail = safe_detail(current)
+        else:
+            detail = type(current).__name__
+        if not details or detail != details[-1]:
+            details.append(detail)
+        # Only traverse explicit causes/contexts from project and standard
+        # storage errors. Avoid leaking messages from arbitrary custom errors.
+        current_module = type(current).__module__
+        if not (
+            current_module.startswith("pocket_packet_sniffer.")
+            or current_module == "sqlite3"
+        ):
+            break
+        current = current.__cause__ or current.__context__
+    return " <- caused by ".join(details)
 
 
 class CaptureError(Exception):
