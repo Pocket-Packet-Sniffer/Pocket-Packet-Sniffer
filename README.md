@@ -11,7 +11,7 @@ The design follows the four-layer architecture defined by the SRS and SASD:
 3. **Storage** — persists PCAP data and indexed metadata through a Repository interface.
 4. **Presentation** — provides the primary CLI for capture control, live statistics, queries, and reports.
 
-WiFi, Ethernet, and BLE remain represented in the requirements. Backend availability depends on hardware, drivers, operating system, and permissions. BLE, suspicious-activity detection, concurrent multi-backend capture, Zeek integration, and the web dashboard are stretch/optional work until implemented and validated.
+WiFi, Ethernet, and BLE are represented by the requirements. The review branch adds metadata decoding for supported Ethernet/IP, ARP, 802.11 beacon/frame, and BLE advertisement link types; passive live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on actual hardware. The branch also adds heuristic suspicious-activity events and concurrent capture for multiple supported backends. Zeek integration and the web dashboard remain optional/deferred; the dashboard comes after backend verification.
 
 ## Requirements and project documents
 
@@ -72,7 +72,7 @@ The Storage/Query package provides the boundary between packet analysis and pres
 
 - `PacketRecord` carries a session ID, record ID, timezone-aware timestamp, normalized protocol, source/destination addresses, captured bytes, PCAP link type, and original packet length.
 - `Repository` defines `save(record)`, `query(protocol, address, time_window)`, and `get_session_summary(session_id)`.
-- `PcapSqliteRepository` stores packet bytes in classic PCAP 2.4 files and searchable metadata in a local SQLite database (`metadata.sqlite3`). SQLite stores packet offsets and metadata, not packet payloads. Each capture session uses one link type.
+- `PcapSqliteRepository` stores packet bytes in local classic PCAP 2.4 files and searchable metadata in SQLite (`metadata.sqlite3`). SQLite stores offsets and metadata, not packet payloads. A logical session may use separate PCAP files for different link-layer types; the index associates each packet with its file, interface, and backend.
 
 Example:
 
@@ -102,7 +102,7 @@ Invalid records and filters raise `InvalidRecordError`; duplicate IDs raise `Dup
 
 Install this package and its test extra from the repository root with `python -m pip install -e ".[test]"`. Run the storage/query tests with `pytest tests/test_storage_query.py`. The tests use generated packet bytes and temporary storage.
 
-The implementation is limited to persistence and querying; packet capture, parsing, and CLI behavior belong to their respective layers. Limitations include classic PCAP only, one link type per session, no encryption or retention policy, and no crash recovery for an unindexed trailing PCAP record. Captures remain local; use authorized traffic and protect the storage directory.
+The implementation is limited to persistence and querying; capture, analysis, and CLI behavior belong to their respective layers. Limitations include classic PCAP only, no encryption or retention policy, and no crash recovery for an unindexed trailing PCAP record. Captures remain local; use authorized traffic and protect the storage directory.
 
 ## Safe use
 
@@ -136,13 +136,35 @@ Query stored metadata and export a CSV session report:
 
 ```bash
 pocket-packet-sniffer query --storage-dir captures --protocol TCP --address 192.0.2.10
-pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv
+pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv --format csv
+pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.pdf --format pdf
 ```
 
-The query command accepts optional timezone-aware `--start` and `--end` ISO-8601 datetimes. The export command refuses to overwrite an existing file. Capture outputs and the SQLite index remain local under the configured storage directory.
+The query command accepts optional timezone-aware `--start` and `--end` ISO-8601 datetimes. CSV and PDF exports refuse to overwrite an existing file and include session/packet metadata, not raw packet payloads. Capture outputs and the SQLite index remain local under the configured storage directory.
+
+## Reproducible synthetic demo
+
+```bash
+python -m pip install -r requirements-dev.txt -r requirements-capture.txt
+python tools/create_demo_pcap.py demo.pcap
+pocket-packet-sniffer capture --pcap-file demo.pcap --storage-dir demo-captures --session-id demo-session
+pocket-packet-sniffer query --storage-dir demo-captures --protocol TCP
+pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.csv --format csv
+pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.pdf --format pdf
+```
+
+The synthetic fixture contains TCP, DNS/UDP, ICMP and two conflicting ARP claims to demonstrate metadata processing and a heuristic alert. It is local test data; replay reads the file and does not transmit packets. The generator refuses to overwrite an existing output file.
+
+To exercise concurrent fan-in on two local PCAP sources (no live interface needed):
+
+```bash
+python tools/create_demo_pcap.py demo-a.pcap
+python tools/create_demo_pcap.py demo-b.pcap
+pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.pcap --storage-dir demo-multi-captures --session-id multi-demo --count 6
+```
 
 ## Current implementation status
 
 The integrated Capture → Analysis → Storage → Presentation/CLI workflow is merged into `main` (PR #24). The latest successful `main` CI run is [40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966): Ruff passed and `pytest -q` reported 81 passed.
 
-Known limitations remain: classic PCAP only, live capture depends on platform/driver/permissions, PDF export is not implemented by the current CLI, and live-interface/Wi-Fi-monitor/BLE/Raspberry Pi behaviour needs manual validation. Repository branch protection and plan-available security settings still require maintainer UI verification.
+Known limitations remain: classic PCAP only; passive live capture depends on platform/driver/permissions; live Wi-Fi monitor-mode and BLE-adapter support are not hardware-verified; Raspberry Pi packet-loss/performance figures have not been measured; Windows ACL behavior remains unverified. The new SRS compliance work is on `feat/PPS-28-srs-compliance` pending CI and independent review, not yet a claim about the current `main` branch. Repository branch protection and plan-available security settings still require maintainer UI verification.
