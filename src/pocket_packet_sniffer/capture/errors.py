@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import traceback
+
 
 def _callback_failure_detail(exc: Exception) -> str:
     """Return safe diagnostic context for an exception raised by a packet callback.
@@ -19,6 +21,15 @@ def _callback_failure_detail(exc: Exception) -> str:
             detail = " ".join(str(error).split())[:180]
             if detail:
                 return f"{name}: {detail}"
+        # For other exception types, never print arbitrary exception text. Show
+        # the final source locations instead, so programming errors stay debuggable.
+        frames = traceback.extract_tb(error.__traceback__)
+        if frames:
+            locations = []
+            for frame in frames[-2:]:
+                filename = frame.filename.replace("\\\\", "/").rsplit("/", 1)[-1]
+                locations.append(f"{filename}:{frame.lineno} in {frame.name}")
+            return f"{name} at " + " <- ".join(locations)
         return name
 
     details: list[str] = []
