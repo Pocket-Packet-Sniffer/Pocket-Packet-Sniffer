@@ -42,7 +42,7 @@ This matrix connects the approved SRS requirements to GitHub work items and the 
 
 - Branch: `feat/PPS-28-srs-compliance`.
 - Added implementation candidates for PDF export, metadata-only Observer alerting, concurrent capture, multi-link-type per-session storage, synthetic PCAP demo tooling, and source-context persistence.
-- Latest feature/test CI for PR #29 (2026-10-27): [run 40473733552](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40473733552) passed Ruff and reported **105 passed in 1.30s**. The implementation is still in the review branch; teammate approval and target-hardware verification remain pending. The replay benchmark is a local processing/storage measure, not a live packet-loss result.
+- Latest CI for PR #29 (2026-10-27): [run 40478879386](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40478879386) passed Ruff and reported **106 passed in 1.42s**. The implementation is still in the review branch; formal approval and target-hardware verification remain pending. The replay benchmark is a local processing/storage measure, not a live packet-loss result.
 - This branch is not merged into `main`; its functional rows above describe review-branch code, not the current main release.
 
 ## Verification record
