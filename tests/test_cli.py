@@ -4,12 +4,12 @@ import csv
 import struct
 from pathlib import Path
 
-from tools.create_demo_pcap import create_demo_pcap
-
 from scapy.layers.inet import IP, TCP
 from scapy.layers.l2 import Ether
 
 from pocket_packet_sniffer.cli import main
+from pocket_packet_sniffer.storage import PcapSqliteRepository
+from tools.create_demo_pcap import create_demo_pcap
 
 
 def write_one_packet_pcap(path: Path) -> None:
@@ -112,9 +112,7 @@ def test_cli_concurrent_replay_and_synthetic_alert_demo(tmp_path, capsys):
     result = capsys.readouterr()
     assert code == 0
     assert "stored=6" in result.out
-    repository = __import__(
-        "pocket_packet_sniffer.storage", fromlist=["PcapSqliteRepository"]
-    ).PcapSqliteRepository(storage)
+    repository = PcapSqliteRepository(storage)
     records = repository.query_session("multi-session")
     assert len(records) == 6
     assert {record.interface for record in records} == {"source-a.pcap", "source-b.pcap"}
