@@ -68,7 +68,7 @@ class Repository(ABC):
         """
         if not isinstance(session_id, str) or not session_id.strip():
             raise ValueError("session_id must be a non-empty string")
-        return self.query(session_id=session_id)
+        return [record for record in self.query() if record.session_id == session_id]
 
     @abstractmethod
     def get_session_summary(self, session_id: str) -> SessionSummary:
