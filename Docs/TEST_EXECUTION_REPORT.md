@@ -3,8 +3,8 @@
 **SRS:** v1.3  
 **STP:** v1.3  
 **Implementation under test:** PR #29, branch `feat/PPS-28-srs-compliance`  
-**Code revision at recorded CI run:** `8494469f09fc0fbfcf5ab41d071536629983e2c7`  
-**CI evidence:** [GitHub Actions run 40473984177](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40473984177)  
+**Code revision at latest CI run:** `8303fb0ec42bf4aec26281f77b8e39cec970055b`  
+**CI evidence:** [GitHub Actions run 40478879386](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40478879386)  
 **Run date:** 2026-10-27
 
 ## Automated result
@@ -12,7 +12,7 @@
 | Check | Environment / command | Result |
 |---|---|---|
 | Python lint | Ubuntu 24.04, Python 3.12; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — “All checks passed!” |
-| Unit and integration tests | `pytest -q` | PASS — **105 passed in 1.31 seconds** |
+| Unit and integration tests | `pytest -q` | PASS — **106 passed in 1.42 seconds** |
 | Full review merge gate | PR #29 | **Not complete** — an independent teammate approval is still required; PR is open and not merged. |
 
 CI uses generated PCAP fixtures and mocked capture backends. It does not require root/administrator privileges or send traffic.
@@ -30,7 +30,7 @@ CI uses generated PCAP fixtures and mocked capture backends. It does not require
 | REQ-7 / TC-PRE-01 — packet rate, protocol breakdown, top five talkers | `tests/test_analysis_statistics.py`, `tests/test_presentation_dashboard.py`, `tests/test_session_integration.py` | PASS for snapshots and the 2-second CLI refresh contract using test data. Live target throughput is not measured by CI. |
 | REQ-8 / TC-PRE-02 — session report export | `tests/test_presentation_report_export.py`, `tests/test_report_pdf.py` | PASS for CSV and PDF output, content/summary, invalid destinations, and no-overwrite behavior. The SRS says CSV **or** PDF; the branch supports both. |
 | REQ-9 / TC-SEC-01 — Observer suspicious-activity events (stretch) | `tests/test_analysis_alerts.py`, `tests/test_cli.py` | PASS for tested match/non-match cases: ARP IP/MAC conflict and allowlist-based device/AP indicators. Alerts are heuristics, not proof of malicious activity. AP detection requires decoded Wi-Fi beacon frames and an explicit allowlist. |
-| REQ-10 / TC-CAP-03 — concurrent capture (stretch) | `tests/test_concurrent_capture.py`, `tests/test_storage_query.py`, `tests/test_session_integration.py` | PASS for synthetic concurrent file sources, aggregation, cancellation/error paths and mixed-link-type storage. Two actual live adapters have not been tested simultaneously. |
+| REQ-10 / TC-CAP-03 — concurrent capture (stretch) | `tests/test_concurrent_capture.py`, `tests/test_storage_query.py`, `tests/test_session_integration.py` | PASS for synthetic concurrent file sources, aggregation, cancellation/error paths, mixed-link-type storage, and Ctrl+C cleanup which stops and joins peer backends. Two actual live adapters have not been tested simultaneously. |
 
 ## Non-functional and security verification
 
@@ -55,4 +55,4 @@ CI uses generated PCAP fixtures and mocked capture backends. It does not require
 
 ## Overall disposition
 
-The code-level backend work and synthetic demo path pass the recorded automated CI run. The SRS is **not yet fully hardware-verified**: live-source support, Raspberry Pi performance/drop behavior, and platform-specific checks remain open, and PR #29 must receive independent review before becoming merged `main` functionality.
+The code-level backend work and synthetic demo path pass CI run 40478879386: Ruff passed and 106 tests passed in 1.42 seconds. The SRS is **not yet fully hardware-verified**: live-source support, Raspberry Pi performance/drop behavior, and platform-specific checks remain open, and PR #29 must receive independent review before becoming merged `main` functionality.
