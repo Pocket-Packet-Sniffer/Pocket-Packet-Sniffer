@@ -49,7 +49,7 @@ The following are **carry-over/release-readiness work**, not hidden blockers or 
 | #10 — live-interface/platform security | Run authorized live-interface startup/permission checks and target OS/driver/security checks; verify Windows ACLs, Wi-Fi mode/BLE support only if the platform is in scope, and Raspberry Pi performance if targeted. | M4 — Release Readiness |
 | #16 — repository protection/security controls | Maintainer must enable/verify main-branch PR review, conversation resolution, the observed `Lint and test` check, and available secret-scanning/Dependabot controls. | M4 — Release Readiness |
 | Report format | The approved SRS REQ-8 accepts CSV or PDF; the main baseline's CSV export satisfies that literal requirement. The compliance branch adds PDF as a second format. | PR #29 CI passed (Ruff + 104 tests); independent review pending |
-| #13 and #14 | Both are low-priority stretch requirements in the SRS. Implementation candidates, synthetic tests and CLI wiring are on `feat/PPS-28-srs-compliance`; they must pass CI and independent review before the issues close. Live Wi-Fi/BLE adapter validation remains separate. | Review branch; CI/review pending |
+| #13 and #14 | Both are low-priority stretch requirements in the SRS. Implementations, synthetic tests and CLI wiring are on `feat/PPS-28-srs-compliance`; PR #29 passes CI (Ruff + 104 tests). They close after reviewed merge. Live Wi-Fi/BLE adapter validation remains separate. | Review branch; CI passed; independent review pending |
 
 ## Sprint 2 focus
 
