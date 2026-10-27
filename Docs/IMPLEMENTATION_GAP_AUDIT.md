@@ -1,6 +1,6 @@
 # SRS v1.3 implementation-gap audit
 
-**Basis:** the approved `Pocket_Packet_Sniffer_SRS.pdf` (Version 1.3), Sections 1-6, checked against repository source and tests. This is a code-level audit, not a claim that untested hardware works. The changes described below are on the `feat/PPS-28-srs-compliance` review branch and must pass CI/review before being treated as merged delivery.
+**Basis:** the approved `Pocket_Packet_Sniffer_SRS.pdf` (Version 1.3), Sections 1-6, checked against repository source and tests. This is a code-level audit, not a claim that untested hardware works. The changes described below are on review branch `feat/PPS-28-srs-compliance`. CI run [40478879386](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40478879386) passed Ruff and 106 tests on commit `8303fb0ec42bf4aec26281f77b8e39cec970055b`. The PR remains unmerged pending formal independent approval.
 
 ## Functional requirements
 
