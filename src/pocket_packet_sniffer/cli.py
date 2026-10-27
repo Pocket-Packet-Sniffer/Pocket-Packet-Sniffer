@@ -178,6 +178,8 @@ def _run_capture(args: argparse.Namespace) -> int:
                 f"stored={child.packets_stored} ignored={child.packets_ignored} "
                 f"exit_code={child.exit_code}"
             )
+        for error in result.errors:
+            print(f"error: concurrent capture session failed: {error}", file=sys.stderr)
     if not args.live_dashboard:
         print(render_stats(session.statistics_snapshot()))
     return result.exit_code
