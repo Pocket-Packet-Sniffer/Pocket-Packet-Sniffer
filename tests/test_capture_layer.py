@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import struct
+import sqlite3
 import types
 from datetime import datetime, timezone
 from pathlib import Path
@@ -263,3 +264,36 @@ def test_project_owned_callback_error_includes_sanitized_reason(tmp_path):
 
     with pytest.raises(CaptureCallbackError, match=r"CaptureStartupError: storage directory is unavailable"):
         PcapFileCapturer(pcap).capture(broken, Event())
+
+
+
+def test_callback_error_includes_safe_storage_root_cause(tmp_path):
+    from pocket_packet_sniffer.storage.errors import RepositoryError
+
+    pcap = make_pcap(tmp_path / "storage-cause.pcap", [b"frame"])
+
+    def broken(_record):
+        try:
+            raise sqlite3.OperationalError("no such table: capture_files")
+        except sqlite3.OperationalError as cause:
+            raise RepositoryError("metadata storage failed while saving packet") from cause
+
+    with pytest.raises(CaptureCallbackError) as error:
+        PcapFileCapturer(pcap).capture(broken, Event())
+
+    assert "RepositoryError: metadata storage failed while saving packet" in str(error.value)
+    assert "OperationalError: no such table: capture_files" in str(error.value)
+    assert error.value.__cause__ is not None
+
+
+def test_callback_error_does_not_disclose_arbitrary_custom_text(tmp_path):
+    pcap = make_pcap(tmp_path / "custom-cause.pcap", [b"secret-payload"])
+
+    def broken(_record):
+        raise RuntimeError("secret-payload must not appear in errors")
+
+    with pytest.raises(CaptureCallbackError) as error:
+        PcapFileCapturer(pcap).capture(broken, Event())
+
+    assert "RuntimeError" in str(error.value)
+    assert "secret-payload" not in str(error.value)
