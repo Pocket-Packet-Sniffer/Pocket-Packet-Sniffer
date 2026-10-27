@@ -799,3 +799,59 @@ tbody tr { transition:background .15s ease; }
 .protocol-card,.talker-card,.recent-card,.explorer { padding:21px; }
 .warning { margin-bottom:20px; }
 @media(max-width:760px) { .flow-panel { padding:15px; } .flow-canvas { grid-template-columns:minmax(0,1fr); gap:15px; } .flow-middle { min-height:95px; } .flow-lines { inset:0 10%; flex-direction:column; } .flow-core { width:76px;height:76px; } .flow-column { gap:8px; } .flow-node { font-size:10px; } .flow-footnote { margin-top:6px; } }
+/* SOC reference alignment: left filter rail, global search, flow-first two-column workspace */
+.topbar { display:grid; grid-template-columns:auto minmax(160px,1fr) minmax(240px,420px) auto; gap:22px; align-items:center; }
+.global-search { display:flex; align-items:center; gap:10px; min-width:0; padding:10px 13px; color:#7f94ac; border:1px solid #2a3b50; border-radius:8px; background:#111b29; }
+.global-search input { min-width:0; width:100%; color:#e4edf8; border:0; outline:0; background:transparent; font:inherit; font-size:12px; }
+.global-search input::placeholder { color:#778ba3; }
+.global-search kbd { flex:0 0 auto; padding:3px 6px; color:#8195ad; border:1px solid #2b3c51; border-radius:4px; font-size:9px; background:#0b1420; }
+.sidebar-filters { margin:22px 0 0; padding:0 0 16px; border-bottom:1px solid #1d2b3d; }
+.sidebar-filters .nav-caption { margin-bottom:11px; }
+.side-filter { display:grid; grid-template-columns:14px minmax(0,1fr) auto; align-items:center; gap:8px; width:100%; padding:8px 9px; color:#a7b7ca; text-align:left; border:1px solid transparent; border-radius:6px; background:transparent; cursor:pointer; font-size:11px; }
+.side-filter:hover { color:#e7eef8; background:#142235; }
+.side-filter.chosen { color:#d9f9f1; border-color:#28594f; background:#12312e; }
+.side-filter small { color:#71869f; font-size:10px; font-variant-numeric:tabular-nums; }
+.filter-check { display:grid; place-items:center; width:13px; height:13px; color:#061b18; border:1px solid #41536a; border-radius:3px; font-size:9px; background:#111c2a; }
+.chosen .filter-check { border-color:#5eead4; background:#5eead4; }
+.filter-color-1 { border-color:#4775a7; }.filter-color-2 { border-color:#8066bd; }.filter-color-3 { border-color:#9b7847; }
+.sidebar-filter-note { display:flex; align-items:flex-start; gap:7px; margin:12px 8px 0; color:#71869e; font-size:9px; line-height:1.5; }
+.sidebar-filter-note svg { flex:0 0 auto; color:#5eead4; }
+.network-grid { display:grid; grid-template-columns:minmax(0,1.8fr) minmax(280px,.9fr); align-items:stretch; gap:13px; margin:14px 0; }
+.network-grid .flow-panel { margin:0; min-width:0; }
+.network-grid .flow-canvas { grid-template-columns:minmax(0,1fr) minmax(95px,.42fr) minmax(0,1fr); min-height:250px; }
+.network-grid .flow-node { padding:10px 8px; font-size:10px; }
+.network-grid .flow-middle { min-height:180px; }
+.network-grid .flow-core { width:84px; height:84px; }
+.analytics-side { display:flex; flex-direction:column; gap:13px; min-width:0; margin:14px 0; }
+.analytics-side .analytics { display:contents; }
+.analytics-side .protocol-card,.analytics-side .talker-card { min-width:0; padding:17px; }
+.analytics-side .protocol-card { flex:1 1 50%; }
+.analytics-side .talker-card { flex:1 1 50%; }
+.analytics-side .talker { padding-block:8px; }
+.analytics-side .talker-info small { margin-top:3px; }
+.analytics-side .bar { margin-top:5px; }
+.analytics-side .protocol-row { padding-block:8px; }
+.analytics-side .protocol-total strong { font-size:25px; }
+.activity-grid { margin:14px 0; }
+.capture { margin-bottom:14px; }
+.warning { border-radius:9px; }
+.page-heading { margin-bottom:16px; }
+@media (min-width:1400px) {
+  .content { padding-inline:clamp(22px,2.2vw,38px); }
+  .network-grid .flow-canvas { min-height:280px; }
+}
+@media (max-width:1150px) {
+  .topbar { grid-template-columns:auto minmax(0,1fr) auto; }
+  .global-search { grid-column:2; grid-row:2; width:100%; }
+  .top-actions { grid-column:3; grid-row:1; }
+  .network-grid { grid-template-columns:minmax(0,1fr); }
+  .analytics-side { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .analytics-side .analytics { display:contents; }
+}
+@media (max-width:760px) {
+  .topbar { display:flex; flex-wrap:wrap; gap:10px; }
+  .global-search { order:4; flex:1 0 100%; }
+  .analytics-side { display:flex; }
+  .network-grid .flow-canvas { grid-template-columns:minmax(0,1fr); }
+  .sidebar-filters { display:none; }
+}
