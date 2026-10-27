@@ -194,8 +194,10 @@ def interfaces():
 def start_capture(request: CaptureStart):
     with _capture_lock:
         thread = _capture.get("thread")
-        if _capture["state"] == "running" and thread is not None and thread.is_alive():
-            raise HTTPException(status_code=409, detail="A capture session is already running.")
+        if _capture["state"] in ("starting", "running", "stopping") and thread is not None and thread.is_alive():
+            raise HTTPException(status_code=409, detail=f"A capture session is already {_capture['state']}. Wait for it to stop before starting another.")
+        if _capture["state"] in ("starting", "running", "stopping") and (thread is None or not thread.is_alive()):
+            capture_status()
         if request.mode == "pcap":
             if not request.pcap_path or not request.pcap_path.strip():
                 raise HTTPException(status_code=422, detail="Provide an absolute path to a local classic PCAP file.")
