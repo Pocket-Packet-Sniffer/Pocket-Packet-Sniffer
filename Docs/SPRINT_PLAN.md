@@ -62,3 +62,8 @@ Several items originally planned for Sprint 2 were delivered early in PRs #19–
 
 The review/retrospective evidence and limitations are recorded in `Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md`. The record is an asynchronous maintainer closeout from repository evidence, not a claim that a live team meeting or external stakeholder demo occurred.
 
+## Addendum — 2026-10-27 backend SRS completion
+
+PR #29 (`feat: complete SRS backend functionality and demo workflow`) has since been merged into `main` at `cd80e958bf572c32126c3f222579aec638da04b7`. It adds the remaining backend features described in `Docs/IMPLEMENTATION_GAP_AUDIT.md`, including PDF export, session-scoped retrieval, metadata-only heuristic alerts, concurrent capture, and synthetic demo/benchmark tooling.
+
+Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and **106 tests in 1.87 seconds**. This is automated evidence only. Live Wi-Fi monitor mode/BLE adapter behavior, Windows ACLs, Raspberry Pi throughput/drop performance, and real simultaneous multi-interface capture remain pending target-environment validation. The web dashboard is still deferred until final backend verification and is tracked in issue #27.
