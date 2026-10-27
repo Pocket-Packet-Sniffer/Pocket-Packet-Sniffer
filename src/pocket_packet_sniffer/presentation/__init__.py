@@ -8,6 +8,7 @@ from .capture_runner import (
 )
 from .dashboard import render_stats, run_live_dashboard
 from .report_export import ReportExportError, export_session_report_csv
+from .report_pdf import export_session_report_pdf
 
 __all__ = [
     "EXIT_CAPTURE_ERROR",
@@ -15,6 +16,7 @@ __all__ = [
     "EXIT_SUCCESS",
     "ReportExportError",
     "export_session_report_csv",
+    "export_session_report_pdf",
     "render_stats",
     "run_capture_with_error_handling",
     "run_live_dashboard",
