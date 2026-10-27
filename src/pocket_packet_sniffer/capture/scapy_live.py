@@ -16,6 +16,7 @@ from .errors import (
     CaptureInterfaceError,
     CapturePermissionError,
     CaptureStartupError,
+    _callback_failure_detail,
 )
 from .models import CapturedPacket
 from .pcap_file import _validate_capture_args
@@ -172,7 +173,13 @@ class ScapyCapturer(Capturer):
                 sniffer.join()
 
             if callback_error:
-                raise CaptureCallbackError("Analysis callback failed while processing a live packet.") from callback_error[0]
+                error = callback_error[0]
+                if isinstance(error, CaptureCallbackError):
+                    raise error
+                detail = _callback_failure_detail(error)
+                raise CaptureCallbackError(
+                    f"Analysis callback failed while processing a live packet ({detail})."
+                ) from error
             backend_error = getattr(sniffer, "exception", None)
             if backend_error is not None:
                 raise _translate_backend_error(backend_error, self.interface)
