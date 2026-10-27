@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from threading import Event, Thread
 from time import time
+import uuid
 
 
 class CaptureControlError(RuntimeError):
@@ -64,11 +65,17 @@ class CaptureControl:
 
     @staticmethod
     def _private_file(path: Path, content: str) -> None:
-        """Create a private marker atomically with respect to its permissions."""
+        """Publish a fully written private marker atomically.
+
+        The temporary file is fully flushed and closed before a hard link makes
+        it visible at the final path. A watcher can therefore never mistake a
+        partially written stop request for a complete request on Windows.
+        """
+        temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
         flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
         if hasattr(os, "O_BINARY"):
             flags |= os.O_BINARY
-        descriptor = os.open(path, flags, 0o600)
+        descriptor = os.open(temporary, flags, 0o600)
         try:
             if os.name == "posix":
                 os.fchmod(descriptor, 0o600)
@@ -77,11 +84,13 @@ class CaptureControl:
                 stream.write(content)
                 stream.flush()
                 os.fsync(stream.fileno())
-        except Exception:
+            # link() creates the target only after the temporary file is closed
+            # and retains exclusive-create semantics if another process wins.
+            os.link(temporary, path)
+        finally:
             if descriptor >= 0:
                 os.close(descriptor)
-            path.unlink(missing_ok=True)
-            raise
+            temporary.unlink(missing_ok=True)
 
     def activate(self) -> None:
         """Register the active session, refusing a second owner for that ID."""
@@ -140,7 +149,12 @@ class CaptureControl:
                 return
             if self.stop_path.exists():
                 self._stop_event.set()
-                self.stop_path.unlink(missing_ok=True)
+                try:
+                    self.stop_path.unlink(missing_ok=True)
+                except OSError:
+                    # close() retries marker cleanup; a watcher must not die on
+                    # a transient Windows file-system sharing violation.
+                    pass
                 return
 
     def close(self) -> None:
