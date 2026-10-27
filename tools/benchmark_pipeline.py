@@ -14,6 +14,7 @@ from threading import Event
 from time import perf_counter
 from uuid import uuid4
 
+from create_demo_pcap import build_demo_packets
 from scapy.utils import wrpcap
 
 from pocket_packet_sniffer.analysis.parser import PacketParser
@@ -21,7 +22,6 @@ from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.application.session import CaptureSession
 from pocket_packet_sniffer.capture import PcapFileCapturer
 from pocket_packet_sniffer.storage import PcapSqliteRepository
-from create_demo_pcap import build_demo_packets
 
 
 def _positive_int(value: str) -> int:
