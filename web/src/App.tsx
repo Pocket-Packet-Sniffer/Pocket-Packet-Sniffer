@@ -91,7 +91,7 @@ export default function App() {
     return bins.map((count,i)=>({label:String(i+1),count}));
   },[rows]);
   const maxActivity=Math.max(...activityBins.map(x=>x.count),1);
-  const title=page==="Overview"?"Network overview":page==="Packets"?"Packet explorer":page==="Sessions"?"Capture sessions":page;
+  const title=page==="Overview"?"Network command center":page==="Packets"?"Packet explorer":page==="Sessions"?"Capture sessions":page;
   return <div className="app-shell">
     {menu&&<button className="scrim" onClick={()=>setMenu(false)} aria-label="Close menu"/>}
     <aside className={"sidebar "+(menu?"open":"")}>
@@ -139,6 +139,14 @@ export default function App() {
               <div className="signal-main"><div className="signal-icon"><Radio size={21}/></div><div><strong>{capture.state==="running"?"Collecting packets":capture.state==="stopping"?"Finishing capture":capture.state==="error"?"Capture needs attention":capture.state==="stopped"?"Last capture stopped":"Ready to capture"}</strong><p>{capture.interface||"Choose an adapter or replay a PCAP file"}</p></div></div>
               <div className="signal-stats"><div><small>Seen</small><strong>{capture.result?.packets_seen?.toLocaleString()??"—"}</strong></div><div><small>Stored</small><strong>{capture.result?.packets_stored?.toLocaleString()??"—"}</strong></div><div><small>Ignored</small><strong>{capture.result?.packets_ignored?.toLocaleString()??"—"}</strong></div></div>
               {capture.error&&<p className="signal-error">{capture.error}</p>}
+            </div>
+          </section>
+          <section className="flow-panel card">
+            <div className="section-head"><div><span className="section-kicker">LIVE TELEMETRY</span><h2>Network flow map</h2><p>Observed source and destination endpoints from stored packets</p></div><span className="result-count">{rows.length.toLocaleString()} packets sampled</span></div>
+            <div className="flow-canvas">
+              <div className="flow-column"><span className="flow-label">SOURCES</span>{Array.from(new Set(rows.slice(0,500).map(p=>p.source))).slice(0,4).map((ip,i)=><div className="flow-node source-node" key={ip}><i/>{ip}</div>)}{!rows.length&&<div className="flow-empty">Waiting for packet data</div>}</div>
+              <div className="flow-middle"><div className="flow-lines"><i/><i/><i/><i/></div><div className="flow-core"><Network size={23}/><span>PACKET<br/>INSPECTOR</span></div><div className="flow-footnote">METADATA ONLY</div></div>
+              <div className="flow-column destination-column"><span className="flow-label">DESTINATIONS</span>{Array.from(new Set(rows.slice(0,500).map(p=>p.destination))).slice(0,4).map((ip,i)=><div className={"flow-node destination-node flow-tone-"+(i%4)} key={ip}><i/>{ip}</div>)}{!rows.length&&<div className="flow-empty">No endpoints yet</div>}</div>
             </div>
           </section>
           <section className="analytics">
