@@ -109,6 +109,7 @@ class ScapyCapturer(Capturer):
                     interface=str(sniffed_on),
                     link_type=int(link_type),
                     original_length=max(len(raw), int(getattr(packet, "wirelen", len(raw)) or len(raw))),
+                    capture_backend=self.name,
                 )
                 on_packet(record)
                 with count_lock:
