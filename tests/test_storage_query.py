@@ -88,6 +88,32 @@ def test_query_filters_protocol_address_and_inclusive_time_window(tmp_path):
     assert repository.query(protocol="ICMP") == []
 
 
+def test_session_scoped_query_and_session_listing(tmp_path):
+    repository = PcapSqliteRepository(tmp_path)
+    older = record(
+        record_id="older-record",
+        session_id="older-session",
+        timestamp=BASE_TIME,
+    )
+    newer = record(
+        record_id="newer-record",
+        session_id="newer-session",
+        timestamp=BASE_TIME + timedelta(seconds=5),
+    )
+    repository.save(older)
+    repository.save(newer)
+
+    assert repository.query(session_id="older-session") == [older]
+    assert repository.query(session_id="newer-session", protocol="tcp") == [newer]
+    with pytest.raises(InvalidRecordError, match="session_id filter"):
+        repository.query(session_id="  ")
+
+    sessions = repository.list_sessions()
+    assert [summary.session_id for summary in sessions] == ["newer-session", "older-session"]
+    assert [summary.packet_count for summary in sessions] == [1, 1]
+    assert sessions[0].last_packet_at == newer.timestamp
+
+
 def test_query_matches_source_and_destination_addresses(tmp_path):
     repository = PcapSqliteRepository(tmp_path)
     packet = record()
