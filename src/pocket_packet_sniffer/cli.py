@@ -8,7 +8,10 @@ from datetime import datetime
 from pathlib import Path
 from threading import Event, Thread
 
-from pocket_packet_sniffer.analysis.alerts import AlertPublisher, SuspiciousActivityDetector
+from pocket_packet_sniffer.analysis.alerts import (
+    AlertPublisher,
+    SuspiciousActivityDetector,
+)
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.application.session import CaptureSession
