@@ -13,6 +13,7 @@ from pocket_packet_sniffer.storage.models import PacketRecord, SessionSummary
 def _pdf_text(value: object) -> str:
     """Return PDF literal-string-safe ASCII without including packet payloads."""
     text = str(value).encode("ascii", "replace").decode("ascii")
+    text = text.replace("\\r", " ").replace("\\n", " ").replace("\\t", " ")
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
