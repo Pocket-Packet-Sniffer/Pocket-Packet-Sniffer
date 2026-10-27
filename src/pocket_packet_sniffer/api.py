@@ -155,23 +155,39 @@ def interfaces():
             except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
                 windows_by_guid = {}
 
-        by_name = {normalize(item.get("name")): item for item in details if item.get("name")}
+        def extract_guid(value):
+            value = str(value or "")
+            if "{" in value and "}" in value:
+                return value[value.find("{") + 1:value.rfind("}")].strip().casefold()
+            return value.strip().strip("{}").casefold()
+
+        # Scapy versions differ in whether Windows adapter metadata is keyed
+        # by the NPF path, GUID, or friendly name. Index all available forms.
+        details_by_guid = {}
+        by_name = {}
+        for item in details or []:
+            item_name = str(item.get("name") or "")
+            if item_name:
+                by_name[normalize(item_name)] = item
+            for key in ("name", "guid", "interface_guid", "netid", "network_name"):
+                value = item.get(key)
+                if value:
+                    details_by_guid[extract_guid(value)] = item
+
         result = []
         for name in raw_names:
-            item = by_name.get(normalize(name), {})
-            guid = ""
-            if "NPF_" in name.upper() and "{" in name and name.endswith("}"):
-                guid = name[name.find("{") + 1:-1].casefold()
+            guid = extract_guid(name) if "NPF_" in name.upper() and "{" in name and "}" in name else ""
+            item = details_by_guid.get(guid) or by_name.get(normalize(name), {})
             win = windows_by_guid.get(guid, {})
-            ips = item.get("ips") or win.get("IPs") or []
+            ips = item.get("ips") or item.get("ip") or win.get("IPs") or []
             if isinstance(ips, str):
                 ips = [ips]
             description = (
                 win.get("InterfaceDescription") or win.get("Name")
-                or item.get("description") or item.get("network_name") or name
+                or item.get("description") or item.get("network_name") or item.get("name") or name
             )
-            status = win.get("Status") or "Unknown"
-            friendly_name = win.get("Name") or description
+            friendly_name = win.get("Name") or item.get("network_name") or item.get("name") or description
+            status = win.get("Status") or item.get("status") or ("Up" if ips else "Unknown")
             is_pseudo = any(token in f"{description} {friendly_name} {name}".casefold() for token in ("wan miniport", "network monitor", "loopback", "wi-fi direct"))
             ipv4 = any(isinstance(ip, str) and ip.count(".") == 3 and not ip.startswith(("127.", "169.254.")) for ip in ips)
             result.append({
@@ -183,7 +199,7 @@ def interfaces():
                 "status": status,
                 "interface_guid": guid or None,
                 "capture_candidate": status == "Up" and not is_pseudo,
-                "recommended": status == "Up" and not is_pseudo and ipv4 and bool(win.get("InterfaceDescription")),
+                "recommended": status == "Up" and not is_pseudo and ipv4,
             })
         return {"interfaces": result}
     except Exception as exc:
