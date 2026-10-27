@@ -31,6 +31,7 @@ class PacketRecord:
     link_type: int = 1  # Ethernet, the PCAP/pcap-linktypes default.
     original_length: int | None = None
     record_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    interface: str = "unknown"
 
     def __post_init__(self) -> None:
         if not isinstance(self.session_id, str) or not self.session_id.strip():
@@ -39,6 +40,8 @@ class PacketRecord:
             raise InvalidRecordError("record_id must be a non-empty string")
         if not isinstance(self.protocol, str) or not self.protocol.strip():
             raise InvalidRecordError("protocol must be a non-empty string")
+        if not isinstance(self.interface, str) or not self.interface.strip():
+            raise InvalidRecordError("interface must be a non-empty string")
         for name in ("source_address", "destination_address"):
             value = getattr(self, name)
             if value is not None and (not isinstance(value, str) or not value.strip()):
@@ -56,7 +59,7 @@ class PacketRecord:
             raise InvalidRecordError("timestamp is outside the supported PCAP range") from exc
         if not 0 <= timestamp_us <= 0xFFFFFFFF * 1_000_000 + 999_999:
             raise InvalidRecordError("timestamp must fit the classic PCAP seconds field")
-        for name, value in (("session_id", self.session_id), ("record_id", self.record_id), ("protocol", self.protocol)):
+        for name, value in (("session_id", self.session_id), ("record_id", self.record_id), ("protocol", self.protocol), ("interface", self.interface)):
             try:
                 value.encode("utf-8")
             except UnicodeEncodeError as exc:
@@ -83,6 +86,7 @@ class PacketRecord:
         if len(self.packet_data) > 65535:
             raise InvalidRecordError("packet_data exceeds the configured PCAP snap length (65535 bytes)")
         object.__setattr__(self, "protocol", self.protocol.strip().upper())
+        object.__setattr__(self, "interface", self.interface.strip())
         object.__setattr__(self, "timestamp", utc_timestamp)
         object.__setattr__(self, "original_length", original)
 
