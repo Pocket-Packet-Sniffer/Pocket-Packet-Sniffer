@@ -24,6 +24,7 @@ from pocket_packet_sniffer.presentation import (
     render_stats,
     run_live_dashboard,
 )
+from pocket_packet_sniffer.presentation.capture_control import CaptureControl, CaptureControlError
 from pocket_packet_sniffer.presentation.report_pdf import export_session_report_pdf
 from pocket_packet_sniffer.storage import PcapSqliteRepository
 from pocket_packet_sniffer.storage.errors import RepositoryError
@@ -80,6 +81,10 @@ def build_parser() -> argparse.ArgumentParser:
     query = commands.add_parser("query", help="query local capture metadata")
     sessions = commands.add_parser("sessions", help="list saved capture-session summaries")
     sessions.add_argument("--storage-dir", type=Path, default=Path("captures"))
+
+    stop = commands.add_parser("stop", help="request graceful stop of an active capture")
+    stop.add_argument("--storage-dir", type=Path, default=Path("captures"))
+    stop.add_argument("--session-id", required=True, help="session ID printed when capture started")
 
     query.add_argument("--storage-dir", type=Path, default=Path("captures"))
     query.add_argument("--session-id", help="restrict results to one saved session")
@@ -229,6 +234,23 @@ def _run_sessions(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def _run_stop(args: argparse.Namespace) -> int:
+    """Request cooperative cancellation for a running capture command."""
+    try:
+        requested = CaptureControl.request_stop(args.storage_dir, args.session_id)
+    except (CaptureControlError, OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if not requested:
+        print(f"No active capture session {args.session_id!r} was found.", file=sys.stderr)
+        return 2
+    print(
+        f"Stop requested for session {args.session_id!r}; "
+        "capture will exit after the backend observes cancellation."
+    )
+    return EXIT_SUCCESS
+
+
 def _run_query(args: argparse.Namespace) -> int:
     if args.start is not None and args.end is not None and args.start > args.end:
         print("error: --start must not be after --end", file=sys.stderr)
@@ -275,6 +297,8 @@ def main(argv: list[str] | None = None) -> int:
             return _run_capture_multi(args)
         if args.command == "sessions":
             return _run_sessions(args)
+        if args.command == "stop":
+            return _run_stop(args)
         if args.command == "query":
             return _run_query(args)
         if args.command == "export":
