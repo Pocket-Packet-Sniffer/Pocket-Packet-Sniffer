@@ -101,7 +101,7 @@ export default function App() {
       <div className="sidebar-bottom"><div className="privacy-card"><ShieldCheck size={17}/><div><strong>Privacy first</strong><small>Local processing</small></div><Check size={15}/></div><div className="operator"><div className="avatar">VK</div><div><strong>Local operator</strong><small>Personal workspace</small></div></div></div>
     </aside>
     <main className="main">
-      <header className="topbar"><button className="icon-btn menu-btn" onClick={()=>setMenu(true)} aria-label="Open menu"><Menu size={20}/></button><div className="crumb">Workspace <span>/</span> <strong>{title}</strong></div><div className="top-actions"><div className="preview-pill"><i/> {online?"BACKEND CONNECTED":"CONNECTING"}</div></div></header>
+      <header className="topbar"><button className="icon-btn menu-btn" onClick={()=>setMenu(true)} aria-label="Open menu"><Menu size={20}/></button><div className="crumb">Workspace <span>/</span> <strong>{title}</strong></div><label className="global-search"><Search size={16}/><input value={query} onChange={e=>{setQuery(e.target.value);if(e.target.value)setPage("Packets");}} placeholder="Search packets, IP addresses, protocols..."/><kbd>⌘ K</kbd></label><div className="top-actions"><div className="preview-pill"><i/> {online?"BACKEND CONNECTED":"CONNECTING"}</div></div></header>
       <div className="content">
         <div className="warning"><div className="warning-icon"><Activity size={17}/></div><div><strong>{online?"Python backend connected":"Python backend unavailable"}</strong><p>{online?`Auto-refreshing stored data · ${overview.total_packets.toLocaleString()} packets`:error||"Start the API with: python -m uvicorn pocket_packet_sniffer.api:app --reload"}</p></div><span className="offline-tag">{online?"BACKEND ONLINE":"BACKEND OFFLINE"}</span></div>
         <div className="page-heading"><div><div className="eyebrow"><span/> LOCAL NETWORK MONITOR</div><h1>{title}<em>.</em></h1><p>Inspect stored packet metadata and capture sessions.</p></div><div className="heading-buttons"><button className="btn secondary" onClick={()=>exportCsv(filtered)}><ArrowDownToLine size={16}/> Export CSV</button><button className="btn primary" onClick={()=>setPage("Packets")}><Search size={16}/> Explore packets</button></div></div>
@@ -125,6 +125,19 @@ export default function App() {
             <Metric title="Packet rate" value="—" unit="not measured" sub="Not provided by current API" icon={<Radio size={17}/>} color="purple"/>
             <Metric title="Capture sessions" value={String(overview.active_sessions)} sub="Recorded sessions" icon={<Network size={17}/>} color="orange"/>
           </section>
+          <section className="network-grid">
+          <div className="flow-panel card">
+            <div className="section-head"><div><span className="section-kicker">LIVE TELEMETRY</span><h2>Network flow map</h2><p>Observed source and destination endpoints from stored packets</p></div><span className="result-count">{rows.length.toLocaleString()} packets sampled</span></div>
+            <div className="flow-canvas">
+              <div className="flow-column"><span className="flow-label">SOURCES</span>{Array.from(new Set(rows.slice(0,500).map(p=>p.source))).slice(0,4).map((ip,i)=><div className="flow-node source-node" key={ip}><i/>{ip}</div>)}{!rows.length&&<div className="flow-empty">Waiting for packet data</div>}</div>
+              <div className="flow-middle"><div className="flow-lines"><i/><i/><i/><i/></div><div className="flow-core"><Network size={23}/><span>PACKET<br/>INSPECTOR</span></div><div className="flow-footnote">METADATA ONLY</div></div>
+              <div className="flow-column destination-column"><span className="flow-label">DESTINATIONS</span>{Array.from(new Set(rows.slice(0,500).map(p=>p.destination))).slice(0,4).map((ip,i)=><div className={"flow-node destination-node flow-tone-"+(i%4)} key={ip}><i/>{ip}</div>)}{!rows.length&&<div className="flow-empty">No endpoints yet</div>}</div>
+            </div>
+          </div>
+          <div className="analytics-side">
+            <div className="card protocol-card"><div className="section-head"><div><h2>Protocol distribution</h2><p>Classification of stored packets</p></div></div><div className="protocol-total"><strong>{overview.total_packets.toLocaleString()}</strong><span>recorded packets</span></div><div className="stacked">{protocols.map(([n,c],i)=><i key={n} className={["mint","blue","purple","orange","gray"][i%5]} style={{width:(overview.total_packets?c/overview.total_packets*100:0)+"%"}}/>)}</div><div className="protocol-list">{protocols.map(([n,c],i)=><div className="protocol-row" key={n}><i className={["mint","blue","purple","orange","gray"][i%5]}/><span>{n}</span><strong>{c.toLocaleString()}</strong><small>{overview.total_packets?(c/overview.total_packets*100).toFixed(1):0}%</small></div>)}{!protocols.length&&<p>No protocol data yet.</p>}</div></div>
+            <div className="card talker-card"><div className="section-head"><div><h2>Top talkers</h2><p>Frequently observed addresses</p></div></div>{overview.top_talkers.map(([ip,count],i)=><div className="talker" key={ip}><span className={"rank "+(!i?"first":"")}>{String(i+1).padStart(2,"0")}</span><div className="talker-info"><strong>{ip}</strong><small>Observed address</small><div className="bar"><i style={{width:(count/maxTalker*100)+"%"}}/></div></div><b>{count.toLocaleString()}</b></div>)}{!overview.top_talkers.length&&<p>No address data yet.</p>}</div>
+          </div>
           <section className="activity-grid">
             <div className="card activity-card">
               <div className="section-head"><div><h2>Traffic activity</h2><p>Packet distribution across the latest stored sample</p></div><span className="live-sample"><i/>{rows.length.toLocaleString()} sampled</span></div>
@@ -140,18 +153,6 @@ export default function App() {
               <div className="signal-stats"><div><small>Seen</small><strong>{capture.result?.packets_seen?.toLocaleString()??"—"}</strong></div><div><small>Stored</small><strong>{capture.result?.packets_stored?.toLocaleString()??"—"}</strong></div><div><small>Ignored</small><strong>{capture.result?.packets_ignored?.toLocaleString()??"—"}</strong></div></div>
               {capture.error&&<p className="signal-error">{capture.error}</p>}
             </div>
-          </section>
-          <section className="flow-panel card">
-            <div className="section-head"><div><span className="section-kicker">LIVE TELEMETRY</span><h2>Network flow map</h2><p>Observed source and destination endpoints from stored packets</p></div><span className="result-count">{rows.length.toLocaleString()} packets sampled</span></div>
-            <div className="flow-canvas">
-              <div className="flow-column"><span className="flow-label">SOURCES</span>{Array.from(new Set(rows.slice(0,500).map(p=>p.source))).slice(0,4).map((ip,i)=><div className="flow-node source-node" key={ip}><i/>{ip}</div>)}{!rows.length&&<div className="flow-empty">Waiting for packet data</div>}</div>
-              <div className="flow-middle"><div className="flow-lines"><i/><i/><i/><i/></div><div className="flow-core"><Network size={23}/><span>PACKET<br/>INSPECTOR</span></div><div className="flow-footnote">METADATA ONLY</div></div>
-              <div className="flow-column destination-column"><span className="flow-label">DESTINATIONS</span>{Array.from(new Set(rows.slice(0,500).map(p=>p.destination))).slice(0,4).map((ip,i)=><div className={"flow-node destination-node flow-tone-"+(i%4)} key={ip}><i/>{ip}</div>)}{!rows.length&&<div className="flow-empty">No endpoints yet</div>}</div>
-            </div>
-          </section>
-          <section className="analytics">
-            <div className="card protocol-card"><div className="section-head"><div><h2>Protocol distribution</h2><p>Classification of stored packets</p></div></div><div className="protocol-total"><strong>{overview.total_packets.toLocaleString()}</strong><span>recorded packets</span></div><div className="stacked">{protocols.map(([n,c],i)=><i key={n} className={["mint","blue","purple","orange","gray"][i%5]} style={{width:(overview.total_packets?c/overview.total_packets*100:0)+"%"}}/>)}</div><div className="protocol-list">{protocols.map(([n,c],i)=><div className="protocol-row" key={n}><i className={["mint","blue","purple","orange","gray"][i%5]}/><span>{n}</span><strong>{c.toLocaleString()}</strong><small>{overview.total_packets?(c/overview.total_packets*100).toFixed(1):0}%</small></div>)}{!protocols.length&&<p>No protocol data yet.</p>}</div></div>
-            <div className="card talker-card"><div className="section-head"><div><h2>Top talkers</h2><p>Frequently observed addresses</p></div></div>{overview.top_talkers.map(([ip,count],i)=><div className="talker" key={ip}><span className={"rank "+(!i?"first":"")}>{String(i+1).padStart(2,"0")}</span><div className="talker-info"><strong>{ip}</strong><small>Observed address</small><div className="bar"><i style={{width:(count/maxTalker*100)+"%"}}/></div></div><b>{count.toLocaleString()}</b></div>)}{!overview.top_talkers.length&&<p>No address data yet.</p>}</div>
           </section>
           <section className="card recent-card"><div className="section-head"><div><h2>Recent packets</h2><p>Latest stored records</p></div><button className="link-button" onClick={()=>setPage("Packets")}>View all →</button></div><PacketTable rows={rows.slice(0,8)}/></section>
         </>}
