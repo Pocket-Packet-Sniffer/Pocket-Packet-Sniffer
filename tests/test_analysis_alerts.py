@@ -70,6 +70,19 @@ def test_unrecognized_access_point_requires_allowlist():
     assert events[0].evidence == {"bssid": "02:00:00:00:00:02"}
 
 
+def test_non_match_does_not_emit_an_alert_without_inventory_match():
+    publisher = AlertPublisher()
+    events: list[AlertEvent] = []
+    publisher.subscribe(events.append)
+    detector = SuspiciousActivityDetector(publisher)
+
+    detector.inspect(record("ARP", "192.0.2.1", "02:00:00:00:00:01"))
+    detector.inspect(record("ARP", "192.0.2.1", "02:00:00:00:00:01"))
+    detector.inspect(record("TCP", "192.0.2.10", "02:00:00:00:00:10"))
+
+    assert events == []
+
+
 def test_observer_failure_does_not_interrupt_other_subscribers():
     publisher = AlertPublisher()
     delivered: list[AlertEvent] = []
