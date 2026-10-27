@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from threading import Event, Lock
 from typing import TextIO
 
+from pocket_packet_sniffer.analysis.alerts import AlertBus, SuspiciousActivityDetector
 from pocket_packet_sniffer.analysis.models import PacketRecord as AnalyzedPacket
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import PacketAnalyzer
@@ -49,6 +50,8 @@ class CaptureSession:
         analyzer: PacketAnalyzer | None = None,
         statistics: TrafficStatistics | None = None,
         on_record: Callable[[AnalyzedPacket], None] | None = None,
+        alert_bus: AlertBus | None = None,
+        detector: SuspiciousActivityDetector | None = None,
     ) -> None:
         self.capturer = capturer
         self.repository = repository
@@ -58,6 +61,10 @@ class CaptureSession:
         self.analyzer = analyzer or PacketParser()
         self.statistics = statistics or TrafficStatistics()
         self.on_record = on_record
+        self.alert_bus = alert_bus
+        self.detector = detector if detector is not None else (
+            SuspiciousActivityDetector() if alert_bus is not None else None
+        )
         self._lock = Lock()
         self._packets_seen = 0
         self._packets_stored = 0
@@ -84,9 +91,13 @@ class CaptureSession:
             packet_data=captured.packet_data,
             link_type=captured.link_type,
             original_length=captured.original_length,
+            interface=analyzed.interface,
         )
         self.repository.save(stored)
         self.statistics.observe(analyzed)
+        if self.detector is not None and self.alert_bus is not None:
+            for alert in self.detector.inspect(analyzed):
+                self.alert_bus.publish(alert)
         with self._lock:
             self._packets_stored += 1
 
