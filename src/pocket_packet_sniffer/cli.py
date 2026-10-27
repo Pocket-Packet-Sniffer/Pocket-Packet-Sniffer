@@ -98,7 +98,7 @@ def build_parser() -> argparse.ArgumentParser:
 def _run_capture(args: argparse.Namespace) -> int:
     has_live_source = bool(args.interface or args.multi_interface)
     if args.live_dashboard and not has_live_source:
-        print("error: --live-dashboard requires an interface or PCAP capture source", file=sys.stderr)
+        print("error: --live-dashboard requires --interface or --multi-interface", file=sys.stderr)
         return 2
     if args.multi_interface is not None and len(args.multi_interface) < 2:
         print("error: --multi-interface requires at least two interface names", file=sys.stderr)
