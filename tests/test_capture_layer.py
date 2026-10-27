@@ -122,8 +122,12 @@ def test_callback_failure_is_reported_as_capture_error(tmp_path):
     def broken(_record):
         raise RuntimeError("analysis failed")
 
-    with pytest.raises(CaptureCallbackError, match="callback failed"):
+    with pytest.raises(CaptureCallbackError, match="callback failed") as error:
         PcapFileCapturer(pcap).capture(broken, Event())
+
+    assert "RuntimeError: analysis failed" in str(error.value)
+    assert error.value.__cause__ is not None
+    assert "frame" not in str(error.value)
 
 
 def test_invalid_count_is_rejected(tmp_path):
