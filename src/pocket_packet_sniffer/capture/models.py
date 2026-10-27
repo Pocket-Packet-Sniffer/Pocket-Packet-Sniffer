@@ -20,6 +20,7 @@ class CapturedPacket:
     interface: str
     link_type: int
     original_length: int
+    capture_backend: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.timestamp, datetime) or self.timestamp.tzinfo is None:
@@ -43,4 +44,6 @@ class CapturedPacket:
             or self.original_length > 0xFFFFFFFF
         ):
             raise ValueError("original_length must be at least packet_data length and fit PCAP")
+        if self.capture_backend is not None and (not isinstance(self.capture_backend, str) or not self.capture_backend.strip()):
+            raise ValueError("capture_backend must be a non-empty string or None")
         object.__setattr__(self, "timestamp", self.timestamp.astimezone(timezone.utc))
