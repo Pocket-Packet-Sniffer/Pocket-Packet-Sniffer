@@ -221,15 +221,24 @@ def start_capture(request: CaptureStart):
 @app.post("/api/capture/stop")
 def stop_capture():
     with _capture_lock:
-        if _capture["state"] != "running":
+        state = _capture["state"]
+        thread = _capture.get("thread")
+        if state == "stopping":
+            # Idempotent stop: repeated clicks/retries return the same state
+            # instead of a misleading 409 while the driver is shutting down.
+            return {"state":"stopping","session_id":_capture["session_id"],"stop_requested":True,"worker_alive":bool(thread and thread.is_alive())}
+        if state != "running":
+            # Reconcile a worker that completed between the UI poll and click.
+            if thread is not None and not thread.is_alive():
+                capture_status()
+                return capture_status()
             raise HTTPException(status_code=409, detail="No capture session is currently running.")
         _capture["state"] = "stopping"
         stop_event = _capture.get("stop_event")
         if stop_event is not None:
             stop_event.set()
-        thread = _capture.get("thread")
-        # Report promptly; the capture worker performs driver shutdown and
-        # persists final counters without blocking this HTTP request.
+        # Never join the driver on the HTTP request thread. The worker closes
+        # the sniffer and writes final counters asynchronously.
         return {"state":"stopping","session_id":_capture["session_id"],"stop_requested":True,"worker_alive":bool(thread and thread.is_alive())}
 
 
