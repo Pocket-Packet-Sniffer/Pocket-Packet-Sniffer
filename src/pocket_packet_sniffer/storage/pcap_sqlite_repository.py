@@ -49,7 +49,7 @@ class PcapSqliteRepository(Repository):
     """
 
     def __init__(self, directory: str | os.PathLike[str], *, timeout: float = 5.0):
-        self.directory = Path(directory).expanduser()
+        self.directory = Path(directory).expanduser().resolve()
         self.database_path = self.directory / "metadata.sqlite3"
         self.timeout = timeout
         self._lock = threading.RLock()
