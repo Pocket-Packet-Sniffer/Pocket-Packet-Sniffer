@@ -47,7 +47,6 @@ def test_untrusted_wifi_beacon_emits_rogue_ap_heuristic():
 def test_alert_bus_subscribe_unsubscribe_and_isolate_observer_errors():
     bus = AlertBus()
     received = []
-    event = SuspiciousActivityDetector().inspect(record(source_mac="aa:bb:cc:dd:ee:ff"))
     # Create an event through the detector's second ARP mapping.
     detector = SuspiciousActivityDetector()
     detector.inspect(record(source_mac="aa:bb:cc:dd:ee:ff"))
