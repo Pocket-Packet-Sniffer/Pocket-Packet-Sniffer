@@ -666,3 +666,49 @@ tbody tr:hover { background: #142337; }
   .sidebar { background: #0b121d; box-shadow: 12px 0 35px #0008; }
   .scrim { background: #020711b8; }
 }
+
+
+/* Layout refinement: information-dense, operator-first console */
+.content { max-width: 1720px; margin-inline: auto; padding-inline: clamp(18px,2.3vw,36px); }
+.topbar { padding-inline: clamp(18px,2.3vw,36px); }
+.page-heading { align-items: end; }
+.page-heading h1 { font-size: clamp(28px,2.3vw,36px); line-height: 1.12; }
+.page-heading p { margin-top: 8px; }
+.capture { position: relative; overflow: hidden; }
+.capture:before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#5eead4,#7ab7ff); opacity:.8; }
+.capture-head { align-items: flex-start; }
+.capture-row { display:grid; grid-template-columns:minmax(220px,auto) minmax(260px,1fr) auto; align-items:end; gap:14px; }
+.mode-switch { align-self:end; }
+.field { min-width:0; }
+.capture-action { min-width:142px; }
+.metrics { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.analytics { grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr); align-items:stretch; }
+.lower { grid-template-columns:minmax(0,1.2fr) minmax(300px,1fr); }
+.section-head { display:flex; align-items:flex-start; justify-content:space-between; }
+.status.stopped { color:#8ca1ba; border-color:#304258; background:#172438; }
+.status.failed { color:#ffb8c0; border-color:#6c3542; background:#301b25; }
+.status.failed i { background:#fb7185; }
+.status.stopped i { background:#8195ad; }
+@media (max-width: 1120px) {
+  .capture-row { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .capture-action { grid-column:2; justify-self:end; }
+  .mode-switch { grid-column:1; grid-row:1; }
+  .field { grid-column:1 / -1; grid-row:2; }
+  .capture-action { grid-row:3; }
+  .analytics { grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width: 760px) {
+  .content { padding-inline:14px; }
+  .topbar { padding-inline:14px; }
+  .page-heading { align-items:flex-start; flex-direction:column; }
+  .heading-buttons { width:100%; flex-wrap:wrap; }
+  .capture-row { grid-template-columns:minmax(0,1fr); }
+  .mode-switch, .field, .capture-action { grid-column:1; grid-row:auto; width:100%; }
+  .capture-action { justify-self:stretch; }
+  .capture-action .btn { width:100%; justify-content:center; }
+  .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .lower { grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width: 420px) {
+  .metrics { grid-template-columns:minmax(0,1fr); }
+}
