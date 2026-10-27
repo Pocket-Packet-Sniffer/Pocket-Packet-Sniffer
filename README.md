@@ -67,6 +67,8 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 - [Capture Layer guide](Docs/CAPTURE_LAYER.md) — capture backends, typed failures, setup and limitations.
 - [End-to-end guide](Docs/END_TO_END_GUIDE.md) — CLI install/usage, layer contracts, tests and manual checks.
 - [End-to-end demo script](Docs/DEMO_SCRIPT.md) — reproducible PCAP replay, alerts, queries, CSV/PDF exports, and concurrent-capture demo.
+- [SRS/STP test execution report](Docs/TEST_EXECUTION_REPORT.md) — automated CI evidence, requirement-to-test mapping, and explicit pending hardware checks.
+- [Replay throughput benchmark](tools/benchmark_pipeline.py) — measures synthetic replay, analysis, and local storage throughput; it is not a live packet-loss test.
 
 ## Storage and query layer (PPS-04/PPS-05)
 
