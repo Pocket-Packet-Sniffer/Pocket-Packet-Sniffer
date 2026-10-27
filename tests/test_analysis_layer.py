@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
-from scapy.layers.dns import DNS, DNSQR
 from scapy.layers.bluetooth4LE import BTLE, BTLE_ADV, BTLE_ADV_IND
+from scapy.layers.dns import DNS, DNSQR
 from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt
 from scapy.layers.inet import ICMP, IP, TCP, UDP
 from scapy.layers.l2 import ARP, Ether
