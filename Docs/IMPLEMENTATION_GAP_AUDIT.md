@@ -59,8 +59,8 @@ pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.p
 
 ## Verification gate
 
-- [ ] CI Ruff check passes.
-- [ ] Full pytest suite passes, including alerts, concurrent capture, multi-link storage migration, CSV/PDF export, and the synthetic demo.
+- [x] CI Ruff check passes — [run 40472573188](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40472573188), all selected checks passed.
+- [x] Full pytest suite passes — the same CI run reports **104 passed in 0.92s**, including alerts, concurrent capture, multi-link storage migration, CSV/PDF export, capture control, and the synthetic demo.
 - [ ] A teammate reviews and approves the implementation PR before merge.
 - [ ] Perform and record authorized live-interface startup/stop tests on the intended OS/driver.
 - [ ] Record Raspberry Pi throughput/drop-rate measurements if Raspberry Pi remains a performance target.
