@@ -1,6 +1,8 @@
 from datetime import UTC, datetime
 
 from scapy.layers.dns import DNS, DNSQR
+from scapy.layers.bluetooth4LE import BTLE, BTLE_ADV, BTLE_ADV_IND
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt
 from scapy.layers.inet import ICMP, IP, TCP, UDP
 from scapy.layers.l2 import ARP, Ether
 
@@ -40,6 +42,8 @@ def test_parse_arp_packet():
     record = PacketParser().parse(captured(packet))
     assert record is not None
     assert record.protocol == "ARP"
+    assert record.source_mac == packet[ARP].hwsrc
+    assert record.destination_mac == packet[ARP].hwdst
 
 
 def test_parse_icmp_packet():
@@ -59,6 +63,33 @@ def test_parse_dns_packet():
     record = PacketParser().parse(captured(packet))
     assert record is not None
     assert record.protocol == "DNS"
+
+
+def test_parse_wifi_beacon_metadata():
+    packet = (
+        Dot11(
+            type=0,
+            subtype=8,
+            addr1="ff:ff:ff:ff:ff:ff",
+            addr2="02:00:00:00:00:20",
+            addr3="02:00:00:00:00:20",
+        )
+        / Dot11Beacon()
+        / Dot11Elt(ID="SSID", info=b"demo-network")
+    )
+    record = PacketParser().parse(captured(packet, link_type=105))
+    assert record is not None
+    assert record.protocol == "WIFI_BEACON"
+    assert record.source_mac == "02:00:00:00:00:20"
+    assert record.source == record.source_mac
+
+
+def test_parse_ble_advertisement_metadata():
+    packet = BTLE() / BTLE_ADV() / BTLE_ADV_IND(AdvA="02:00:00:00:00:30")
+    record = PacketParser().parse(captured(packet, link_type=251))
+    assert record is not None
+    assert record.protocol == "BLE_ADVERTISEMENT"
+    assert record.source_mac == "02:00:00:00:00:30"
 
 
 def test_unsupported_link_type_returns_none():
