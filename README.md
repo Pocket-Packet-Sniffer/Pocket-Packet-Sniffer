@@ -11,7 +11,7 @@ The design follows the four-layer architecture defined by the SRS and SASD:
 3. **Storage** — persists PCAP data and indexed metadata through a Repository interface.
 4. **Presentation** — provides the primary CLI for capture control, live statistics, queries, and reports.
 
-WiFi, Ethernet, and BLE remain represented in the requirements. Backend availability depends on hardware, drivers, operating system, and permissions. BLE, suspicious-activity detection, concurrent multi-backend capture, Zeek integration, and the web dashboard are stretch/optional work until implemented and validated.
+Ethernet and Scapy-supported interfaces are available when the operating system, driver, and permissions support them. This branch adds observer-based suspicious-activity heuristics, concurrent capture sessions, session listing, and synthetic PCAP demo fixtures. BLE advertisement scanning is not implemented; Wi-Fi monitor mode and target-hardware operation remain unverified. Zeek and the web dashboard are outside the current backend milestone. Alerts are heuristics, not proof of an attack.
 
 ## Requirements and project documents
 
@@ -70,8 +70,8 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 
 The Storage/Query package provides the boundary between packet analysis and presentation:
 
-- `PacketRecord` carries a session ID, record ID, timezone-aware timestamp, normalized protocol, source/destination addresses, captured bytes, PCAP link type, and original packet length.
-- `Repository` defines `save(record)`, `query(protocol, address, time_window)`, and `get_session_summary(session_id)`.
+- `PacketRecord` carries session ID, record ID, timezone-aware timestamp, normalized protocol, source/destination addresses, capture interface, captured bytes, PCAP link type, and original packet length.
+- `Repository` defines `save(record)`, filtered `query(protocol, address, time_window, session_id)`, `list_sessions()`, and `get_session_summary(session_id)`.
 - `PcapSqliteRepository` stores packet bytes in classic PCAP 2.4 files and searchable metadata in a local SQLite database (`metadata.sqlite3`). SQLite stores packet offsets and metadata, not packet payloads. Each capture session uses one link type.
 
 Example:
@@ -135,6 +135,7 @@ pocket-packet-sniffer capture --interface eth0 --storage-dir captures --live-das
 Query stored metadata and export a CSV session report:
 
 ```bash
+pocket-packet-sniffer sessions --storage-dir captures
 pocket-packet-sniffer query --storage-dir captures --protocol TCP --address 192.0.2.10
 pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv
 ```
@@ -145,4 +146,20 @@ The query command accepts optional timezone-aware `--start` and `--end` ISO-8601
 
 The integrated Capture → Analysis → Storage → Presentation/CLI workflow is merged into `main` (PR #24). The latest successful `main` CI run is [40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966): Ruff passed and `pytest -q` reported 81 passed.
 
-Known limitations remain: classic PCAP only, live capture depends on platform/driver/permissions, PDF export is not implemented by the current CLI, and live-interface/Wi-Fi-monitor/BLE/Raspberry Pi behaviour needs manual validation. Repository branch protection and plan-available security settings still require maintainer UI verification.
+Known limitations: classic PCAP only; BLE advertisement scanning is not implemented; Wi-Fi monitor mode, authorized live-interface permissions, Windows ACLs, and Raspberry Pi performance require target-environment validation. CSV satisfies the current SRS REQ-8 wording (CSV or PDF); PDF is not required by that wording. Suspicious-activity alerts are heuristics and require explicit allowlists for unknown-device and rogue-AP rules. Repository branch protection and plan-available security settings still require maintainer UI verification.
+## Synthetic end-to-end demo
+
+Generate synthetic classic-PCAP files locally (the tool does not transmit packets):
+
+~~~bash
+python tools/create_demo_pcaps.py --output-dir demo-data
+~~~
+
+Run concurrent replay through Capture, Analysis, Storage, combined statistics and the alert event bus:
+
+~~~bash
+pocket-packet-sniffer capture --multi-pcap-file demo-data/ethernet-demo.pcap demo-data/wifi-beacon-demo.pcap --storage-dir demo-captures --session-id demo-run --alerts --trusted-device 02:00:00:00:00:01 --trusted-ap 02:00:00:00:00:01 --replay-delay 0.25 --live-dashboard
+pocket-packet-sniffer sessions --storage-dir demo-captures
+~~~
+
+The Ethernet fixture deliberately contains an ARP sender IP-to-MAC conflict; the Wi-Fi fixture contains a beacon BSSID outside the configured trusted-AP list. The data is synthetic and for testing only. Use each printed backend-session ID for queries and CSV exports. Multi-interface live capture is also available when at least two supported interfaces are present, but only capture interfaces you are explicitly authorized to monitor. Each backend uses its own storage session/PCAP file because classic PCAP stores one link type per file.
