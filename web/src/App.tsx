@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Activity, ArrowDownToLine, ArrowRight, ArrowUpRight, Bell, Check, ChevronDown, CircleHelp, FileText, Filter, Gauge, HardDrive, LayoutDashboard, Menu, Network, Play, Radio, Search, Settings, ShieldCheck, Square, Wifi, X } from "lucide-react";
 
 type Packet = { id: number; time: string; protocol: string; source: string; destination: string; length: number; info: string };
@@ -105,7 +105,7 @@ export default function App() {
   </div>;
 }
 
-function Metric({ title, value, sub, icon, color, unit }: { title:string; value:string; sub:string; icon:React.ReactNode; color:string; unit?:string }) {
+function Metric({ title, value, sub, icon, color, unit }: { title:string; value:string; sub:string; icon:ReactNode; color:string; unit?:string }) {
   return <div className="metric card"><div className="metric-head"><span>{title}</span><i className={color}>{icon}</i></div><div className="metric-number">{value}<small>{unit}</small></div><div className="metric-sub"><i/>{sub}</div></div>;
 }
 
