@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-
 from threading import Event
 from time import monotonic, sleep
 
