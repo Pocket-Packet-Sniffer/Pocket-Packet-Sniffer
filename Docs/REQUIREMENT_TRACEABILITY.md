@@ -56,3 +56,8 @@ For every acceptance criterion, record:
 - any limitation or unsupported configuration.
 
 Status changes must be based on evidence, not on an issue being assigned, a branch existing, or a PR being opened. Keep this matrix synchronized as issues and tests evolve.
+
+
+## Latest backend compliance branch verification
+
+PR #29 head `8303fb0ec42bf4aec26281f77b8e39cec970055b` passed [CI run 40478879386](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40478879386): Ruff passed and pytest reported 106 passed. The PR is open and not yet merged into `main`; independent approval and target-hardware validation remain required.
