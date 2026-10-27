@@ -106,13 +106,22 @@ def interfaces():
     try:
         raw_names = list(get_if_list())
         details = get_windows_if_list() if get_windows_if_list is not None else []
-        by_name = {item.get("name"): item for item in details if item.get("name")}
+        def normalize(value):
+            return str(value or "").strip().replace("/", "\\\\").casefold()
+        by_name = {normalize(item.get("name")): item for item in details if item.get("name")}
         result = []
         for name in raw_names:
-            item = by_name.get(name, {})
+            item = by_name.get(normalize(name), {})
             ips = item.get("ips") or []
-            description = item.get("description") or item.get("network_name") or name
-            result.append({"name": name, "description": description, "ips": ips, "mac": item.get("mac")})
+            description = item.get("description") or item.get("network_name") or ""
+            result.append({
+                "name": name,
+                "description": description,
+                "ips": ips,
+                "mac": item.get("mac"),
+            })
+        # Prefer Scapy's Windows adapter metadata when its device name is
+        # available; retain raw Scapy names as a safe fallback.
         return {"interfaces": result}
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Could not enumerate capture interfaces: {exc}") from exc
