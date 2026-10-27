@@ -42,7 +42,13 @@ jobs:
       - name: Export demo report (Windows)
         if: runner.os == 'Windows'
         run: python -m pocket_packet_sniffer export --storage-dir ci-demo-captures --session-id ci-demo-session --output ci-demo.csv
-      - name: Run tests
+      - name: Run full test suite (Linux)
+        if: runner.os == 'Linux'
         env:
           PYTHONPATH: src
-        run: pytest -vv
+        run: pytest -q
+      - name: Run relative-storage replay regression (Windows)
+        if: runner.os == 'Windows'
+        env:
+          PYTHONPATH: src
+        run: pytest -q tests/test_cli.py::test_cli_replay_supports_relative_storage_directory
