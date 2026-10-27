@@ -51,7 +51,7 @@ CI uses generated PCAP fixtures and mocked capture backends. It does not require
 3. If BLE capture is claimed, test the actual BLE sniffer/HCI device and record the captured link type and decoded advertisement metadata. A parser fixture is not sufficient evidence.
 4. Run `python tools/benchmark_pipeline.py --repeats 1000 --storage-dir benchmark-captures` on the target device and record its output. Separately generate representative authorized live traffic and record packet/drop counters if the platform exposes them.
 5. Verify Windows ACLs if Windows is part of the approved support matrix.
-6. Have a teammate independently review PR #29, resolve any review feedback, and merge only after approval.
+6. Process note: PR #29 is already merged after teammate review comments were recorded (Shivanandgc: “reviewed”; sanjithramanjaneya-source: “go ahead”). They were COMMENTED reviews rather than formal APPROVE events. Confirm required-review settings in branch protection before future merges.
 
 ## Overall disposition
 
