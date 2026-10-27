@@ -24,6 +24,7 @@ class MultiCaptureSessionResult:
     session_id: str
     sessions: tuple[CaptureSessionResult, ...]
     exit_code: int
+    errors: tuple[str, ...] = ()
 
     @property
     def packets_seen(self) -> int:
@@ -98,9 +99,15 @@ class MultiCaptureSession:
         results: list[CaptureSessionResult | None] = [None] * len(self.sessions)
         result_lock = Lock()
         interrupted = False
+        errors: list[str | None] = [None] * len(self.sessions)
 
         def run_session(index: int, session: CaptureSession) -> None:
-            result = session.run(stop_event, count=count)
+            try:
+                result = session.run(stop_event, count=count)
+            except Exception as exc:
+                result = session.result(2)
+                errors[index] = f"{type(exc).__name__}: {exc}"
+                stop_event.set()
             with result_lock:
                 results[index] = result
             if result.exit_code != EXIT_SUCCESS:
@@ -136,4 +143,9 @@ class MultiCaptureSession:
             (result.exit_code for result in completed if result.exit_code != EXIT_SUCCESS),
             EXIT_SUCCESS,
         )
-        return MultiCaptureSessionResult(self.session_id, completed, exit_code)
+        return MultiCaptureSessionResult(
+            self.session_id,
+            completed,
+            exit_code,
+            tuple(error for error in errors if error is not None),
+        )
