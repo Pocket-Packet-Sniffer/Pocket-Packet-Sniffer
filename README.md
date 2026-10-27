@@ -146,6 +146,8 @@ The query command accepts optional timezone-aware `--start` and `--end` ISO-8601
 
 The integrated Capture → Analysis → Storage → Presentation/CLI workflow is merged into `main` (PR #24). The latest successful `main` CI run is [40357674966](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40357674966): Ruff passed and `pytest -q` reported 81 passed.
 
+The backend completion branch is under review in [PR #31](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/pull/31). Its CI run [40477786175](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40477786175) passed Ruff and 95 tests. This branch adds session/interface persistence, session listing, observer alerts, concurrent capture/replay, Wi-Fi beacon metadata parsing, and a synthetic demo. It is not yet merged into `main`.
+
 Known limitations: classic PCAP only; BLE advertisement scanning is not implemented; Wi-Fi monitor mode, authorized live-interface permissions, Windows ACLs, and Raspberry Pi performance require target-environment validation. CSV satisfies the current SRS REQ-8 wording (CSV or PDF); PDF is not required by that wording. Suspicious-activity alerts are heuristics and require explicit allowlists for unknown-device and rogue-AP rules. Repository branch protection and plan-available security settings still require maintainer UI verification.
 ## Synthetic end-to-end demo
 
