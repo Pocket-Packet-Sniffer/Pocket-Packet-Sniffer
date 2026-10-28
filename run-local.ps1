@@ -25,6 +25,6 @@ Write-Host ""
 Write-Host "If live capture fails on Windows, close these windows and relaunch PowerShell as Administrator."
 Write-Host "Keep both terminal windows open while using the dashboard."
 
-Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoExit", "-ExecutionPolicy", "Bypass", "-Command", $backendCommand)
+Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoExit", "-Command", $backendCommand)
 Start-Sleep -Seconds 2
-Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoExit", "-ExecutionPolicy", "Bypass", "-Command", $frontendCommand)
+Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoExit", "-Command", $frontendCommand)
