@@ -52,12 +52,15 @@ def test_cli_capture_query_and_export_using_local_pcap(tmp_path, capsys):
     assert "stored=1" in captured.out
     assert "TCP" in captured.out
     assert SECRET_PAYLOAD.decode() not in captured.out
+    assert SECRET_PAYLOAD.decode() not in captured.err
 
     code = main(["sessions", "--storage-dir", str(storage)])
     sessions_result = capsys.readouterr()
     assert code == 0
     assert "cli-session" in sessions_result.out
     assert "1 session(s)" in sessions_result.out
+    assert SECRET_PAYLOAD.decode() not in sessions_result.out
+    assert SECRET_PAYLOAD.decode() not in sessions_result.err
 
     code = main(
         [
@@ -70,6 +73,7 @@ def test_cli_capture_query_and_export_using_local_pcap(tmp_path, capsys):
     assert "192.0.2.5" in query_result.out
     assert "1 packet(s)" in query_result.out
     assert SECRET_PAYLOAD.decode() not in query_result.out
+    assert SECRET_PAYLOAD.decode() not in query_result.err
 
     code = main(
         [
@@ -108,6 +112,7 @@ def test_cli_capture_query_and_export_using_local_pcap(tmp_path, capsys):
     pdf_result = capsys.readouterr()
     assert code == 0
     assert "PDF" in pdf_result.out
+    assert SECRET_PAYLOAD not in pdf_report.read_bytes()
     assert pdf_report.read_bytes().startswith(b"%PDF-1.4")
 
 
