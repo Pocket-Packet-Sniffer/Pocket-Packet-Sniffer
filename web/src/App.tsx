@@ -118,9 +118,12 @@ export default function App() {
         if(!response.ok)throw new Error("Capture status request failed");
         const status=await response.json() as CaptureStatus;
         if(!cancelled)setCapture(current=>{
-          // Do not let a late status poll roll back a newer button action.
-          if(current.session_id&&status.session_id&&current.session_id!==status.session_id&&
-             (current.state==="running"||current.state==="stopping"))return current;
+          // A status poll started before POST /capture/start can finish after
+          // the start response. Its old idle/null-session payload must not
+          // overwrite the newer session state.
+          const hasNewerSession=Boolean(current.session_id)&&current.session_id!==status.session_id;
+          const currentActive=current.state==="starting"||current.state==="running"||current.state==="stopping";
+          if(currentActive&&hasNewerSession)return current;
           return status;
         });
       }catch{/* The regular health poll reports backend connectivity. */}
