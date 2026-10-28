@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from scapy.all import get_if_list
+
 try:
     from scapy.arch.windows import get_windows_if_list
 except ImportError:
