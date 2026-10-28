@@ -45,7 +45,7 @@ ruff check --select E4,E7,E9,F,I src tests tools
 pytest -q
 ```
 
-The tests use generated PCAP fixtures and mocked capture backends; they do not require root privileges or live network traffic. The repository now includes the Capture, Analysis, Storage, and Presentation/application session path, plus CLI and generated-PCAP integration tests. The latest `main` CI run completed successfully with Ruff passing and 81 tests passing. Live-interface and target-platform behaviour still needs manual verification.
+The tests use generated PCAP fixtures and mocked capture backends; they do not require root privileges or live network traffic. The repository now includes the Capture, Analysis, Storage, and Presentation/application session path, plus CLI and generated-PCAP integration tests. The latest recorded `main` CI run completed successfully with Ruff passing and 106 tests passing. Live-interface and target-platform behaviour still needs manual verification.
 
 ## Planning and traceability
 
@@ -153,7 +153,7 @@ pocket-packet-sniffer export --storage-dir captures --session-id demo-session --
 pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.pdf --format pdf
 ```
 
-The query command accepts optional timezone-aware `--start` and `--end` ISO-8601 datetimes. CSV and PDF exports refuse to overwrite an existing file and include session/packet metadata, not raw packet payloads. Capture outputs and the SQLite index remain local under the configured storage directory.
+The query command accepts optional timezone-aware `--start` and `--end` ISO-8601 datetimes. CSV and PDF exports refuse to overwrite an existing file and include session/packet metadata, not raw packet payloads. Capture outputs and the SQLite index remain local under the configured storage directory. The PCAP files contain original captured bytes; metadata-only query and report output does not redact or remove payloads from those files.
 
 ## Reproducible synthetic demo
 
