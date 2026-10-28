@@ -19,13 +19,13 @@ if (-not (Test-Path (Join-Path $root "web\package.json"))) {
 foreach ($port in @(8000, 5173)) {
     $listeners = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty OwningProcess -Unique)
-    foreach ($processId in $listeners) {
-        $process = Get-CimInstance Win32_Process -Filter "ProcessId = $processId" -ErrorAction SilentlyContinue
+    foreach ($listenerPid in $listeners) {
+        $process = Get-CimInstance Win32_Process -Filter "ProcessId = $listenerPid" -ErrorAction SilentlyContinue
         $processName = if ($process) { $process.Name } else { "unknown process" }
-        Write-Host "Port $port is already used by PID $processId ($processName)."
+        Write-Host "Port $port is already used by PID $listenerPid ($processName)."
         $answer = Read-Host "Stop this process so Pocket Packet Sniffer can use port $port? (y/N)"
         if ($answer -match "^(y|yes)$") {
-            Stop-Process -Id $processId -Force
+            Stop-Process -Id $listenerPid -Force
             Start-Sleep -Milliseconds 500
         } else {
             throw "Port $port is occupied. Stop its listener, then run .\run-local.ps1 again."
