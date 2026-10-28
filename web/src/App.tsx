@@ -67,17 +67,46 @@ export default function App() {
   useEffect(()=>{
     let cancelled=false;
     async function refresh(){
+      // Health is the source of truth for connectivity. A slow/failed data
+      // endpoint must not incorrectly disable capture when the API is alive.
       try{
-        const rs=await Promise.all([fetch(`${API}/api/health`),fetch(`${API}/api/overview`),fetch(`${API}/api/packets?limit=500`),fetch(`${API}/api/sessions`)]);
-        if(rs.some(r=>!r.ok)) throw new Error("API request failed. Check the Python backend terminal.");
-        const [health,summary,packetResult,sessionResult]=await Promise.all(rs.map(r=>r.json()));
+        const response=await fetch(`${API}/api/health`,{cache:"no-store"});
+        if(!response.ok)throw new Error(`Health check failed (HTTP ${response.status}).`);
+        const health=await response.json();
         if(cancelled)return;
-        setOnline(health.status==="ok");setOverview(summary);setSessions(sessionResult||[]);
-        setRows((packetResult.packets||[]).map((p:any)=>({id:p.id,session_id:p.session_id||"",time:date(p.time),timestamp:Date.parse(p.time),protocol:p.protocol||"OTHER",source:p.source||"—",destination:p.destination||"—",length:p.length||0,info:p.info||`${p.protocol||"Packet"} packet`})));
+        if(health.status!=="ok")throw new Error("Backend health check did not return status=ok.");
+        setOnline(true);
         setError("");
-      }catch(e){if(cancelled)return;setOnline(false);setError(e instanceof Error?e.message:"Could not reach the backend.");}
+      }catch(e){
+        if(cancelled)return;
+        setOnline(false);
+        setError(e instanceof Error?e.message:"Could not reach the backend.");
+        return;
+      }
+
+      // Load dashboard data separately so one slow endpoint cannot mark the
+      // backend offline or block the capture controls.
+      const requests=await Promise.allSettled([
+        fetch(`${API}/api/overview`,{cache:"no-store"}),
+        fetch(`${API}/api/packets?limit=200`,{cache:"no-store"}),
+        fetch(`${API}/api/sessions`,{cache:"no-store"})
+      ]);
+      if(cancelled)return;
+      const [summaryResult,packetResult,sessionResult]=requests;
+      if(summaryResult.status==="fulfilled"&&summaryResult.value.ok){
+        try{setOverview(await summaryResult.value.json());}catch{/* Keep last good overview. */}
+      }
+      if(packetResult.status==="fulfilled"&&packetResult.value.ok){
+        try{
+          const data=await packetResult.value.json();
+          setRows((data.packets||[]).map((p:any)=>({id:p.id,session_id:p.session_id||"",time:date(p.time),timestamp:Date.parse(p.time),protocol:p.protocol||"OTHER",source:p.source||"—",destination:p.destination||"—",length:p.length||0,info:p.info||`${p.protocol||"Packet"} packet`})));
+        }catch{/* Keep last good packet list. */}
+      }
+      if(sessionResult.status==="fulfilled"&&sessionResult.value.ok){
+        try{setSessions((await sessionResult.value.json())||[]);}catch{/* Keep last good sessions. */}
+      }
     }
-    void refresh();const t=window.setInterval(()=>void refresh(),2500);
+    void refresh();const t=window.setInterval(()=>void refresh(),5000);
     return()=>{cancelled=true;window.clearInterval(t);};
   },[]);
   useEffect(()=>{
