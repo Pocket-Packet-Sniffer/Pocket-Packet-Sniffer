@@ -7,7 +7,7 @@ name = "pocket-packet-sniffer"
 version = "0.1.0"
 description = "Pocket Packet Sniffer passive capture, packet analysis, storage and CLI"
 requires-python = ">=3.10"
-dependencies = ["scapy>=2.5"]
+dependencies = ["scapy>=2.5", "fastapi>=0.110", "uvicorn>=0.29"]
 
 [project.optional-dependencies]
 test = ["pytest>=8"]

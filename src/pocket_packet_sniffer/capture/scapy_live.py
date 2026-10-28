@@ -168,9 +168,23 @@ class ScapyCapturer(Capturer):
                 stop_event.wait(self.poll_interval)
 
             if getattr(sniffer, "running", False):
-                sniffer.stop(join=True)
+                # On Windows/Npcap, a blocking join inside Scapy's stop() can
+                # leave the API stuck in "stopping" when the adapter read is
+                # blocked. Request stop first, then bound how long we wait.
+                sniffer.stop(join=False)
+                thread = getattr(sniffer, "thread", None)
+                if thread is not None:
+                    thread.join(timeout=2.0)
+                    if thread.is_alive():
+                        raise CaptureStartupError(
+                            f"Capture on '{self.interface}' received a stop request, "
+                            "but the Scapy worker did not exit within 2 seconds. "
+                            "Check Npcap/adapter state and try another interface."
+                        )
             else:
-                sniffer.join()
+                thread = getattr(sniffer, "thread", None)
+                if thread is not None:
+                    thread.join(timeout=2.0)
 
             if callback_error:
                 cause = callback_error[0]
@@ -201,11 +215,10 @@ def _stop_sniffer_safely(sniffer: Any) -> None:
         return
     try:
         if getattr(sniffer, "running", False):
-            sniffer.stop(join=True)
-        else:
-            thread = getattr(sniffer, "thread", None)
-            if thread is not None and thread.is_alive():
-                thread.join(timeout=0.2)
+            sniffer.stop(join=False)
+        thread = getattr(sniffer, "thread", None)
+        if thread is not None and thread.is_alive():
+            thread.join(timeout=0.5)
     except Exception:
         # Preserve the primary startup/capture error; cleanup is best-effort.
         pass
