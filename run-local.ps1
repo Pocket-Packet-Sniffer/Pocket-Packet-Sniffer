@@ -54,8 +54,8 @@ if (-not (Test-Path (Join-Path $root "web\node_modules"))) {
     }
 }
 
-$backendCommand = "\`$ErrorActionPreference = 'Stop'; Set-Location '$root'; \`$env:PYTHONPATH = '$root\src'; \`$env:PPS_STORAGE_DIR = '$storage'; python -m uvicorn pocket_packet_sniffer.api:app --host 127.0.0.1 --port 8000"
-$frontendCommand = "\`$ErrorActionPreference = 'Stop'; Set-Location '$root\web'; npm run dev"
+$backendCommand = "${String.fromCharCode(96)}$ErrorActionPreference = 'Stop'; Set-Location '$root'; ${String.fromCharCode(96)}$env:PYTHONPATH = '$root\src'; ${String.fromCharCode(96)}$env:PPS_STORAGE_DIR = '$storage'; python -m uvicorn pocket_packet_sniffer.api:app --host 127.0.0.1 --port 8000"
+$frontendCommand = "${String.fromCharCode(96)}$ErrorActionPreference = 'Stop'; Set-Location '$root\web'; npm run dev"
 
 Write-Host ""
 Write-Host "Pocket Packet Sniffer - LIVE API MODE"
