@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import io
 import os
+import json
 import platform
 import subprocess
-import json
 import threading
 import uuid
 from pathlib import Path
