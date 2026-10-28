@@ -22,6 +22,8 @@ This document separates automated/code-reviewed safeguards from target-environme
 
 ## Manual checks still required
 
+For each completed check, record the test date, OS/version, adapter and driver, interface mode, privilege context, authorized test-traffic source, observed startup/stop result, and packet/drop counts when available. Mark checks **not run** until evidence is collected; do not attach raw capture files to the record.
+
 - Live capture start/stop and permission diagnostics on each target OS, capture driver and adapter.
 - Wi-Fi monitor mode with the actual supported adapter/driver.
 - BLE advertisement capture with the selected BLE sniffer/HCI adapter; parser fixtures alone do not validate the radio/backend.
