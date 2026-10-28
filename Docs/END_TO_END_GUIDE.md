@@ -44,7 +44,7 @@ pocket-packet-sniffer query --storage-dir captures --session-id lab-session --pr
 pocket-packet-sniffer query --storage-dir captures --start 2026-10-26T12:00:00+00:00 --end 2026-10-26T13:00:00+00:00
 ```
 
-Filters can be combined, including protocol, address, session ID and time window. Dates must be timezone-aware ISO-8601 values. Dates must be timezone-aware ISO-8601 values. Query output displays metadata, not raw packet payloads.
+Filters can be combined, including protocol, address, session ID and time window. Dates must be timezone-aware ISO-8601 values. Query output displays metadata, not raw packet payloads.
 
 ## Export a session
 
@@ -53,7 +53,7 @@ pocket-packet-sniffer export --storage-dir captures --session-id demo-session --
 pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.pdf --format pdf
 ```
 
-The export writes a session summary and packet metadata to a local CSV or PDF file. It does not include raw packet payloads and refuses to overwrite an existing destination. Session-scoped retrieval uses the Repository contract.
+The export writes a session summary and packet metadata to a local CSV or PDF file. It does not include raw packet payloads and refuses to overwrite an existing destination. Session-scoped retrieval uses the Repository contract. Exporting metadata does not remove or sanitize the original PCAP; keep the capture storage directory private because it contains raw captured bytes.
 
 ## Synthetic end-to-end demo
 
