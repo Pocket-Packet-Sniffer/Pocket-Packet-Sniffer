@@ -10,7 +10,7 @@ This document separates automated/code-reviewed safeguards from target-environme
 - POSIX tests check private directory/file modes. Storage uses mode 0700 for capture directories and 0600 for PCAP/SQLite files when supported by the OS.
 - Capture-runner tests cover stable exit statuses, one-line known errors and Ctrl+C cleanup.
 - Analysis alert events contain packet metadata, not raw captured bytes. Alert detection is a heuristic, not an attack verdict.
-- PDF and CSV reports use exclusive file creation, refuse overwrite, and omit packet payload bytes.
+- CLI capture/query output and PDF/CSV reports display metadata only; generated-PCAP tests assert packet payload markers are not exposed. Reports use exclusive file creation and refuse overwrite.
 - Concurrent capture uses existing capturer strategies, shared cancellation and an aggregate packet callback. Its synthetic tests do not require privileges or live network traffic.
 
 ## Required operating controls
