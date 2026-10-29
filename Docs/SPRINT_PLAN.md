@@ -15,12 +15,12 @@
 | #4 | Packet parsing and cross-layer record contract | Shivanand | 5 | **Closed.** PR #23 provides parsing; PR #24 provides AnalyzerPipeline and a tested application adapter. ADR 0001 records the accepted application-boundary contract. |
 | #5 | PCAP storage and Repository interface | Shivakumara GP | 5 | **Closed.** PCAP persistence, SQLite metadata, filters and repository tests are merged. |
 | #9 | Missing interface and permission failures | Vikas | 3 | **Closed for the implemented path.** Typed errors and stable CLI/session exit handling are merged. Live-driver behaviour remains a manual release-readiness check. |
-| #10 | Security/passive-use and portability checks | Vikas + Shivakumara | 5 | **Carried into M4.** Automated POSIX permissions, passive-use constraints and local-only CLI behaviour are covered. Authorized live-interface, Windows ACL and target-hardware checks remain open in #10. |
+| #10 | Security/passive-use and portability checks | Vikas + Shivakumara | 5 | **GitHub issue closed; target-environment checks remain unverified in the audit.** Automated POSIX permissions, passive-use constraints and local-only CLI behaviour are covered. Sprint 3 issue #39 tracks any remaining checks required for the supported platform. |
 | #11 | Test scaffolding and end-to-end tests | Sanjith; shared | 5 | **Closed for automated fixture coverage.** CI runs lint and tests; generated-PCAP tests exercise Capture → Analysis → Storage → query/statistics/CSV export. |
 | #15 | Sprint review/retrospective and process record | Vikas; shared | 2 | **Closed.** PR #26 merged the asynchronous evidence review and two Sprint 2 process actions. Historical actual effort was not captured; the gap is documented without invented values. This is not represented as a synchronous team meeting. |
-| #16 | Repository configuration | Vikas | TBD | **Carried into M4.** Access, labels, milestones, CODEOWNERS and use of the existing board are recorded. Main branch protection and plan-available security controls need a repository-admin UI action. |
+| #16 | Repository configuration | Vikas | TBD | **GitHub issue closed; verify admin-only controls if still required.** Access, labels, milestones, CODEOWNERS and the existing board are recorded. Main branch protection and available security controls may still need a repository-admin UI action; this is process hardening, not missing application functionality. |
 
-Issues #10 and #16 span foundation and release-readiness work. They remain open as carry-overs and should not be represented as completed technical checks.
+Issues #10 and #16 are currently closed in GitHub, although their descriptions document some manual/admin follow-up. Do not treat closure alone as proof that platform checks or repository settings were verified; Sprint 3 tracker #39 records the relevant completion gate.
 
 ## Verified merged implementation evidence
 
@@ -47,7 +47,7 @@ The following are **carry-over/release-readiness work**, not hidden blockers or 
 | Carry-over | Status/action | Destination |
 |---|---|---|
 | #10 — live-interface/platform security | Run authorized live-interface startup/permission checks and target OS/driver/security checks; verify Windows ACLs, Wi-Fi mode/BLE support only if the platform is in scope, and Raspberry Pi performance if targeted. | M4 — Release Readiness |
-| #16 — repository protection/security controls | Maintainer must enable/verify main-branch PR review, conversation resolution, the observed `Lint and test` check, and available secret-scanning/Dependabot controls. | M4 — Release Readiness |
+| #16 — repository protection/security controls | If required by the team, maintainer should verify main-branch PR review, conversation resolution, the observed `Lint and test` check, and available secret-scanning/Dependabot controls. The issue is currently closed in GitHub; verify the settings directly before claiming completion. | M4 — Release Readiness / process follow-up |
 | Report format | The approved SRS REQ-8 accepts CSV or PDF; main now provides both CSV and PDF export with session-scoped retrieval. | Implemented in PR #29; latest main CI passed (Ruff + 106 tests) |
 | #13 and #14 | Both are low-priority stretch requirements in the SRS. Metadata-only alert events and concurrent capture, including synthetic fan-in tests and CLI wiring, are implemented on main. Live Wi-Fi/BLE adapter validation remains separate. | Merged in PR #29; latest main CI passed (Ruff + 106 tests); target-hardware validation pending |
 
