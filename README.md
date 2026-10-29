@@ -149,11 +149,13 @@ List saved sessions, then query one session's stored metadata and export reports
 ```bash
 pocket-packet-sniffer sessions --storage-dir captures
 pocket-packet-sniffer query --storage-dir captures --session-id live-session --protocol TCP --address 192.0.2.10
+pocket-packet-sniffer query --storage-dir captures --session-id live-session --suspicious-only
+pocket-packet-sniffer query --storage-dir captures --session-id live-session --show-classification
 pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.csv --format csv
 pocket-packet-sniffer export --storage-dir captures --session-id demo-session --output demo-session.pdf --format pdf
 ```
 
-The query command accepts optional timezone-aware `--start` and `--end` ISO-8601 datetimes. CSV and PDF exports refuse to overwrite an existing file and include session/packet metadata, not raw packet payloads. Capture outputs and the SQLite index remain local under the configured storage directory. The PCAP files contain original captured bytes; metadata-only query and report output does not redact or remove payloads from those files.
+The query command accepts optional timezone-aware `--start` and `--end` ISO-8601 datetimes. `--suspicious-only` re-parses the saved records and shows only packets that trigger a configured heuristic, including the rule and reason; `--show-classification` labels all queried records `SUSPICIOUS/REVIEW` or `NO RULE MATCHED`. Optional query-time `--known-device MAC` and `--known-access-point BSSID` arguments enable inventory-based rules. A no-match does not mean traffic is safe, and these heuristics are not a guaranteed malware detector. CSV and PDF exports refuse to overwrite an existing file and include session/packet metadata, not raw packet payloads. Capture outputs and the SQLite index remain local under the configured storage directory. The PCAP files contain original captured bytes; metadata-only query and report output does not redact or remove payloads from those files.
 
 ## Reproducible synthetic demo
 
