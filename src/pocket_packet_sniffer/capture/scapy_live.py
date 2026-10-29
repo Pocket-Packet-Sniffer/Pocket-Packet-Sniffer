@@ -191,6 +191,7 @@ class ScapyCapturer(Capturer):
                     "Check adapter state, capture driver, and permissions."
                 )
 
+            count_reached = False
             while True:
                 if stop_event.is_set() or callback_error:
                     break
@@ -216,6 +217,11 @@ class ScapyCapturer(Capturer):
             backend_error = getattr(sniffer, "exception", None)
             if backend_error is not None:
                 raise _translate_backend_error(backend_error, self.interface)
+            if not stop_event.is_set() and not count_reached and not getattr(sniffer, "running", True):
+                raise CaptureStartupError(
+                    f"Capture on '{self.interface}' stopped unexpectedly before a stop request "
+                    "or packet-count limit was reached. Check the adapter, capture driver, and backend logs."
+                )
         except KeyboardInterrupt:
             # Ctrl+C must stop the background sniffer before the CLI returns.
             stop_event.set()

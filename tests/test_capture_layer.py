@@ -334,3 +334,15 @@ def test_callback_error_does_not_disclose_arbitrary_custom_text(tmp_path):
 
     assert "RuntimeError" in str(error.value)
     assert "secret-payload" not in str(error.value)
+
+
+def test_scapy_backend_reports_unexpected_sniffer_exit(monkeypatch):
+    class ExitingSniffer(FakeSniffer):
+        def start(self):
+            super().start()
+            # Simulate Scapy's worker ending without a stop request or count limit.
+            self.running = False
+
+    install_fake_scapy(monkeypatch, sniffer_factory=ExitingSniffer)
+    with pytest.raises(CaptureStartupError, match="stopped unexpectedly"):
+        ScapyCapturer("eth-test", poll_interval=0.001).capture(lambda _record: None, Event(), count=100)
