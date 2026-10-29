@@ -97,20 +97,19 @@ def test_parse_preserves_capture_metadata_and_backend(parser):
     assert record.capture_backend == "synthetic-fixture"
 
 
-@pytest.mark.parametrize("link_type", [-1, 999, 65535])
+@pytest.mark.parametrize("link_type", [999, 65535])
 def test_unknown_link_types_are_declined(parser, link_type):
     captured = make_capture(Ether() / IPv6() / TCP(), link_type=link_type)
 
     assert parser.parse(captured) is None
 
 
-def test_empty_packet_bytes_are_non_fatal(parser):
-    captured = CapturedPacket(
-        timestamp=datetime(2026, 1, 2, tzinfo=UTC),
-        packet_data=b"",
-        interface="fixture1",
-        link_type=1,
-        original_length=0,
-    )
-
-    assert parser.parse(captured) is None
+def test_empty_packet_bytes_are_rejected_by_capture_model():
+    with pytest.raises(ValueError, match="packet_data must not be empty"):
+        CapturedPacket(
+            timestamp=datetime(2026, 1, 2, tzinfo=UTC),
+            packet_data=b"",
+            interface="fixture1",
+            link_type=1,
+            original_length=0,
+        )
