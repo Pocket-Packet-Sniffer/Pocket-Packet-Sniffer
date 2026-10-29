@@ -7,11 +7,11 @@ from time import monotonic, sleep
 import pytest
 
 from pocket_packet_sniffer.application.session import CaptureSession
-from pocket_packet_sniffer.storage import PcapSqliteRepository
 from pocket_packet_sniffer.presentation.capture_control import (
     CaptureControl,
     CaptureControlError,
 )
+from pocket_packet_sniffer.storage import PcapSqliteRepository
 
 
 def test_stop_request_from_another_cli_context_sets_stop_event(tmp_path):
