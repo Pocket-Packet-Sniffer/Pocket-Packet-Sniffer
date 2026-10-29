@@ -39,6 +39,8 @@ This command replays a local file. It does not transmit packets to a network.
 pocket-packet-sniffer sessions --storage-dir demo-captures
 pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --protocol TCP
 pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --address 192.0.2.1
+pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --suspicious-only
+pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --show-classification
 pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --start 2026-10-27T10:00:00+00:00 --end 2026-10-27T10:00:04+00:00
 ```
 
@@ -47,6 +49,8 @@ Expected outcomes:
 - The TCP query returns the fixture's matching TCP metadata.
 - The address query returns ARP metadata for the synthetic address `192.0.2.1`.
 - Query results show timestamps, normalized protocol, source/destination metadata, size, and session ID. Raw packet payloads are not printed.
+- `--suspicious-only` re-parses the saved PCAP records and displays records that trigger a configured heuristic, with a rule ID and reason. The synthetic ARP conflict should show one `SUSPICIOUS/REVIEW` record.
+- `--show-classification` shows `SUSPICIOUS/REVIEW` or `NO RULE MATCHED` for each record. A no-match is not proof that traffic is safe. For allowlist rules, pass repeated `--known-device MAC` or `--known-access-point BSSID` options to the query command.
 
 ## 4. Export local reports
 
