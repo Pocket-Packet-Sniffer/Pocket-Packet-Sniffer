@@ -52,3 +52,14 @@ Status changes must be based on evidence, not on an issue being assigned, a bran
 ## Current backend compliance verification on main
 
 PR #29 merged into `main` as commit `cd80e958bf572c32126c3f222579aec638da04b7`. The resulting main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and reported 106 passed in 1.87s. Target-hardware validation remains required.
+
+
+## Sprint 3 verification addendum — 2026-10-29
+
+The following changes are now merged into `main` and have fresh verification evidence:
+
+- **PR #38 — parser regression coverage:** [PR #38](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/pull/38) merged as `b79ab365611ce301b85ebd20fad484846df0bbab`. Adds deterministic tests for IPv6 TCP/UDP, ICMPv6 echo request, non-IP Ethernet metadata, capture metadata/backend preservation, unsupported link types, and empty packet bytes. The developer's local Windows/Python 3.13 run passed **8 tests in 0.69 seconds**.
+- **PR #42 — visible suspicious-traffic query filtering:** [PR #42](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/pull/42) merged on 2026-10-29. The CLI now supports `query --suspicious-only` and `query --show-classification`, displays rule IDs/reasons for flagged records, and warns that no rule match is not proof of safety. The synthetic demo produced five stored records, one ARP-conflict record flagged for review, and four records with no rule matched.
+- **Current main CI:** [run 40915380388](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40915380388) passed Ruff and **122 tests in 2.24 seconds** on Ubuntu 24.04 / Python 3.12.15. The Windows CI job also passed lint and its Windows demo/replay/export steps. The developer's local Windows run passed the eight new parser tests.
+
+These results are automated/synthetic verification only. They do **not** close the manual checks in issue #10: authorized live-interface startup/stop and permission behavior, Windows ACL verification if Windows is a supported target, actual Wi-Fi monitor mode/BLE capture if claimed, and Raspberry Pi/live packet-drop measurements if those remain project claims. Do not mark those checks complete without recorded target-environment evidence.

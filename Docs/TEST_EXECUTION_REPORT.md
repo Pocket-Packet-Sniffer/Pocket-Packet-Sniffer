@@ -2,10 +2,21 @@
 
 **SRS:** v1.3  
 **STP:** v1.3  
-**Implementation under test:** `main` after PR #29 merge  
-**Code revision at latest CI run:** `cd80e958bf572c32126c3f222579aec638da04b7`  
-**CI evidence:** [GitHub Actions run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511)  
-**Run date:** 2026-10-27
+**Implementation under test:** `main` after PR #38 and PR #42 merges  
+**Code revision at latest CI run:** `b79ab365611ce301b85ebd20fad484846df0bbab`  
+**CI evidence:** [GitHub Actions run 40915380388](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40915380388)  
+**Run date:** 2026-10-29
+
+## Latest main verification after PR #38 and PR #42 (2026-10-29)
+
+| Check | Environment / command | Result |
+|---|---|---|
+| Main-branch CI | Ubuntu 24.04, Python 3.12.15; Ruff + `pytest -q` | PASS — Ruff clean; **122 passed in 2.24 seconds** ([run 40915380388](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40915380388)) |
+| Windows CI | `windows-latest`; lint and Windows synthetic demo/replay/query/export steps | PASS — job succeeded |
+| Parser regression subset | Windows, Python 3.13.15; `python -m pytest tests/test_analysis_parser_edge_cases.py -v` | PASS — **8 passed in 0.69 seconds** (developer-provided local terminal evidence) |
+| Suspicious-traffic demo | Windows; generated `issue41-demo.pcap`, local replay and query | PASS — 5 packets stored; one ARP conflict flagged with rule/reason; classification view showed one flagged and four no-rule-matched records (developer-provided local terminal evidence) |
+
+The local terminal evidence above was supplied on 2026-10-29. CI evidence is independently available from GitHub Actions. The synthetic demo does not validate live adapters or hardware performance.
 
 ## Automated result
 
@@ -56,3 +67,12 @@ CI uses generated PCAP fixtures and mocked capture backends. It does not require
 ## Overall disposition
 
 The backend and synthetic demo path are merged into `main`. Latest main CI run 40479490511 passed Ruff and 106 tests in 1.87 seconds. The SRS is **not yet fully hardware-verified**: live-source support, Raspberry Pi performance/drop behavior, Wi-Fi monitor mode, BLE-adapter behavior, Windows ACLs and other platform-specific checks remain open.
+
+
+## Sprint 3 verification addendum — 2026-10-29
+
+PR #38 added parser regression tests for IPv6 TCP/UDP, ICMPv6, non-IP Ethernet frames, capture metadata preservation, unsupported link types, and empty packet rejection. It merged as `b79ab365611ce301b85ebd20fad484846df0bbab`. The new main CI run passed Ruff and 122 tests in 2.24 seconds; the local Windows parser test subset passed all eight tests.
+
+PR #42 added visible query-time suspicious-traffic filtering and explanations. The synthetic demo recorded five packets and flagged the ARP address conflict using rule `arp-address-conflict`. The `NO RULE MATCHED` label is explicitly not a safety verdict.
+
+**Manual verification remains NOT RUN / pending evidence:** live authorized interface start/stop and permission behavior; Windows ACL review if Windows is in scope; real Wi-Fi monitor-mode and BLE adapter behavior if claimed; and Raspberry Pi/live packet-drop measurements if performance/no-drop remains a claim. These must not be inferred from CI or PCAP replay.
