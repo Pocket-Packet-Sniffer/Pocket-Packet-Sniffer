@@ -247,3 +247,42 @@ def test_cli_replay_supports_relative_storage_directory(tmp_path, monkeypatch, c
     assert "seen=5 stored=5 ignored=0 exit_code=0" in result.out
     repository = PcapSqliteRepository("demo-captures")
     assert len(repository.query_session("demo-session")) == 5
+
+
+def test_cli_query_can_filter_and_explain_suspicious_records(tmp_path, capsys):
+    source = tmp_path / "suspicious-query-demo.pcap"
+    create_demo_pcap(source)
+    storage = tmp_path / "captures"
+    code = main(
+        [
+            "capture", "--pcap-file", str(source), "--storage-dir", str(storage),
+            "--session-id", "suspicious-query-session",
+        ]
+    )
+    capsys.readouterr()
+    assert code == 0
+
+    code = main(
+        [
+            "query", "--storage-dir", str(storage), "--session-id", "suspicious-query-session",
+            "--suspicious-only",
+        ]
+    )
+    suspicious = capsys.readouterr()
+    assert code == 0
+    assert "SUSPICIOUS/REVIEW" in suspicious.out
+    assert "arp-address-conflict" in suspicious.out
+    assert "192.0.2.1" in suspicious.out
+    assert "1 packet(s)" in suspicious.out
+
+    code = main(
+        [
+            "query", "--storage-dir", str(storage), "--session-id", "suspicious-query-session",
+            "--show-classification",
+        ]
+    )
+    all_records = capsys.readouterr()
+    assert code == 0
+    assert "NO RULE MATCHED" in all_records.out
+    assert "SUSPICIOUS/REVIEW" in all_records.out
+    assert "not a guarantee that traffic is safe" in all_records.out
