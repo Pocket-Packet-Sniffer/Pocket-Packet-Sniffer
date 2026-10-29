@@ -74,12 +74,45 @@ class ScapyCapturer(Capturer):
             interfaces = list(get_if_list())
         except Exception as exc:
             raise CaptureStartupError(f"Could not enumerate network interfaces: {exc}") from exc
-        if self.interface not in interfaces:
-            available = ", ".join(sorted(str(name) for name in interfaces)) or "none detected"
-            raise CaptureInterfaceError(
-                f"Interface '{self.interface}' is unavailable. Available interfaces: {available}. "
-                "Check the interface name, adapter state, and driver installation."
+
+        # On Windows, get_if_list() commonly returns Npcap device paths while
+        # conf.ifaces also exposes friendly names such as "Wi-Fi". Accept
+        # either form and pass the resolved Scapy interface object to the sniffer.
+        resolved_interface: Any = self.interface
+        available_names = {str(name) for name in interfaces}
+        scapy_interfaces = getattr(conf, "ifaces", None)
+        try:
+            interface_objects = list(scapy_interfaces.values()) if scapy_interfaces is not None else []
+        except (AttributeError, TypeError):
+            interface_objects = []
+
+        if self.interface not in available_names:
+            matched_interface = next(
+                (
+                    candidate
+                    for candidate in interface_objects
+                    if self.interface
+                    in {
+                        str(getattr(candidate, attribute, ""))
+                        for attribute in ("name", "description", "network_name")
+                        if getattr(candidate, attribute, None) is not None
+                    }
+                ),
+                None,
             )
+            if matched_interface is None:
+                for candidate in interface_objects:
+                    for attribute in ("name", "description", "network_name"):
+                        value = getattr(candidate, attribute, None)
+                        if value is not None:
+                            available_names.add(str(value))
+                available = ", ".join(sorted(available_names)) or "none detected"
+                raise CaptureInterfaceError(
+                    f"Interface '{self.interface}' is unavailable. Available interfaces: {available}. "
+                    "Check the interface name, adapter state, and driver installation."
+                )
+            resolved_interface = matched_interface
+
         if stop_event.is_set():
             return
 
@@ -131,7 +164,7 @@ class ScapyCapturer(Capturer):
         sniffer = None
         try:
             sniffer = AsyncSniffer(
-                iface=self.interface,
+                iface=resolved_interface,
                 store=False,
                 prn=handle,
                 filter=self.bpf_filter,
