@@ -346,3 +346,17 @@ def test_scapy_backend_reports_unexpected_sniffer_exit(monkeypatch):
     install_fake_scapy(monkeypatch, sniffer_factory=ExitingSniffer)
     with pytest.raises(CaptureStartupError, match="stopped unexpectedly"):
         ScapyCapturer("eth-test", poll_interval=0.001).capture(lambda _record: None, Event(), count=100)
+
+
+def test_live_capture_lifecycle_diagnostics_are_opt_in(monkeypatch, capsys):
+    install_fake_scapy(monkeypatch)
+    monkeypatch.setenv("PPS_DEBUG_CAPTURE_LIFECYCLE", "1")
+
+    ScapyCapturer("eth-test", poll_interval=0.001).capture(
+        lambda _record: None, Event(), count=1
+    )
+
+    diagnostic = capsys.readouterr().err
+    assert "capture_lifecycle reason=packet_count" in diagnostic
+    assert "delivered=1" in diagnostic
+    assert "count_reached=True" in diagnostic
