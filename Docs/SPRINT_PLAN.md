@@ -67,3 +67,40 @@ The review/retrospective evidence and limitations are recorded in `Docs/SPRINT_1
 PR #29 (`feat: complete SRS backend functionality and demo workflow`) has since been merged into `main` at `cd80e958bf572c32126c3f222579aec638da04b7`. It adds the remaining backend features described in `Docs/IMPLEMENTATION_GAP_AUDIT.md`, including PDF export, session-scoped retrieval, metadata-only heuristic alerts, concurrent capture, and synthetic demo/benchmark tooling.
 
 Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and **106 tests in 1.87 seconds**. This is automated evidence only. Live Wi-Fi monitor mode/BLE adapter behavior, Windows ACLs, Raspberry Pi throughput/drop performance, and real simultaneous multi-interface capture remain pending target-environment validation. The web dashboard is still deferred until final backend verification and is tracked in issue #27.
+
+
+## Sprint 3 — Release readiness and project completion
+
+**Coordinator issue:** [#39 — Sprint 3: Release readiness and project completion](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/39)
+
+**Sprint goal:** close the remaining evidence-based acceptance gaps against SRS v1.3, STP v1.3, SASD Deliverable 3, and the project proposal. Keep Capture → Analysis → Storage → Presentation boundaries intact. Distinguish automated CI evidence from manual target-environment evidence.
+
+### Sprint 3 backlog
+
+| Work item | Scope / acceptance evidence | Priority / dependency |
+|---|---|---|
+| Parser edge-case regression tests | Finish [issue #37 / PR #38](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/pull/38); confirm current Ubuntu and Windows CI results and independent review before merge. | High; existing carry-over |
+| Final backend acceptance gate | Continue [issue #28](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/28). Run authorized passive live-capture start/stop on the agreed target OS/interface and record permission/startup behavior. | High; required for full acceptance |
+| Platform/security verification | Verify Windows ACL behavior only if Windows is a supported target. Validate Wi-Fi monitor mode and BLE capture only if those live capabilities will be claimed. Record PASS/FAIL/NOT RUN and exact environment; do not infer hardware support from parser fixtures. | Conditional on supported platform claims |
+| Performance verification | If Raspberry Pi performance/no-drop is in scope, run `tools/benchmark_pipeline.py` on the target and separately measure live offered/received packets and available driver/kernel drop counters. Synthetic replay throughput is not proof of zero live packet loss. | Conditional on target/performance claim |
+| End-to-end demo | Follow [Docs/DEMO_SCRIPT.md](DEMO_SCRIPT.md) from a clean setup: generate synthetic PCAP, replay/capture, query protocol/address, inspect statistics/alerts, export CSV and PDF, and exercise concurrent replay. Keep all traffic local and synthetic unless live capture is explicitly authorized. | High |
+| Final evidence/documentation closeout | Update [Docs/REQUIREMENT_TRACEABILITY.md](REQUIREMENT_TRACEABILITY.md), [Docs/TEST_EXECUTION_REPORT.md](TEST_EXECUTION_REPORT.md), and the implementation-gap audit with actual commands, results, environment, linked CI/PR evidence, and remaining limitations. Review README/setup, safe-use guidance, local-only data handling, and SRS/SASD/STP consistency. | High; after test/demo results |
+| Optional web dashboard | [Issue #27](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/27) remains optional/stretch. Only continue after backend acceptance and if the team/instructor requires it. It must reuse existing layers, require explicit capture initiation, bind locally, and never upload packet data externally. | Stretch; not a blocker for the CLI SRS scope |
+
+### Existing issues to close or update
+
+- **#37 / PR #38:** finish review and CI; merge only after required checks pass.
+- **#28:** remains the authoritative backend demo and target-environment verification gate. Do not close until agreed checks are completed or the supported scope is formally narrowed and documented.
+- **#27:** optional dashboard; do not let it block core CLI acceptance unless explicitly required.
+- **#39:** sprint coordinator issue; close only when all required Sprint 3 acceptance criteria have evidence.
+
+### Definition of done
+
+1. Required automated checks pass on the final candidate commit.
+2. The synthetic end-to-end demo is reproducible and demonstrates query, statistics/alerts, CSV/PDF export, and concurrent replay.
+3. Manual checks are recorded as PASS/FAIL/NOT RUN with OS, interface/adapter, driver, commands and results; no results are fabricated.
+4. SRS REQ-1 through REQ-8 have implementation and test evidence; REQ-9/REQ-10 stretch status and hardware limits are explicit.
+5. Wi-Fi, BLE, Windows, and Raspberry Pi claims do not exceed recorded verification.
+6. Final traceability, test execution report, README and demo instructions agree with the implementation.
+
+**Current known gap:** the repository documentation reports the backend and synthetic demo path merged, with main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passing Ruff and 106 tests. Actual live-interface/platform checks remain unverified. Re-check the latest CI and PR state at execution time rather than relying on this historical snapshot.
