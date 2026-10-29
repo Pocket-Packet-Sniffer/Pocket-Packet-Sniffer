@@ -14,10 +14,10 @@ from pocket_packet_sniffer.analysis.alerts import (
 )
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
-from pocket_packet_sniffer.capture.models import CapturedPacket
 from pocket_packet_sniffer.application.session import CaptureSession
 from pocket_packet_sniffer.capture import PcapFileCapturer, ScapyCapturer
 from pocket_packet_sniffer.capture.concurrent import ConcurrentCapturer
+from pocket_packet_sniffer.capture.models import CapturedPacket
 from pocket_packet_sniffer.presentation import (
     EXIT_SUCCESS,
     ReportExportError,
