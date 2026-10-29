@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import math
+import os
+import sys
 import time
 from datetime import datetime, timezone
 from threading import Event, Lock
@@ -192,14 +194,36 @@ class ScapyCapturer(Capturer):
                 )
 
             count_reached = False
+            exit_reason = "unknown"
             while True:
-                if stop_event.is_set() or callback_error:
+                if stop_event.is_set():
+                    exit_reason = "stop_event"
+                    break
+                if callback_error:
+                    exit_reason = "callback_error"
                     break
                 with count_lock:
                     count_reached = count is not None and delivered >= count
-                if count_reached or not getattr(sniffer, "running", True):
+                if count_reached:
+                    exit_reason = "packet_count"
+                    break
+                if not getattr(sniffer, "running", True):
+                    exit_reason = "sniffer_not_running"
                     break
                 stop_event.wait(self.poll_interval)
+
+            if os.environ.get("PPS_DEBUG_CAPTURE_LIFECYCLE") == "1":
+                thread = getattr(sniffer, "thread", None)
+                print(
+                    "capture_lifecycle "
+                    f"reason={exit_reason} delivered={delivered} "
+                    f"count_reached={count_reached} stop_event={stop_event.is_set()} "
+                    f"sniffer_running={getattr(sniffer, 'running', None)} "
+                    f"thread_alive={thread.is_alive() if thread is not None else None} "
+                    f"backend_exception_type={type(getattr(sniffer, 'exception', None)).__name__ if getattr(sniffer, 'exception', None) is not None else 'none'}",
+                    file=sys.stderr,
+                    flush=True,
+                )
 
             if getattr(sniffer, "running", False):
                 sniffer.stop(join=True)
