@@ -10,7 +10,13 @@ from pocket_packet_sniffer.analysis.alerts import (
 from pocket_packet_sniffer.analysis.models import PacketRecord
 
 
-def record(protocol: str, source: str, source_mac: str, *, destination_mac: str | None = None) -> PacketRecord:
+def record(
+    protocol: str,
+    source: str,
+    source_mac: str | None,
+    *,
+    destination_mac: str | None = None,
+) -> PacketRecord:
     return PacketRecord(
         timestamp=datetime(2026, 10, 27, tzinfo=timezone.utc),
         source=source,
@@ -79,6 +85,24 @@ def test_non_match_does_not_emit_an_alert_without_inventory_match():
     detector.inspect(record("ARP", "192.0.2.1", "02:00:00:00:00:01"))
     detector.inspect(record("ARP", "192.0.2.1", "02:00:00:00:00:01"))
     detector.inspect(record("TCP", "192.0.2.10", "02:00:00:00:00:10"))
+
+    assert events == []
+
+
+def test_missing_metadata_does_not_trigger_arp_or_inventory_rules():
+    publisher = AlertPublisher()
+    events: list[AlertEvent] = []
+    publisher.subscribe(events.append)
+    detector = SuspiciousActivityDetector(
+        publisher,
+        known_devices={"02:00:00:00:00:01"},
+        known_access_points={"02:00:00:00:00:01"},
+    )
+
+    detector.inspect(record("ARP", "", "02:00:00:00:00:01"))
+    detector.inspect(record("ARP", "192.0.2.1", None))
+    detector.inspect(record("TCP", "192.0.2.5", None))
+    detector.inspect(record("WIFI_BEACON", "", None))
 
     assert events == []
 
