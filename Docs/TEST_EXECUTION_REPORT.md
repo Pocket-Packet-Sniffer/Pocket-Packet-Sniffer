@@ -76,3 +76,14 @@ PR #38 added parser regression tests for IPv6 TCP/UDP, ICMPv6, non-IP Ethernet f
 PR #42 added visible query-time suspicious-traffic filtering and explanations. The synthetic demo recorded five packets and flagged the ARP address conflict using rule `arp-address-conflict`. The `NO RULE MATCHED` label is explicitly not a safety verdict.
 
 **Manual verification remains NOT RUN / pending evidence:** live authorized interface start/stop and permission behavior; Windows ACL review if Windows is in scope; real Wi-Fi monitor-mode and BLE adapter behavior if claimed; and Raspberry Pi/live packet-drop measurements if performance/no-drop remains a claim. These must not be inferred from CI or PCAP replay.
+
+## Sprint 3 verification update — 2026-11-07
+
+**Main baseline checked:** `origin/main` at `19bdf4610863b9cfed32d79953c1dc1d69b15f29`; the issue #39 worktree was based on that exact revision. PR #42 is merged and issue #41 is closed. This work reuses its query-time classification rather than duplicating the alert pipeline.
+
+| Check | Environment / command | Result |
+|---|---|---|
+| Current main CI | [Run 40934901326](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40934901326), commit `19bdf4610863b9cfed32d79953c1dc1d69b15f29` | PASS — Ubuntu and Windows jobs succeeded. Windows CI ran lint and synthetic replay/query/export steps; Linux CI ran the full suite. |
+| Python lint | Windows 11 Home Single Language, Python 3.13.12; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — “All checks passed!” |
+| Unit/integration suite | Windows 11 Home Single Language, Python 3.13.12; `python -m pytest -q -rs` with `PYTHONPATH=src` | PASS — **126 passed, 2 skipped in 7.45 seconds**. Includes missing-metadata alert and exited-process liveness regression tests. Both skips are POSIX permission-mode tests because Windows ACL checks are separate. |
+| External stop-request regression | `python -m pytest -q tests/test_capture_control.py::test_active_capture_session_exits_after_external_stop_request` with `PYTHONPATH=src` | PASS — **1 passed in 0.60 seconds**. The Windows process-liveness check now uses a non-destructive process handle instead of `os.kill(pid, 0)`. |
