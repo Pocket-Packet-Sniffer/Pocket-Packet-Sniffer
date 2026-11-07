@@ -51,6 +51,8 @@ class CaptureControl:
     def _process_is_alive(pid: object) -> bool:
         if isinstance(pid, bool) or not isinstance(pid, int) or pid < 1:
             return False
+        if os.name == "nt":
+            return CaptureControl._windows_process_is_alive(pid)
         try:
             os.kill(pid, 0)
         except ProcessLookupError:
@@ -58,10 +60,37 @@ class CaptureControl:
         except PermissionError:
             return True
         except OSError:
-            # Some Windows process-access errors do not distinguish a denied
-            # query from an absent process. Preserve the marker conservatively.
             return True
         return True
+
+    @staticmethod
+    def _windows_process_is_alive(pid: int) -> bool:
+        """Check process state without using Windows ``os.kill`` semantics."""
+        import ctypes
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        open_process = kernel32.OpenProcess
+        open_process.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+        open_process.restype = wintypes.HANDLE
+        wait_for_single_object = kernel32.WaitForSingleObject
+        wait_for_single_object.argtypes = (wintypes.HANDLE, wintypes.DWORD)
+        wait_for_single_object.restype = wintypes.DWORD
+        close_handle = kernel32.CloseHandle
+        close_handle.argtypes = (wintypes.HANDLE,)
+        close_handle.restype = wintypes.BOOL
+
+        process_synchronize = 0x00100000
+        error_invalid_parameter = 87
+        wait_object_0 = 0
+        process_handle = open_process(process_synchronize, False, pid)
+        if not process_handle:
+            return ctypes.get_last_error() != error_invalid_parameter
+        try:
+            wait_result = wait_for_single_object(process_handle, 0)
+            return wait_result != wait_object_0
+        finally:
+            close_handle(process_handle)
 
     @staticmethod
     def _private_file(path: Path, content: str) -> None:
