@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 from threading import Event, Thread
 from time import monotonic, sleep
@@ -34,6 +36,13 @@ def test_stop_request_from_another_cli_context_sets_stop_event(tmp_path):
 def test_request_for_inactive_session_returns_false(tmp_path):
     tmp_path.mkdir(exist_ok=True)
     assert CaptureControl.request_stop(tmp_path, "missing-session") is False
+
+
+def test_exited_process_is_not_reported_alive():
+    with subprocess.Popen([sys.executable, "-c", "pass"]) as process:
+        process.wait(timeout=5)
+
+    assert not CaptureControl._process_is_alive(process.pid)
 
 
 def test_control_refuses_second_active_owner_for_same_session(tmp_path):
