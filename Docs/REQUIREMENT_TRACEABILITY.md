@@ -63,3 +63,7 @@ The following changes are now merged into `main` and have fresh verification evi
 - **Current main CI:** [run 40915380388](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40915380388) passed Ruff and **122 tests in 2.24 seconds** on Ubuntu 24.04 / Python 3.12.15. The Windows CI job also passed lint and its Windows demo/replay/export steps. The developer's local Windows run passed the eight new parser tests.
 
 These results are automated/synthetic verification only. They do **not** close the manual checks in issue #10: authorized live-interface startup/stop and permission behavior, Windows ACL verification if Windows is a supported target, actual Wi-Fi monitor mode/BLE capture if claimed, and Raspberry Pi/live packet-drop measurements if those remain project claims. Do not mark those checks complete without recorded target-environment evidence.
+
+## Sprint 3 current verification — 2026-11-07
+
+- The issue #39 worktree was based on `origin/main` commit `19bdf4610863b9cfed32d79953c1dc1d69b15f29`. PR #42 already delivers issue #41's suspicious-only query and classification/reason output; issue #41 is closed. No duplicate alert or classification implementation was added.
