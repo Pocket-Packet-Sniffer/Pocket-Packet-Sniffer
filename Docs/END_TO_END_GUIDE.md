@@ -63,11 +63,13 @@ python tools/create_demo_pcap.py demo.pcap
 pocket-packet-sniffer capture --pcap-file demo.pcap --storage-dir demo-captures --session-id demo-session
 pocket-packet-sniffer query --storage-dir demo-captures --protocol TCP
 pocket-packet-sniffer query --storage-dir demo-captures --address 192.0.2.1
+pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --suspicious-only
+pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --show-classification
 pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.csv --format csv
 pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.pdf --format pdf
 ```
 
-The generated fixture is synthetic, contains TCP, DNS/UDP, ICMP and conflicting ARP claims, and is intended to demonstrate parser/statistics/reporting and a heuristic alert. Replay reads it locally and does not send packets. The generator refuses to overwrite an existing file.
+The generated fixture is synthetic, contains TCP, DNS/UDP, ICMP and conflicting ARP claims, and is intended to demonstrate parser/statistics/reporting and a heuristic alert. The suspicious-only query should flag the ARP address conflict with rule `arp-address-conflict` and its reason; the classification view shows the other records as `NO RULE MATCHED`. A no-match is not proof that traffic is safe. Replay reads the fixture locally and does not send packets. The generator refuses to overwrite an existing file.
 
 For concurrent fan-in without privileged capture:
 
