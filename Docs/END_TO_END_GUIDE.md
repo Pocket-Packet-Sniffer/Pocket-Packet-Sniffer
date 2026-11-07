@@ -95,7 +95,7 @@ CI runs the same checks. Generated-PCAP tests exercise the layers without root/a
 - The application `CaptureSession` maps analyzed metadata plus original raw bytes to the Storage `PacketRecord` contract.
 - Storage persists PCAP and indexed metadata in SQLite.
 - Presentation renders statistics and exports CSV/PDF without parsing packets; it also lists sessions and supports a local cross-terminal stop request.
-- An architecture test prevents Analysis from importing the concrete Storage implementation. PR #29 merged metadata-only heuristic alerts, concurrent capture, PDF export, session queries, explicit stop control, and a replay throughput benchmark into main. Latest main CI [run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and **106 tests in 1.87s**. The benchmark does not establish live-interface packet-loss performance; target hardware must be measured separately.
+- An architecture test prevents Analysis from importing the concrete Storage implementation. PR #29 merged metadata-only heuristic alerts, concurrent capture, PDF export, session queries, explicit stop control, and a replay throughput benchmark into main. PR #42 added visible suspicious-record filtering and classification. Latest main CI [run 40934901326](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40934901326) passed on Ubuntu and Windows. The benchmark does not establish live-interface packet-loss performance; target hardware must be measured separately.
 
 ## Remaining manual checks
 
