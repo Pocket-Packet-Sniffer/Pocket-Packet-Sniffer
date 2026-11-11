@@ -36,6 +36,8 @@ See CONTRIBUTING.md for the detailed working agreement.
 
 ## Development setup and tests
 
+Run `ruff check .` to verify Python code quality and `pytest --cov=pocket_packet_sniffer --cov-report=term-missing` to inspect test coverage.
+
 Use Python 3.10 or newer. From the repository root:
 
 ```bash
