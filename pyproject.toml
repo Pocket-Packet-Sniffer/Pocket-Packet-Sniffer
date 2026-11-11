@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = ["scapy>=2.5"]
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
+test = ["pytest>=8", "pytest-cov>=7.1"]
 
 [project.scripts]
 pocket-packet-sniffer = "pocket_packet_sniffer.cli:main"
