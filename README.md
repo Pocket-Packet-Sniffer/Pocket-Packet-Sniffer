@@ -42,7 +42,7 @@ Use Python 3.10 or newer. From the repository root:
 python -m pip install -e .
 python -m pip install -r requirements-dev.txt
 ruff check --select E4,E7,E9,F,I src tests tools
-pytest -q
+pytest -q pytest --cov=pocket_packet_sniffer --cov-report=term-missing
 ```
 
 The tests use generated PCAP fixtures and mocked capture backends; they do not require root privileges or live network traffic. The repository now includes the Capture, Analysis, Storage, and Presentation/application session path, plus CLI and generated-PCAP integration tests. The latest recorded `main` CI run completed successfully with Ruff passing and 106 tests passing. Live-interface and target-platform behaviour still needs manual verification.
