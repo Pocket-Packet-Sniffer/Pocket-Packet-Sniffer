@@ -26,7 +26,7 @@ class TrafficStatistics:
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         if isinstance(window_seconds, bool) or not isinstance(window_seconds, (int, float)):
-            raise ValueError("window_seconds must be a positive number")
+            raise TypeError("window_seconds must be a positive number")
         if window_seconds <= 0:
             raise ValueError("window_seconds must be a positive number")
         self.window_seconds = float(window_seconds)
