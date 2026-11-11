@@ -83,7 +83,8 @@ class ConcurrentCapturer(Capturer):
                     backend_stop,
                     count=None,
                 )
-            except Exception as exc:
+            # Collect backend failures so the main thread can report them after cleanup.
+            except Exception as exc:  # noqa: BLE001
                 with state_lock:
                     errors.append(exc)
                 backend_stop.set()

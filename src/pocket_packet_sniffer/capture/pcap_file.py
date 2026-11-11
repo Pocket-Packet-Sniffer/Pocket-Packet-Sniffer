@@ -37,7 +37,7 @@ class PcapFileCapturer(Capturer):
     def __init__(self, path: str | os.PathLike[str], delay: float = 0.0):
         self.path = Path(path).expanduser()
         if isinstance(delay, bool) or not isinstance(delay, (int, float)):
-            raise ValueError("delay must be a non-negative number of seconds")
+            raise TypeError("delay must be a non-negative number of seconds")
         if not math.isfinite(delay) or delay < 0:
             raise ValueError("delay must be a finite, non-negative number of seconds")
         self.delay = float(delay)

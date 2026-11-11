@@ -32,8 +32,8 @@ def _decode_packet(captured: CapturedPacket) -> Packet | None:
             return None
 
         return layer_class(captured.packet_data)
-    except Exception:
-        # Malformed packets must not interrupt the capture process.
+    # Scapy decoding failures must not interrupt packet capture.
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -168,6 +168,6 @@ class PacketParser:
                 destination_mac=destination_mac,
             )
 
-        except Exception:
-            # Protect capture from malformed or unexpected packet-decoding errors.
+        # Unexpected decoding errors must not terminate the capture process.
+        except Exception:  # noqa: BLE001
             return None

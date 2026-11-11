@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+import pytest
+
 from pocket_packet_sniffer.analysis.alerts import (
     AlertEvent,
     AlertPublisher,
@@ -124,3 +126,83 @@ def test_observer_failure_does_not_interrupt_other_subscribers():
 
     assert delivered == [event]
     assert publisher.notification_failures == 1
+
+
+def test_subscribe_rejects_non_callable_observer():
+    publisher = AlertPublisher()
+
+    with pytest.raises(TypeError, match="observer"):
+        publisher.subscribe("not callable")
+
+
+def test_duplicate_subscription_delivers_only_once():
+    publisher = AlertPublisher()
+    events = []
+
+    observer = events.append
+    publisher.subscribe(observer)
+    publisher.subscribe(observer)
+
+    event = AlertEvent(
+        rule_id="test",
+        severity="info",
+        message="test",
+        timestamp=datetime.now(timezone.utc),
+        evidence={},
+    )
+
+    publisher.publish(event)
+
+    assert events == [event]
+
+
+def test_unsubscribe_is_idempotent():
+    publisher = AlertPublisher()
+    events = []
+    unsubscribe = publisher.subscribe(events.append)
+
+    unsubscribe()
+    unsubscribe()
+
+    event = AlertEvent(
+        rule_id="test",
+        severity="info",
+        message="test",
+        timestamp=datetime.now(timezone.utc),
+        evidence={},
+    )
+
+    publisher.publish(event)
+
+    assert events == []
+
+
+def test_detector_rejects_invalid_publisher():
+    with pytest.raises(TypeError, match="publisher"):
+        SuspiciousActivityDetector(None)
+
+
+def test_allowlist_entries_are_normalized():
+    publisher = AlertPublisher()
+    events = []
+
+    publisher.subscribe(events.append)
+
+    detector = SuspiciousActivityDetector(
+        publisher,
+        known_devices={" 02:00:00:00:00:01 "},
+    )
+
+    detector.inspect(record("TCP", "192.0.2.5", "02:00:00:00:00:01"))
+
+    assert events == []
+
+
+def test_allowlist_rejects_invalid_entries():
+    publisher = AlertPublisher()
+
+    with pytest.raises(ValueError, match="allowlist"):
+        SuspiciousActivityDetector(
+            publisher,
+            known_devices={"02:00:00:00:00:01", ""},
+        )

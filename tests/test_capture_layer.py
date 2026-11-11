@@ -360,3 +360,40 @@ def test_live_capture_lifecycle_diagnostics_are_opt_in(monkeypatch, capsys):
     assert "capture_lifecycle reason=packet_count" in diagnostic
     assert "delivered=1" in diagnostic
     assert "count_reached=True" in diagnostic
+
+
+
+@pytest.mark.parametrize("link_type", [None, "1", True, False, 1.5])
+def test_captured_packet_rejects_invalid_link_type_type(link_type):
+    with pytest.raises(TypeError, match="link_type"):
+        CapturedPacket(
+            timestamp=datetime.now(timezone.utc),
+            packet_data=b"frame",
+            interface="eth-test",
+            link_type=link_type,
+            original_length=5,
+        )
+
+
+@pytest.mark.parametrize("link_type", [-1, 0x100000000])
+def test_captured_packet_rejects_out_of_range_link_type(link_type):
+    with pytest.raises(ValueError, match="link_type"):
+        CapturedPacket(
+            timestamp=datetime.now(timezone.utc),
+            packet_data=b"frame",
+            interface="eth-test",
+            link_type=link_type,
+            original_length=5,
+        )
+
+
+@pytest.mark.parametrize("delay", [None, "0.1", True, False])
+def test_pcap_capturer_rejects_invalid_delay_type(tmp_path, delay):
+    with pytest.raises(TypeError, match="delay"):
+        PcapFileCapturer(tmp_path / "sample.pcap", delay=delay)
+
+
+@pytest.mark.parametrize("delay", [-0.1, float("inf"), float("nan")])
+def test_pcap_capturer_rejects_invalid_delay_value(tmp_path, delay):
+    with pytest.raises(ValueError, match="delay"):
+        PcapFileCapturer(tmp_path / "sample.pcap", delay=delay)
