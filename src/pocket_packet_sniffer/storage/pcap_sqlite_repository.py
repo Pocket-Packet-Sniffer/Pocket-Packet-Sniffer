@@ -7,10 +7,10 @@ import os
 import sqlite3
 import struct
 import threading
+from collections.abc import Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Sequence
 
 from .errors import (
     DuplicateRecordError,
