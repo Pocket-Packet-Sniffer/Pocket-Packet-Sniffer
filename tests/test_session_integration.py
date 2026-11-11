@@ -22,14 +22,12 @@ class FixtureCapturer(Capturer):
         self.records = records
 
     def capture(self, on_packet, stop_event, count=None):
-        delivered = 0
-        for record in self.records:
+        for delivered, record in enumerate(self.records):
             if stop_event.is_set():
                 return
             if count is not None and delivered >= count:
                 return
             on_packet(record)
-            delivered += 1
 
 
 def captured(packet_bytes, *, timestamp, link_type=1):
