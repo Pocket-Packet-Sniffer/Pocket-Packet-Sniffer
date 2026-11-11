@@ -19,5 +19,6 @@ pocket-packet-sniffer = "pocket_packet_sniffer.cli:main"
 where = ["src"]
 
 [tool.pytest.ini_options]
+addopts = "--strict-markers"
 testpaths = ["tests"]
 pythonpath = ["src"]
