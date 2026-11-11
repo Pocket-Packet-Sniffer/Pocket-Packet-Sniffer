@@ -56,7 +56,7 @@ def render_stats(snapshot: StatsSnapshot, title: str = "Pocket Packet Sniffer") 
             if count < 0:
                 raise ValueError("protocol counts must be non-negative")
             lines.append(
-                f"  {str(protocol):<10} {count:>7}  "
+                f"  {protocol!s:<10} {count:>7}  "
                 f"{100 * count / denominator:5.1f}%"
             )
     else:
@@ -68,7 +68,7 @@ def render_stats(snapshot: StatsSnapshot, title: str = "Pocket Packet Sniffer") 
             count = int(count)
             if count < 0:
                 raise ValueError("talker counts must be non-negative")
-            lines.append(f"  {str(address):<40} {count:>7}")
+            lines.append(f"  {address!s:<40} {count:>7}")
     else:
         lines.append("  (no packets yet)")
     return "\n".join(lines)
@@ -90,7 +90,7 @@ def run_live_dashboard(
     coupling Presentation to a capture backend.
     """
     if not isinstance(refresh_interval, (int, float)) or isinstance(refresh_interval, bool):
-        raise ValueError("refresh_interval must be a number greater than zero and at most 2 seconds")
+        raise TypeError("refresh_interval must be a number greater than zero and at most 2 seconds")
     if not 0 < refresh_interval <= 2.0:
         raise ValueError("refresh_interval must be greater than zero and at most 2 seconds")
 
