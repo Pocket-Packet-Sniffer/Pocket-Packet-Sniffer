@@ -1,3 +1,4 @@
+
 """Passive live packet capture using Scapy's asynchronous sniffer."""
 
 from __future__ import annotations
@@ -160,7 +161,8 @@ class ScapyCapturer(Capturer):
                 on_packet(record)
                 with count_lock:
                     delivered += 1
-            except Exception as exc:
+            # Preserve callback failures for reporting by the capture thread.
+            except Exception as exc:  # noqa: BLE001
                 callback_error.append(exc)
 
         sniffer = None
@@ -269,8 +271,8 @@ def _stop_sniffer_safely(sniffer: Any) -> None:
             thread = getattr(sniffer, "thread", None)
             if thread is not None and thread.is_alive():
                 thread.join(timeout=0.2)
-    except Exception:
-        # Preserve the primary startup/capture error; cleanup is best-effort.
+    # Cleanup must not mask the original capture or startup error.
+    except Exception:  # noqa: BLE001, S110
         pass
 
 

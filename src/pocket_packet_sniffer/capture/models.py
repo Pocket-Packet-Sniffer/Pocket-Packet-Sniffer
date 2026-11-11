@@ -34,7 +34,7 @@ class CapturedPacket:
         if not isinstance(self.interface, str) or not self.interface.strip():
             raise ValueError("interface must be a non-empty string")
         if not isinstance(self.link_type, int) or isinstance(self.link_type, bool):
-            raise ValueError("link_type must be an integer")
+            raise TypeError("link_type must be an integer")
         if not 0 <= self.link_type <= 0xFFFFFFFF:
             raise ValueError("link_type must fit the classic PCAP field")
         if (
