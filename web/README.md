@@ -1,35 +1,45 @@
-# Pocket Packet Sniffer — Dashboard UI preview
+# Pocket Packet Sniffer dashboard
 
-This is the first frontend shell for visual iteration. It is deliberately labelled **Preview mode** and uses synthetic sample data only. It does not open a network interface, read a PCAP, call the Python backend, or claim that live packet capture is working.
+The dashboard uses Next.js App Router and has two deliberately separate modes:
 
-## Run locally
+- **Local mode** connects to the FastAPI service on this computer and can control explicitly requested passive capture or local PCAP replay.
+- **Hosted demo mode** is a static export with a fixed synthetic dataset. It makes no API requests and cannot access a network interface or local files.
 
-Requirements: Node.js 20+ and npm.
+The hosted demo is not a remote capture service. Live capture, packet bytes, SQLite indexes, and reports stay on the operator's computer.
 
-From the repository root:
+## Run local mode
 
-\`\`\`powershell
+Requirements: Python 3.10+, Node.js 20.9+, and npm. From the repository root:
+
+```powershell
+python -m pip install -e .
 cd web
-npm install
+npm ci
 npm run dev
-\`\`\`
+```
 
-Open the local URL printed by Vite (normally http://127.0.0.1:5173).
+In another terminal, start the local API from the repository root:
 
-Create a production build:
+```powershell
+python -m uvicorn pocket_packet_sniffer.api:app --reload --host 127.0.0.1 --port 8000
+```
 
-\`\`\`powershell
+Open `http://127.0.0.1:5173`. The API binds to loopback. Use only an interface and network you own or are authorized to monitor.
+
+## Build the hosted synthetic demo locally
+
+```powershell
+cd web
+$env:NEXT_PUBLIC_DEMO_MODE = "true"
+$env:NEXT_BASE_PATH = "/Pocket-Packet-Sniffer"
+npm ci
 npm run build
-\`\`\`
+```
 
-## Current scope
+Next.js writes the static site to `out/`. The demo build includes synthetic records only. Its capture panel is hidden and its frontend does not request the local API.
 
-- Responsive navigation and dashboard layout.
-- Clearly marked synthetic sample session.
-- Preview-only stream control and packet table filtering.
-- Client-side CSV export of the visible sample records.
-- No backend or capture connection yet.
+## Deployment
 
-## Important
+`.github/workflows/deploy-dashboard.yml` builds and publishes the static demo to GitHub Pages after main-branch CI succeeds. The repository must have Pages configured to use **GitHub Actions** under **Settings → Pages → Build and deployment**. The workflow does not deploy the Python API or any capture data.
 
-The preview UI is not evidence of a functioning capture session. The next integration step must connect these controls to a local API that reuses the existing Python Capture → Analysis → Storage code. Do not remove the preview warning until live API connectivity and real session data are verified.
+See [`Docs/WEB_DEPLOYMENT.md`](../Docs/WEB_DEPLOYMENT.md) for the hosting decision, provider alternatives, and deployment boundary.

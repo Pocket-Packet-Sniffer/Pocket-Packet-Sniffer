@@ -11,7 +11,7 @@ The design follows the four-layer architecture defined by the SRS and SASD:
 3. **Storage** — persists PCAP data and indexed metadata through a Repository interface.
 4. **Presentation** — provides the primary CLI for capture control, live statistics, queries, and reports.
 
-WiFi, Ethernet, and BLE are represented by the requirements. PR #29 merged support for Ethernet/IP, ARP, conditional 802.11 beacon/frame metadata and conditional BLE advertisement metadata, plus heuristic alert events and concurrent capture. Actual live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. Zeek integration and the web dashboard remain optional/deferred; the dashboard comes after backend verification.
+WiFi, Ethernet, and BLE are represented by the requirements. PR #29 merged support for Ethernet/IP, ARP, conditional 802.11 beacon/frame metadata and conditional BLE advertisement metadata, plus heuristic alert events and concurrent capture. Actual live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. The Next.js dashboard is being completed on the dashboard feature branch; its hosted build is a static synthetic demo, while real capture remains local.
 
 ## Requirements and project documents
 
@@ -193,7 +193,7 @@ Known limitations remain: classic PCAP only; passive live capture depends on pla
 Please retain third-party acknowledgements in project submissions and follow each dependency's distribution/licensing terms.
 ## Local dashboard + API
 
-The React dashboard reads real stored packet metadata from the FastAPI API. It refreshes automatically; an empty dashboard is expected until a capture/replay session has stored records. The dashboard does not start capture itself yet.
+The Next.js dashboard reads stored packet metadata from the local FastAPI API and can explicitly start or stop a local capture/replay session. Its public static deployment uses synthetic demo data only and never connects to the capture API.
 
 ### Start on Windows (PowerShell)
 
@@ -208,11 +208,11 @@ Terminal 2:
 
 ```powershell
 cd web
-npm install
+npm ci
 npm run dev
 ```
 
-Open the Vite URL shown in the terminal (usually http://127.0.0.1:5173). The API health endpoint is http://127.0.0.1:8000/api/health.
+Open the dashboard at http://127.0.0.1:5173. The API health endpoint is http://127.0.0.1:8000/api/health.
 
 Optional: set `PPS_STORAGE_DIR` to choose the local PCAP/SQLite storage directory. The default is `captures` in the current working directory.
 

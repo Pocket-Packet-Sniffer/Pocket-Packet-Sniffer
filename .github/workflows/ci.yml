@@ -54,7 +54,7 @@ jobs:
         run: pytest -q tests/test_cli.py::test_cli_replay_supports_relative_storage_directory
 
   web-build:
-    name: Build dashboard UI preview
+    name: Build Next.js dashboard
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -67,6 +67,11 @@ jobs:
         with:
           node-version: "22"
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
+      - name: Type-check dashboard
+        run: npm run typecheck
       - name: Build frontend
+        env:
+          NEXT_PUBLIC_DEMO_MODE: "true"
+          NEXT_BASE_PATH: "/Pocket-Packet-Sniffer"
         run: npm run build

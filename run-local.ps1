@@ -14,7 +14,7 @@ if (-not (Test-Path (Join-Path $root "web\package.json"))) {
     throw "Frontend folder not found: $root\web"
 }
 
-# A stale preview server on port 5173 can keep showing synthetic data even after
+# A stale dashboard server on port 5173 can keep showing old data even after
 # the integrated frontend has been pulled. Ask before stopping an existing listener.
 foreach ($port in @(8000, 5173)) {
     $listeners = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
@@ -44,11 +44,11 @@ try {
 }
 
 if (-not (Test-Path (Join-Path $root "web\node_modules"))) {
-    Write-Host "Frontend dependencies are missing; installing them with npm install..."
+        Write-Host "Frontend dependencies are missing; installing them with npm ci..."
     Push-Location (Join-Path $root "web")
     try {
-        npm install
-        if ($LASTEXITCODE -ne 0) { throw "npm install failed." }
+        npm ci
+        if ($LASTEXITCODE -ne 0) { throw "npm ci failed." }
     } finally {
         Pop-Location
     }
