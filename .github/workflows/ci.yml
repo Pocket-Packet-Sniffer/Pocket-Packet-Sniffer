@@ -52,3 +52,26 @@ jobs:
         env:
           PYTHONPATH: src
         run: pytest -q tests/test_cli.py::test_cli_replay_supports_relative_storage_directory
+
+  web-build:
+    name: Build Next.js dashboard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Type-check dashboard
+        run: npm run typecheck
+      - name: Build frontend
+        env:
+          NEXT_PUBLIC_DEMO_MODE: "true"
+          NEXT_BASE_PATH: "/Pocket-Packet-Sniffer"
+        run: npm run build
