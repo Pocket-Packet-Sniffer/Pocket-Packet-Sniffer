@@ -27,3 +27,7 @@ captures/
 *.log
 dist/
 build/
+web/node_modules/
+web/.next/
+web/out/
+web/tsconfig.tsbuildinfo

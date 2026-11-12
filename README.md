@@ -11,7 +11,7 @@ The design follows the four-layer architecture defined by the SRS and SASD:
 3. **Storage** — persists PCAP data and indexed metadata through a Repository interface.
 4. **Presentation** — provides the primary CLI for capture control, live statistics, queries, and reports.
 
-WiFi, Ethernet, and BLE are represented by the requirements. PR #29 merged support for Ethernet/IP, ARP, conditional 802.11 beacon/frame metadata and conditional BLE advertisement metadata, plus heuristic alert events and concurrent capture. Actual live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. Zeek integration and the web dashboard remain optional/deferred; the dashboard comes after backend verification.
+WiFi, Ethernet, and BLE are represented by the requirements. PR #29 merged support for Ethernet/IP, ARP, conditional 802.11 beacon/frame metadata and conditional BLE advertisement metadata, plus heuristic alert events and concurrent capture. Actual live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. The Next.js dashboard is being completed on the dashboard feature branch; its hosted build is a static synthetic demo, while real capture remains local.
 
 ## Requirements and project documents
 
@@ -195,3 +195,39 @@ Known limitations remain: classic PCAP only; passive live capture depends on pla
 - The PDF report writer in this implementation uses the Python standard library. Zeek is mentioned as an optional integration in project materials but is not implemented or claimed as an integrated feature.
 
 Please retain third-party acknowledgements in project submissions and follow each dependency's distribution/licensing terms.
+## Local dashboard + API
+
+The Next.js dashboard reads stored packet metadata from the local FastAPI API and can explicitly start or stop a local capture/replay session. Its public static deployment uses synthetic demo data only and never connects to the capture API.
+
+### Start on Windows (PowerShell)
+
+Terminal 1, from the repository root:
+
+```powershell
+python -m pip install -e .
+python -m uvicorn pocket_packet_sniffer.api:app --reload --host 127.0.0.1 --port 8000
+```
+
+Terminal 2:
+
+```powershell
+cd web
+npm ci
+npm run dev
+```
+
+Open the dashboard at http://127.0.0.1:5173. The API health endpoint is http://127.0.0.1:8000/api/health.
+
+Optional: set `PPS_STORAGE_DIR` to choose the local PCAP/SQLite storage directory. The default is `captures` in the current working directory.
+
+
+### Start and stop capture from the dashboard
+
+The dashboard's **Capture session** panel can start passive live capture or replay a local classic PCAP file. It uses the same Capture → Analysis → Storage pipeline as the CLI. Capture writes packet metadata to SQLite and packet bytes to per-session PCAP files under the configured storage directory.
+
+- **Live interface:** enter the exact interface name reported by Scapy (it may not be the friendly label “Wi-Fi”). On Windows, install a supported Npcap driver and run the terminal with the privileges required by your adapter/driver.
+- **PCAP replay:** enter a path to a local classic `.pcap` file accessible to the Python process. PCAPNG is not supported by the current replay reader.
+- Use **Stop capture** to request a graceful stop. Status and packet counters refresh automatically.
+- Only capture traffic on networks and interfaces you own or are authorized to monitor. Capture remains local; this API is intended for localhost development and is not authenticated for exposure to other machines.
+
+Capture API endpoints: `POST /api/capture/start`, `POST /api/capture/stop`, and `GET /api/capture/status`.
