@@ -159,9 +159,10 @@ test("live statistics update while the historical summary is still loading", asy
 });
 
 test("the current sensor version stays connected while offering the optimized update", async ({ page }) => {
-  await mockLocalAgent(page, { agentVersion: "0.2.1" });
+  await mockLocalAgent(page, { agentVersion: "0.2.1", statisticsPackets: 321 });
   await page.goto("/");
   await expect(page.getByText("SENSOR READY", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Network summary" }).getByText("321", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Update sensor for faster packet history" })).toHaveAttribute("href", /releases\/latest\/download/);
 });
 

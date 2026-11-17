@@ -250,6 +250,8 @@ export default function App() {
   const searchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const sensorHealthRequest = useRef<Promise<Record<string, unknown>> | null>(null);
+  const captureSnapshot = useRef(capture);
+  captureSnapshot.current = capture;
 
   async function checkSensorHealth() {
     if (sensorHealthRequest.current) return sensorHealthRequest.current;
@@ -361,11 +363,13 @@ export default function App() {
     let consecutiveFailures = 0;
     async function refresh() {
       if (!connectionRequested) return;
+      let needsUpdate = false;
       try {
         const health = await checkSensorHealth();
         if (cancelled) return;
         consecutiveFailures = 0;
-        setAgentUpdateAvailable(health.version !== CURRENT_AGENT_VERSION);
+        needsUpdate = health.version !== CURRENT_AGENT_VERSION;
+        setAgentUpdateAvailable(needsUpdate);
         setOnline(true);
         setError("");
       } catch (cause) {
@@ -390,12 +394,28 @@ export default function App() {
           // Keep the last successful values; each panel refreshes independently.
         }
       };
+      const liveSessionId = captureSnapshot.current.session_id;
+      const packetPath = needsUpdate
+        ? liveSessionId ? `/api/packets?limit=250&session_id=${encodeURIComponent(liveSessionId)}` : null
+        : "/api/packets?limit=250";
       await Promise.all([
-        updateFrom("/api/overview", (data) => setOverview(data as unknown as Overview)),
-        updateFrom("/api/packets?limit=250", (data) => setRows(((data.packets || []) as Record<string, unknown>[]).map(packetFromApi))),
+        needsUpdate ? Promise.resolve() : updateFrom("/api/overview", (data) => setOverview(data as unknown as Overview)),
+        packetPath ? updateFrom(packetPath, (data) => setRows(((data.packets || []) as Record<string, unknown>[]).map(packetFromApi))) : Promise.resolve(),
         updateFrom("/api/sessions", (data) => setSessions(data as unknown as Session[])),
         updateFrom("/api/alerts?limit=100", (data) => setAlerts((data.alerts || []) as Alert[])),
-        updateFrom("/api/statistics", (data) => setStatistics(data as unknown as TrafficStatistics)),
+        updateFrom("/api/statistics", (data) => {
+          const snapshot = data as unknown as TrafficStatistics;
+          setStatistics(snapshot);
+          if (needsUpdate) {
+            setOverview({
+              total_packets: snapshot.total_packets,
+              total_bytes: snapshot.total_bytes,
+              active_sessions: snapshot.total_packets ? 1 : 0,
+              protocols: Object.fromEntries(snapshot.protocols),
+              top_talkers: snapshot.top_talkers,
+            });
+          }
+        }),
       ]);
       if (!cancelled) timer = window.setTimeout(refresh, 2500);
     }
