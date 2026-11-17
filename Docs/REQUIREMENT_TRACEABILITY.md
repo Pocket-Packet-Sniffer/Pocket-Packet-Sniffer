@@ -38,7 +38,7 @@ This matrix connects the approved SRS requirements to GitHub work items and the 
 
 ## Verification record
 
-See [Docs/TEST_EXECUTION_REPORT.md](TEST_EXECUTION_REPORT.md) for the current CI run, STP test-case mapping, and unexecuted target-environment checks.
+See [test documentation](../tests/README.md) and the [test execution report](../tests/docs/TEST_EXECUTION_REPORT.md) for current CI evidence, STP mapping, and unexecuted target-environment checks.
 
 For every acceptance criterion, record:
 - the implementing PR/commit;
@@ -67,13 +67,13 @@ These results are automated/synthetic verification only. They do **not** close t
 ## Sprint 3 current verification — 2026-11-07
 
 - The issue #39 worktree was based on `origin/main` commit `19bdf4610863b9cfed32d79953c1dc1d69b15f29`. PR #42 already delivers issue #41's suspicious-only query and classification/reason output; issue #41 is closed. No duplicate alert or classification implementation was added.
-- Current main CI [run 40934901326](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40934901326) succeeded on Ubuntu and Windows. The local Windows worktree run passed Ruff and **126 tests with 2 POSIX-only permission tests skipped**; it includes regressions for incomplete alert metadata and exited-process liveness. See `Docs/TEST_EXECUTION_REPORT.md` for exact commands and the local synthetic-demo results.
+- Current main CI [run 40934901326](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40934901326) succeeded on Ubuntu and Windows. The local Windows worktree run passed Ruff and **126 tests with 2 POSIX-only permission tests skipped**; it includes regressions for incomplete alert metadata and exited-process liveness. See `tests/docs/TEST_EXECUTION_REPORT.md` for exact commands and the local synthetic-demo results.
 - The synthetic demo confirmed five stored records, one ARP-conflict classification with an explanation, four `NO RULE MATCHED` records, protocol/address/time queries, CSV/PDF export, and six stored records from concurrent synthetic replay. `NO RULE MATCHED` is not a safety verdict.
 - A Windows stop-request regression was fixed in the issue #39 worktree: Windows now checks process state through a synchronization handle rather than using the POSIX `os.kill(pid, 0)` convention. The cross-terminal stop test and full Windows test suite pass locally.
 - **NOT RUN:** live authorized capture start/stop and permission diagnostics, Windows ACL review, Wi-Fi monitor mode, BLE adapter capture, Raspberry Pi performance, live packet/drop counters, and simultaneous live-adapter capture. These remain evidence gates; synthetic tests and CI do not verify target hardware.
 
 ## Dashboard implementation verification — 2026-11-17
 
-The draft SRS v1.4 REQ-11/REQ-12 web flow is now implemented: Vercel hosts the interface, while each user runs the capture API locally. The dashboard presents only records returned by that local API and has an honest offline state; real capture requires an explicitly selected local adapter, and replay requires choosing a local classic PCAP. Browser tests cover offline guidance, actual packet activity visualization, capture settings, server-side protocol/session/time/address filters, header-only packet details, local PCAP staging/replay, session CSV/PDF reports, and mobile width. API integration tests cover these routes and reject writes from unapproved browser origins. See `Docs/TEST_EXECUTION_REPORT.md` for exact run results.
+The draft SRS v1.4 REQ-11/REQ-12 web flow is now implemented: Vercel hosts the interface, while each user runs the capture API locally. The dashboard presents only records returned by that local API and has an honest offline state; real capture requires an explicitly selected local adapter, and replay requires choosing a local classic PCAP. Browser tests cover offline guidance, actual packet activity visualization, capture settings, server-side protocol/session/time/address filters, header-only packet details, local PCAP staging/replay, session CSV/PDF reports, and mobile width. API integration tests cover these routes and reject writes from unapproved browser origins. See `tests/docs/TEST_EXECUTION_REPORT.md` for exact run results.
 
 Draft REQ-11/REQ-12 status: **automated dashboard/local-agent flows implemented and covered**. Physical adapters, Wi-Fi monitor mode, BLE radio input, Windows ACLs, and Raspberry Pi packet loss/performance remain unverified. The v1.4 proposal remains a draft pending project approval.

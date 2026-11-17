@@ -11,7 +11,7 @@ The design follows the four-layer architecture defined by the SRS and SASD:
 3. **Storage** — persists PCAP data and indexed metadata through a Repository interface.
 4. **Presentation** — provides the primary CLI for capture control, live statistics, queries, and reports.
 
-WiFi, Ethernet, and BLE are represented by the requirements. The dashboard uses a dark purple visual system and displays only data from the local capture agent. Live capture and PCAP replay are explicit operator actions; metadata-only heuristic alerts identify suspicious patterns for review. Live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. Vercel hosts the interface only; real capture remains local.
+WiFi, Ethernet, and BLE are represented by the requirements. The dashboard uses a near-black visual system with signal-green/cyan accents and displays only data from the local capture agent. Live capture and PCAP replay are explicit operator actions; metadata-only heuristic alerts identify suspicious patterns for review. Live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. Vercel hosts the interface only; real capture remains local.
 
 ## Requirements and project documents
 
@@ -53,7 +53,7 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 
 - [Requirement Traceability Matrix](Docs/REQUIREMENT_TRACEABILITY.md) — SRS-to-issue and STP-to-test mapping with verification status.
 - [Implementation Gap Audit](Docs/IMPLEMENTATION_GAP_AUDIT.md) — direct SRS v1.3-to-code comparison, branch status, and outstanding hardware checks.
-- [Sprint Plan](Docs/SPRINT_PLAN.md) — proposed Sprint 1/Sprint 2 scope and review records.
+- [Sprint Plan and closeout](Docs/SPRINT_PLAN.md) — completed sprint records and the remaining evidence-based follow-up.
 - [Sprint 1 review/retrospective](Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md) — verified deliveries, asynchronous evidence review, limitations, and process improvements.
 - [GitHub Operating Guide](Docs/GITHUB_OPERATING_GUIDE.md) — repository workflow, milestones, labels, reviews and security settings.
 
@@ -69,7 +69,7 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 - [Capture Layer guide](Docs/CAPTURE_LAYER.md) — capture backends, typed failures, setup and limitations.
 - [End-to-end guide](Docs/END_TO_END_GUIDE.md) — CLI install/usage, layer contracts, tests and manual checks.
 - [End-to-end demo script](Docs/DEMO_SCRIPT.md) — reproducible PCAP replay, alerts, queries, CSV/PDF exports, and concurrent-capture demo.
-- [SRS/STP test execution report](Docs/TEST_EXECUTION_REPORT.md) — automated CI evidence, requirement-to-test mapping, and explicit pending hardware checks.
+- [Test documentation and execution reports](tests/README.md) — test plan, categorized test reports, coverage evidence, requirement mapping, and pending hardware checks.
 - [Replay throughput benchmark](tools/benchmark_pipeline.py) — measures synthetic replay, analysis, and local storage throughput; it is not a live packet-loss test.
 
 ## Storage and query layer (PPS-04/PPS-05)
