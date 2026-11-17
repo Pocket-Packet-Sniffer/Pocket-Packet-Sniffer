@@ -246,6 +246,28 @@ export default function App() {
   const [toast, setToast] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const sensorHealthRequest = useRef<Promise<Record<string, unknown>> | null>(null);
+
+  async function checkSensorHealth() {
+    if (sensorHealthRequest.current) return sensorHealthRequest.current;
+    const request = (async () => {
+      const response = await localFetch(`${API}/api/health`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+      const health = await response.json() as Record<string, unknown>;
+      if (!response.ok || health.status !== "ok") {
+        throw new Error(String(health.detail || "The local sensor is not ready yet."));
+      }
+      if (health.version !== "0.2.1") {
+        throw new Error("Your capture sensor needs an update. Download and open the latest sensor, then reconnect.");
+      }
+      return health;
+    })();
+    sensorHealthRequest.current = request;
+    try {
+      return await request;
+    } finally {
+      if (sensorHealthRequest.current === request) sensorHealthRequest.current = null;
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -332,22 +354,22 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
+    let timer: number | undefined;
+    let consecutiveFailures = 0;
     async function refresh() {
       if (!connectionRequested) return;
       try {
-        const healthResponse = await localFetch(`${API}/api/health`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
-        const health = await healthResponse.json();
-        if (!healthResponse.ok || health.status !== "ok") {
-          throw new Error(health.detail || "The local sensor is not ready yet.");
-        }
-        if (health.version !== "0.2.1") throw new Error("Your capture sensor needs an update. Download and open the latest sensor, then reconnect.");
+        await checkSensorHealth();
         if (cancelled) return;
+        consecutiveFailures = 0;
         setOnline(true);
         setError("");
       } catch (cause) {
         if (cancelled) return;
-        setOnline(false);
+        consecutiveFailures += 1;
+        if (consecutiveFailures >= 2) setOnline(false);
         setError(cause instanceof Error ? cause.message : "Open the local sensor to connect this dashboard.");
+        timer = window.setTimeout(refresh, 2500);
         return;
       }
 
@@ -378,10 +400,10 @@ export default function App() {
       if (statisticsResult.status === "fulfilled" && statisticsResult.value.ok) {
         try { setStatistics(await statisticsResult.value.json()); } catch { /* Keep the last rate snapshot. */ }
       }
+      if (!cancelled) timer = window.setTimeout(refresh, 2500);
     }
     if (connectionRequested) void refresh();
-    const timer = window.setInterval(() => void refresh(), 2500);
-    return () => { cancelled = true; window.clearInterval(timer); };
+    return () => { cancelled = true; if (timer !== undefined) window.clearTimeout(timer); };
   }, [connectionRequested]);
 
   useEffect(() => {
@@ -465,15 +487,12 @@ export default function App() {
   const maxActivity = Math.max(...activityBins, 1);
 
   async function connectSensor() {
-    setConnectionRequested(true);
     setError("Allow this site to access the local network if your browser asks, then keep the sensor running.");
     try {
-      const response = await localFetch(`${API}/api/health`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
-      const health = await response.json();
-      if (!response.ok || health.status !== "ok") throw new Error(health.detail || "The local sensor is not ready yet.");
-      if (health.version !== "0.2.1") throw new Error("Your capture sensor needs an update. Download and open the latest sensor, then reconnect.");
+      await checkSensorHealth();
       setOnline(true);
       setError("");
+      setConnectionRequested(true);
     } catch (cause) {
       setOnline(false);
       setError(loopbackPermission === "denied"

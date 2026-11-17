@@ -31,6 +31,7 @@ type MockOptions = {
   packetRequests?: URL[];
   loopbackPermission?: "prompt" | "granted" | "denied";
   healthRequests?: number[];
+  healthSequence?: boolean[];
 };
 
 async function mockLocalAgent(page: Page, options: MockOptions = {}) {
@@ -44,6 +45,7 @@ async function mockLocalAgent(page: Page, options: MockOptions = {}) {
     packetRequests = [],
     loopbackPermission = "granted",
     healthRequests = [],
+    healthSequence = [],
   } = options;
 
   await page.addInitScript((permissionState) => {
@@ -61,7 +63,8 @@ async function mockLocalAgent(page: Page, options: MockOptions = {}) {
     const path = url.pathname;
     if (path === "/api/health") {
       healthRequests.push(Date.now());
-      return route.fulfill({ status: online ? 200 : 503, json: online ? { status: "ok", version: "0.2.1" } : { detail: "Sensor not running" } });
+      const healthy = healthSequence.length ? healthSequence.shift() ?? online : online;
+      return route.fulfill({ status: healthy ? 200 : 503, json: healthy ? { status: "ok", version: "0.2.1" } : { detail: "Sensor not running" } });
     }
     if (path === "/api/interfaces") {
       return route.fulfill({ json: { interfaces: [{ name: "\\Device\\NPF_{TEST}", description: "Intel Wi-Fi 6 Adapter", friendly_name: "Wi-Fi", ips: ["192.0.2.10"], mac: "02:00:00:00:00:10", status: "Up", capture_candidate: true, recommended: true }] } });
@@ -130,6 +133,16 @@ test("local sensor waits for an explicit connection when loopback permission is 
 
   await page.getByRole("button", { name: "Connect to this computer" }).click();
   await expect.poll(() => requests.length).toBeGreaterThan(0);
+});
+
+test("a single missed health check does not drop an established sensor connection", async ({ page }) => {
+  const requests: number[] = [];
+  await mockLocalAgent(page, { healthRequests: requests, healthSequence: [true, false, true] });
+  await page.goto("/");
+  await expect(page.getByText("SENSOR READY", { exact: true })).toBeVisible();
+  await expect.poll(() => requests.length, { timeout: 8000 }).toBeGreaterThanOrEqual(2);
+  await expect(page.getByText("SENSOR READY", { exact: true })).toBeVisible();
+  await expect(page.getByText("Your sensor is connected on this computer.")).toBeVisible();
 });
 
 test("overview explains real activity with rate and an address diagram", async ({ page }) => {
