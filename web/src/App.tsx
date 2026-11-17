@@ -6,6 +6,7 @@ import {
   ArrowDownToLine,
   Check,
   ChevronDown,
+  Download,
   FileText,
   Filter,
   HardDrive,
@@ -522,7 +523,7 @@ export default function App() {
 
           {page === "Sessions" && <section className="card explorer"><div className="section-head"><div><h2>Capture sessions</h2><p>Sessions recorded by local storage.</p></div><span className="result-count">{sessions.length} sessions</span></div><div className="table-wrap"><table><thead><tr><th>Session ID</th><th>Packets</th><th>First packet</th><th>Last packet</th></tr></thead><tbody>{sessions.length ? sessions.map((session) => <tr key={session.session_id}><td className="id-cell">{session.session_id}</td><td>{session.packet_count.toLocaleString()}</td><td>{formatDate(session.first_packet_at)}</td><td>{formatDate(session.last_packet_at)}</td></tr>) : <tr><td colSpan={4} className="empty">No capture sessions recorded yet.</td></tr>}</tbody></table></div></section>}
 
-          {page === "Settings" && <section className="card settings"><div className="section-head"><div><h2>Sensor settings</h2><p>Local collection and privacy boundaries.</p></div><Settings size={19} /></div><Setting icon={<Radio size={18} />} title="Local capture API" value={API} status={online ? "CONNECTED" : "OFFLINE"} /><Setting icon={<HardDrive size={18} />} title="Packet storage" value="PCAP and SQLite files stay on this device." status="LOCAL" /><Setting icon={<ShieldCheck size={18} />} title="Analysis mode" value="Metadata-based rules; no payload inspection." status="PRIVATE" /><Setting icon={<AlertTriangle size={18} />} title="Device allowlists" value="Set PPS_KNOWN_DEVICES and PPS_KNOWN_ACCESS_POINTS on the local sensor to enable inventory-based indicators." status="OPTIONAL" /></section>}
+          {page === "Settings" && <section className="card settings"><div className="section-head"><div><h2>Sensor settings</h2><p>Local collection and privacy boundaries.</p></div><Settings size={19} /></div><div className="agent-download-card"><div className="agent-download-icon"><Download size={19} /></div><div><strong>Use PocketSniff on another PC</strong><p>Download the portable Windows sensor. No source checkout or Python setup required. Npcap is required for live adapter capture.</p></div><a className="btn primary" href="https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/releases/latest/download/pocket-packet-sniffer-agent-windows.zip" target="_blank" rel="noreferrer"><Download size={15} /> Download agent</a></div><Setting icon={<Radio size={18} />} title="Local capture API" value={API} status={online ? "CONNECTED" : "OFFLINE"} /><Setting icon={<HardDrive size={18} />} title="Packet storage" value="PCAP and SQLite files stay on this device." status="LOCAL" /><Setting icon={<ShieldCheck size={18} />} title="Analysis mode" value="Metadata-based rules; no payload inspection." status="PRIVATE" /><Setting icon={<AlertTriangle size={18} />} title="Device allowlists" value="Set PPS_KNOWN_DEVICES and PPS_KNOWN_ACCESS_POINTS on the local sensor to enable inventory-based indicators." status="OPTIONAL" /></section>}
 
           <footer className="footer"><div><Network size={14} /><strong>POCKET PACKET SNIFFER</strong><span>·</span> Live local network analysis</div><div><ShieldCheck size={14} /> Authorized capture only <span>Payload privacy preserved</span></div></footer>
         </div>

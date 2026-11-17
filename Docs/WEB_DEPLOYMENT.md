@@ -12,6 +12,8 @@ The cloud host serves only the web interface. It cannot see or capture traffic f
 
 For a hosted dashboard to communicate with the local agent, set `PPS_ALLOWED_ORIGINS` on the local sensor to the exact comma-separated dashboard origin(s), including scheme and hostname. Browsers may also require explicit local-network access permission for a public HTTPS page to reach loopback. If the browser blocks this connection, run the dashboard locally at `http://127.0.0.1:5173` alongside the local API.
 
+Friends do not need a source checkout or Python environment. The Settings page links to a portable Windows agent ZIP published from `agent-v*` tags. Each Windows PC still needs Npcap installed for live adapter capture; the cloud page cannot capture another computer's network interface by itself. The agent binds to loopback and stores PCAP/SQLite data under that user's local application data directory.
+
 ## CI and CD flow
 
 1. Pull requests run Python lint/tests and the frontend type check/build.
