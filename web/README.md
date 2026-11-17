@@ -25,4 +25,4 @@ Open `http://127.0.0.1:5173`. Select an active adapter and start live capture, o
 
 ## Deploy
 
-The `Deploy dashboard to Vercel` GitHub Actions workflow deploys the tested `main` commit after CI succeeds. Configure GitHub Actions secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` for the linked Vercel project. Vercel hosts only the dashboard; capture and stored packet data remain local.
+Vercel's GitHub integration creates pull request previews and deploys production when the configured production branch is updated. GitHub Actions runs the backend and frontend CI checks. Vercel hosts only the dashboard; capture and stored packet data remain local.

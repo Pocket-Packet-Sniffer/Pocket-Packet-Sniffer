@@ -2,9 +2,9 @@
 
 ## Hosting choice
 
-The dashboard is a static Next.js export deployed to Vercel by GitHub Actions after the `CI` workflow succeeds on `main`. Pull requests run frontend type checking and a production build; only the tested main-branch commit is deployed. The deployment workflow expects GitHub Actions secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID`.
+The dashboard is deployed through Vercel's GitHub integration. Vercel creates preview deployments for pull requests and production deployments for the configured production branch. GitHub Actions CI runs the Python lint/tests and frontend type check/build on pull requests and pushes. Require those CI checks before merging to the production branch so production CD runs only for checked commits.
 
-Vercel Hobby is free for personal, non-commercial use. If the project is used commercially, choose a plan/provider that permits that use before production deployment. The hosting account must be linked and the three deployment secrets configured before the workflow can publish.
+Vercel Hobby is free for personal, non-commercial use. If the project is used commercially, choose a plan/provider that permits that use before production deployment. Vercel's GitHub integration is connected to this repository and has created a Ready preview for this change.
 
 ## Capture architecture
 
@@ -15,8 +15,8 @@ For a hosted dashboard to communicate with the local agent, set `PPS_ALLOWED_ORI
 ## CI and CD flow
 
 1. Pull requests run Python lint/tests and the frontend type check/build.
-2. A successful `CI` run on `main` starts the Vercel deployment workflow.
-3. The workflow builds the same tested commit and deploys its prebuilt static output.
-4. A deploy cannot succeed until the Vercel project is linked and the required GitHub secrets are set.
+2. Vercel builds pull request previews through its GitHub integration.
+3. Merge to the configured production branch triggers Vercel's production deployment.
+4. The production site serves the dashboard only; no packet data or capture API is uploaded.
 
 No packet data, demo traffic, or local capture API is uploaded during deployment.
