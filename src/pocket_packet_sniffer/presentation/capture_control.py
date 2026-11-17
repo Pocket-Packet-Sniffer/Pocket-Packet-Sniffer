@@ -96,9 +96,9 @@ class CaptureControl:
     def _private_file(path: Path, content: str) -> None:
         """Publish a fully written private marker atomically.
 
-        The temporary file is fully flushed and closed before a hard link makes
-        it visible at the final path. A watcher can therefore never mistake a
-        partially written stop request for a complete request on Windows.
+        The temporary file is fully flushed and closed before it is published
+        at the final path. A watcher can therefore never mistake a partially
+        written stop request for a complete request.
         """
         temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
         flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -113,9 +113,13 @@ class CaptureControl:
                 stream.write(content)
                 stream.flush()
                 os.fsync(stream.fileno())
-            # link() creates the target only after the temporary file is closed
-            # and retains exclusive-create semantics if another process wins.
-            os.link(temporary, path)
+            # Windows rename is atomic and fails if the destination exists,
+            # while hard-link creation may be unavailable in restricted
+            # environments. POSIX hard links retain exclusive-create behavior.
+            if os.name == "nt":
+                os.rename(temporary, path)
+            else:
+                os.link(temporary, path)
         finally:
             if descriptor >= 0:
                 os.close(descriptor)
