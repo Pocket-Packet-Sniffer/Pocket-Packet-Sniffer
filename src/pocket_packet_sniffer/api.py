@@ -9,12 +9,19 @@ import subprocess
 import threading
 import uuid
 from collections import deque
+from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from scapy.all import get_if_list
+from scapy.config import conf
+from scapy.layers.inet import IP, TCP, UDP
+from scapy.layers.inet6 import IPv6
+from scapy.layers.l2 import Ether
+from starlette.background import BackgroundTask
+from starlette.responses import FileResponse, JSONResponse
 
 from pocket_packet_sniffer.analysis.alerts import (
     AlertEvent,
@@ -30,7 +37,13 @@ except ImportError:
 from pocket_packet_sniffer.analysis.parser import PacketParser
 from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.application.session import CaptureSession
-from pocket_packet_sniffer.capture import PcapFileCapturer, ScapyCapturer
+from pocket_packet_sniffer.capture import (
+    ConcurrentCapturer,
+    PcapFileCapturer,
+    ScapyCapturer,
+)
+from pocket_packet_sniffer.presentation.report_export import export_session_report_csv
+from pocket_packet_sniffer.presentation.report_pdf import export_session_report_pdf
 from pocket_packet_sniffer.storage import PcapSqliteRepository
 
 STORAGE_DIR = Path(os.getenv("PPS_STORAGE_DIR", "captures")).expanduser()
@@ -49,6 +62,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def validate_browser_origin(request: Request, call_next):
+    """Reject cross-site browser writes to the loopback capture agent."""
+    origin = request.headers.get("origin")
+    if request.method == "POST" and origin and origin not in _allowed_origins:
+        return JSONResponse(status_code=403, content={"detail": "This website is not allowed to control the local capture agent."})
+    return await call_next(request)
+
 _capture_lock = threading.RLock()
 _alerts_lock = threading.Lock()
 _alert_history: deque[dict] = deque(maxlen=500)
@@ -58,9 +80,13 @@ _capture: dict = {"state": "idle", "session_id": None, "source": None, "interfac
 class CaptureStart(BaseModel):
     mode: str = Field(default="interface", pattern="^(interface|pcap)$")
     interface: str = Field(default="Wi-Fi", min_length=1, max_length=256)
+    interfaces: list[str] | None = Field(default=None, max_length=16)
     pcap_path: str | None = Field(default=None, max_length=2048)
+    upload_id: str | None = Field(default=None, max_length=64)
     bpf_filter: str | None = Field(default=None, max_length=2048)
     delay: float = Field(default=0.01, ge=0, le=2)
+    known_devices: list[str] | None = Field(default=None, max_length=256)
+    known_access_points: list[str] | None = Field(default=None, max_length=256)
 
 
 def get_repository() -> PcapSqliteRepository:
@@ -68,7 +94,52 @@ def get_repository() -> PcapSqliteRepository:
 
 
 def packet_json(packet):
-    return {"id": packet.record_id, "session_id": packet.session_id, "time": packet.timestamp.isoformat(), "protocol": packet.protocol, "source": packet.source_address, "destination": packet.destination_address, "length": len(packet.packet_data), "info": f"{packet.protocol} packet", "interface": packet.interface, "capture_backend": packet.capture_backend}
+    source_mac = destination_mac = None
+    source_port = destination_port = None
+    transport = None
+    tcp_flags = None
+    ttl = None
+    try:
+        link_layer = conf.l2types.get(packet.link_type)
+        decoded = link_layer(packet.packet_data) if link_layer else None
+        if decoded is not None:
+            if decoded.haslayer(Ether):
+                source_mac = decoded[Ether].src
+                destination_mac = decoded[Ether].dst
+            if decoded.haslayer(IP):
+                ttl = decoded[IP].ttl
+            elif decoded.haslayer(IPv6):
+                ttl = decoded[IPv6].hlim
+            if decoded.haslayer(TCP):
+                layer = decoded[TCP]
+                source_port, destination_port = layer.sport, layer.dport
+                transport, tcp_flags = "TCP", str(layer.flags)
+            elif decoded.haslayer(UDP):
+                layer = decoded[UDP]
+                source_port, destination_port = layer.sport, layer.dport
+                transport = "UDP"
+    except Exception:  # noqa: BLE001 - malformed packets remain inspectable by stored metadata.
+        pass
+    return {
+        "id": packet.record_id,
+        "session_id": packet.session_id,
+        "time": packet.timestamp.isoformat(),
+        "protocol": packet.protocol,
+        "source": packet.source_address,
+        "destination": packet.destination_address,
+        "source_mac": source_mac,
+        "destination_mac": destination_mac,
+        "source_port": source_port,
+        "destination_port": destination_port,
+        "transport": transport,
+        "tcp_flags": tcp_flags,
+        "ttl": ttl,
+        "length": len(packet.packet_data),
+        "original_length": packet.original_length,
+        "info": f"{packet.protocol} packet",
+        "interface": packet.interface,
+        "capture_backend": packet.capture_backend,
+    }
 
 
 def _store_alert(session_id: str, event: AlertEvent) -> None:
@@ -132,6 +203,12 @@ def _run_capture(session, stop_event):
         with _capture_lock:
             _capture["state"] = "error"
             _capture["error"] = str(exc)
+    finally:
+        with _capture_lock:
+            temporary_pcap = _capture.get("temporary_pcap")
+            _capture["temporary_pcap"] = None
+        if temporary_pcap is not None:
+            Path(temporary_pcap).unlink(missing_ok=True)
 
 
 @app.get("/api/health")
@@ -153,6 +230,57 @@ def alerts(limit: int = Query(default=100, ge=1, le=500)):
     """Return bounded, metadata-only heuristic alerts from this API process."""
     with _alerts_lock:
         return {"alerts": list(_alert_history)[:limit]}
+
+
+@app.get("/api/statistics")
+def statistics():
+    """Return rolling live counters from the active or most recent session."""
+    with _capture_lock:
+        session = _capture.get("session")
+    if session is None:
+        return {
+            "total_packets": 0,
+            "total_bytes": 0,
+            "packets_per_sec": 0.0,
+            "protocols": [],
+            "top_talkers": [],
+        }
+    return session.statistics_snapshot()
+
+
+@app.post("/api/capture/upload")
+async def upload_pcap(file: UploadFile = File(...)):
+    """Stage an explicitly selected classic PCAP on this computer only."""
+    if Path(file.filename or "").suffix.casefold() not in {".pcap", ".cap"}:
+        raise HTTPException(status_code=415, detail="Choose a classic PCAP file (.pcap or .cap). PCAPNG is not supported.")
+    repository = get_repository()
+    upload_directory = repository.directory / ".uploads"
+    upload_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    upload_id = uuid.uuid4().hex
+    destination = upload_directory / f"{upload_id}.pcap"
+    byte_count = 0
+    try:
+        with destination.open("xb") as output:
+            while chunk := await file.read(1024 * 1024):
+                byte_count += len(chunk)
+                if byte_count > 100 * 1024 * 1024:
+                    raise HTTPException(status_code=413, detail="PCAP files must be 100 MB or smaller.")
+                output.write(chunk)
+        with destination.open("rb") as uploaded:
+            magic = uploaded.read(4)
+        if magic not in {b"\xd4\xc3\xb2\xa1", b"\xa1\xb2\xc3\xd4", b"\x4d\x3c\xb2\xa1", b"\xa1\xb2\x3c\x4d"}:
+            raise HTTPException(status_code=415, detail="This file is not a supported classic PCAP capture.")
+    except HTTPException:
+        destination.unlink(missing_ok=True)
+        raise
+    except OSError as exc:
+        destination.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail="The local sensor could not stage that PCAP file.") from exc
+    finally:
+        await file.close()
+    with _capture_lock:
+        _capture.setdefault("uploaded_pcaps", {})[upload_id] = destination
+    return {"upload_id": upload_id, "filename": Path(file.filename).name, "size": byte_count}
 
 
 @app.get("/api/interfaces")
@@ -253,38 +381,49 @@ def start_capture(request: CaptureStart):
         if _capture["state"] in ("starting", "running", "stopping") and (thread is None or not thread.is_alive()):
             capture_status()
         if request.mode == "pcap":
-            if not request.pcap_path or not request.pcap_path.strip():
-                raise HTTPException(status_code=422, detail="Provide an absolute path to a local classic PCAP file.")
-            pcap_path = Path(request.pcap_path).expanduser()
+            with _capture_lock:
+                uploaded_pcaps = _capture.get("uploaded_pcaps", {})
+                uploaded_path = uploaded_pcaps.pop(request.upload_id, None) if request.upload_id else None
+            if request.upload_id and uploaded_path is None:
+                raise HTTPException(status_code=404, detail="That PCAP upload expired. Choose the file again.")
+            if not uploaded_path and (not request.pcap_path or not request.pcap_path.strip()):
+                raise HTTPException(status_code=422, detail="Choose a local classic PCAP file to replay.")
+            pcap_path = Path(uploaded_path or request.pcap_path).expanduser()
             if not pcap_path.is_file():
                 raise HTTPException(status_code=400, detail=f"PCAP file not found: {pcap_path}")
             capturer = PcapFileCapturer(pcap_path, delay=request.delay)
             source = "pcap"
             interface = str(pcap_path)
         else:
+            interface_names = list(dict.fromkeys(request.interfaces or [request.interface]))
+            if not interface_names or any(not name.strip() for name in interface_names):
+                raise HTTPException(status_code=422, detail="Choose at least one valid network adapter.")
             try:
                 available = set(get_if_list())
             except Exception as exc:
                 raise HTTPException(status_code=503, detail=f"Could not enumerate Scapy capture interfaces: {exc}") from exc
-            if request.interface not in available:
-                raise HTTPException(status_code=422, detail="The selected adapter is no longer available. Refresh the interface list and select an active adapter.")
+            unavailable = [name for name in interface_names if name not in available]
+            if unavailable:
+                raise HTTPException(status_code=422, detail=f"These adapters are no longer available: {', '.join(unavailable)}. Refresh the adapter list and try again.")
             if platform.system() == "Windows" and get_windows_if_list is not None:
                 try:
                     details = get_windows_if_list() or []
-                    selected = next((item for item in details if str(item.get("name") or "").strip().casefold() == request.interface.strip().casefold()), {})
-                    description = str(selected.get("description") or selected.get("network_name") or "")
-                    if any(token in description.casefold() for token in ("wan miniport", "network monitor", "loopback", "wi-fi direct")):
-                        raise HTTPException(status_code=422, detail=f"'{description}' is a Windows pseudo-interface, not a normal network adapter. Select your connected Wi-Fi or Ethernet adapter.")
+                    for interface_name in interface_names:
+                        selected = next((item for item in details if str(item.get("name") or "").strip().casefold() == interface_name.strip().casefold()), {})
+                        description = str(selected.get("description") or selected.get("network_name") or "")
+                        if any(token in description.casefold() for token in ("wan miniport", "network monitor", "loopback", "wi-fi direct")):
+                            raise HTTPException(status_code=422, detail=f"'{description}' is a Windows pseudo-interface, not a normal network adapter. Select a connected Wi-Fi or Ethernet adapter.")
                 except HTTPException:
                     raise
                 except Exception:
                     pass
             try:
-                capturer = ScapyCapturer(request.interface, bpf_filter=request.bpf_filter)
+                capturers = [ScapyCapturer(name, bpf_filter=request.bpf_filter) for name in interface_names]
+                capturer = capturers[0] if len(capturers) == 1 else ConcurrentCapturer(capturers)
             except ValueError as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
-            source = "interface"
-            interface = request.interface
+            source = "interface" if len(interface_names) == 1 else "concurrent"
+            interface = ", ".join(interface_names)
         session_id = str(uuid.uuid4())
         stop_event = threading.Event()
         publisher = AlertPublisher()
@@ -293,21 +432,23 @@ def start_capture(request: CaptureStart):
             publisher,
             known_devices={
                 item.strip()
-                for item in os.getenv("PPS_KNOWN_DEVICES", "").split(",")
+                for item in (request.known_devices if request.known_devices is not None else os.getenv("PPS_KNOWN_DEVICES", "").split(","))
                 if item.strip()
             },
             known_access_points={
                 item.strip()
-                for item in os.getenv("PPS_KNOWN_ACCESS_POINTS", "").split(",")
+                for item in (request.known_access_points if request.known_access_points is not None else os.getenv("PPS_KNOWN_ACCESS_POINTS", "").split(","))
                 if item.strip()
             },
         )
         try:
             session = CaptureSession(capturer, get_repository(), session_id=session_id, analyzer=AnalyzerPipeline([PacketParser()]), alert_detector=detector)
         except Exception as exc:
+            if request.mode == "pcap" and request.upload_id and uploaded_path:
+                uploaded_path.unlink(missing_ok=True)
             raise HTTPException(status_code=500, detail=f"Could not initialize capture storage: {exc}") from exc
         thread = threading.Thread(target=_run_capture, args=(session, stop_event), name=f"pps-capture-{session_id[:8]}", daemon=True)
-        _capture.update({"state":"running","session_id":session_id,"source":source,"interface":interface,"started_at":__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),"result":None,"error":None,"thread":thread,"stop_event":stop_event,"session":session})
+        _capture.update({"state":"running","session_id":session_id,"source":source,"interface":interface,"started_at":datetime.now().astimezone().isoformat(),"result":None,"error":None,"thread":thread,"stop_event":stop_event,"session":session,"temporary_pcap":uploaded_path if request.mode == "pcap" and request.upload_id else None})
         thread.start()
         return capture_status()
 
@@ -346,13 +487,76 @@ def sessions():
 
 
 @app.get("/api/packets")
-def packets(session_id: str | None = None, protocol: str | None = None, address: str | None = None, limit: int = Query(default=100, ge=1, le=1000)):
+def packets(
+    session_id: str | None = None,
+    protocol: str | None = None,
+    address: str | None = None,
+    search: str | None = Query(default=None, max_length=256),
+    start: datetime | None = None,
+    end: datetime | None = None,
+    limit: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0, le=10_000_000),
+):
     try:
-        records = get_repository().query(session_id=session_id, protocol=protocol, address=address)
-        records = list(reversed(records[-limit:]))
-        return {"count": len(records), "packets": [packet_json(packet) for packet in records]}
+        for endpoint in (start, end):
+            if endpoint is not None and (endpoint.tzinfo is None or endpoint.utcoffset() is None):
+                raise HTTPException(status_code=422, detail="Time filters must include a timezone.")
+        if start is not None and end is not None and start > end:
+            raise HTTPException(status_code=422, detail="The start time must be earlier than the end time.")
+        records = get_repository().query(
+            session_id=session_id,
+            protocol=protocol.upper() if protocol else None,
+            address=address,
+            time_window=(start, end) if start is not None or end is not None else None,
+        )
+        if search:
+            needle = search.casefold().strip()
+            records = [
+                record
+                for record in records
+                if needle in " ".join(
+                    (record.record_id, record.session_id, record.protocol,
+                     record.source_address or "", record.destination_address or "",
+                     record.interface or "", record.capture_backend or "")
+                ).casefold()
+            ]
+        total = len(records)
+        newest_first = list(reversed(records))
+        page = newest_first[offset : offset + limit]
+        return {"total": total, "count": len(page), "limit": limit, "offset": offset, "packets": [packet_json(packet) for packet in page]}
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/sessions/{session_id}/report")
+def session_report(session_id: str, format: str = Query(default="csv", pattern="^(csv|pdf)$")):
+    """Download an explicitly requested metadata-only session report."""
+    repository = get_repository()
+    try:
+        summary = repository.get_session_summary(session_id)
+        if summary.packet_count == 0:
+            raise HTTPException(status_code=404, detail="No saved capture session has that ID.")
+        records = repository.query_session(session_id)
+        suffix = format.lower()
+        path = repository.directory / f".session-report-{uuid.uuid4().hex}.{suffix}"
+        if suffix == "csv":
+            export_session_report_csv(summary, records, path)
+            media_type = "text/csv"
+        else:
+            export_session_report_pdf(summary, records, path)
+            media_type = "application/pdf"
+        return FileResponse(
+            path,
+            media_type=media_type,
+            filename=f"pocket-packet-sniffer-session.{suffix}",
+            background=BackgroundTask(lambda: path.unlink(missing_ok=True)),
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Could not export this local capture report: {exc}") from exc
 
 
 @app.get("/api/overview")

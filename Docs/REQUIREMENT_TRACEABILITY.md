@@ -28,13 +28,13 @@ This matrix connects the approved SRS requirements to GitHub work items and the 
 | Modularity and maintainability | [#1](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/1), [#11](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/11) | Review documented boundaries between Capture, Analysis, Storage and Presentation; check the cross-layer interfaces in integration tests. |
 | Setup, limitations and safe demo | [#12](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/12) | Fresh setup follows the README; demo instructions use controlled/synthetic traffic or an authorized interface. |
 
-## Current implementation and verification snapshot (2026-10-27)
+## Current implementation and verification snapshot (historical, 2026-10-27)
 
 - Backend SRS-completion changes were merged in PR #29 at main commit `cd80e958bf572c32126c3f222579aec638da04b7`.
 - Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and reported **106 passed in 1.87 seconds**.
 - Main includes per-session/per-link-type PCAP mapping, interface/backend metadata, session-scoped repository queries, CSV/PDF report export, metadata-only heuristic alerts, concurrent capture, synthetic PCAP demo tooling, and a replay throughput benchmark.
 - Automated tests use generated traffic and mocks. They do not establish live-interface permission behavior, actual Wi-Fi monitor-mode or BLE radio operation, Windows ACL behavior, Raspberry Pi throughput/drop rate, or simultaneous multi-radio behavior on target hardware.
-- Optional Zeek integration and the web dashboard remain unimplemented/deferred; do not claim either as part of the current implementation.
+- Optional Zeek integration remains unimplemented. The dashboard is now implemented; see the current verification addendum below for browser/API evidence and its local-agent boundary.
 
 ## Verification record
 
@@ -71,3 +71,9 @@ These results are automated/synthetic verification only. They do **not** close t
 - The synthetic demo confirmed five stored records, one ARP-conflict classification with an explanation, four `NO RULE MATCHED` records, protocol/address/time queries, CSV/PDF export, and six stored records from concurrent synthetic replay. `NO RULE MATCHED` is not a safety verdict.
 - A Windows stop-request regression was fixed in the issue #39 worktree: Windows now checks process state through a synchronization handle rather than using the POSIX `os.kill(pid, 0)` convention. The cross-terminal stop test and full Windows test suite pass locally.
 - **NOT RUN:** live authorized capture start/stop and permission diagnostics, Windows ACL review, Wi-Fi monitor mode, BLE adapter capture, Raspberry Pi performance, live packet/drop counters, and simultaneous live-adapter capture. These remain evidence gates; synthetic tests and CI do not verify target hardware.
+
+## Dashboard implementation verification — 2026-11-17
+
+The draft SRS v1.4 REQ-11/REQ-12 web flow is now implemented: Vercel hosts the interface, while each user runs the capture API locally. The dashboard presents only records returned by that local API and has an honest offline state; real capture requires an explicitly selected local adapter, and replay requires choosing a local classic PCAP. Browser tests cover offline guidance, actual packet activity visualization, capture settings, server-side protocol/session/time/address filters, header-only packet details, local PCAP staging/replay, session CSV/PDF reports, and mobile width. API integration tests cover these routes and reject writes from unapproved browser origins. See `Docs/TEST_EXECUTION_REPORT.md` for exact run results.
+
+Draft REQ-11/REQ-12 status: **automated dashboard/local-agent flows implemented and covered**. Physical adapters, Wi-Fi monitor mode, BLE radio input, Windows ACLs, and Raspberry Pi packet loss/performance remain unverified. The v1.4 proposal remains a draft pending project approval.

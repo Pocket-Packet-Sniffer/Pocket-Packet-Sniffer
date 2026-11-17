@@ -92,3 +92,18 @@ PR #42 added visible query-time suspicious-traffic filtering and explanations. T
 The local synthetic demo used an isolated temporary directory and removed its artifacts afterward. Suspicious classification is passive metadata-only heuristic triage; it is not proof of malicious activity or safety.
 
 **Manual checks: NOT RUN.** No authorized live interface/driver was selected, so live start/stop and real permission/startup diagnostics were not exercised. Windows ACL behavior was not evaluated; the two POSIX mode-bit tests were skipped and are not ACL evidence. Wi-Fi monitor mode, BLE capture, Raspberry Pi throughput, live offered/received/drop counters, and simultaneous live-adapter capture were also not tested. Do not infer these results from CI or synthetic replay.
+
+## Dashboard and local-agent verification — 2026-11-17
+
+| Check | Environment / command | Result |
+|---|---|---|
+| Python lint | Windows workspace; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — All checks passed. |
+| Full Python suite | Windows workspace; `python -m pytest -q` | PASS — **170 passed, 2 skipped in 13.65 seconds**. The skips are existing platform-conditional checks; this is not evidence of Windows ACL behavior. |
+| Dashboard type check | Node; `npm run typecheck` | PASS — TypeScript clean. |
+| Production dashboard build | Node; `npm run build` | PASS — Next.js production build completed; `/` is statically rendered. |
+| Browser flow tests | Chromium; `npx playwright test --workers=2` | PASS — **7 passed in 1.1 minutes**. Covers offline onboarding, actual-data overview/rate, adapter/BPF capture request, packet filtering/details, local PCAP replay transfer, CSV/PDF session reports, and mobile layout. Browser API calls were stubbed; this validates UI behavior, not physical adapter capture. |
+| API integration/security tests | Included in the full Python suite | PASS — Local PCAP upload/replay through Analysis and Storage, server-side filters, metadata-only packet details/reports, interface fan-in, and rejection of unapproved browser write origins. |
+
+The CI workflow now runs the full Python test suite on both Linux and Windows and runs dashboard type-check, production build, and browser tests. The updated CI workflow has not yet run on GitHub for this change; its result must be checked before merge/deployment. The Vercel production deployment remains the previous production version until the checked change is merged and CD completes.
+
+**Hardware acceptance remains NOT RUN:** no live adapter was started during this verification. Wi-Fi monitor mode, BLE radio capture, Windows ACL review, physical concurrent interfaces, Raspberry Pi throughput, and live packet/drop counters remain unverified. No result above establishes those platform-specific claims.
