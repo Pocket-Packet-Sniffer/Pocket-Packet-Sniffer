@@ -125,3 +125,21 @@ The CI workflow now runs the full Python test suite on both Linux and Windows an
 Coverage instrumentation was first unavailable in the local interpreter, so the declared `pytest-cov` development dependency was installed and the full command rerun successfully. CI now measures statement and branch coverage on both operating systems and uploads each XML report for 14 days. No minimum threshold is set yet; the results establish a baseline.
 
 **Not verified by this closeout:** branch-protection settings could not be read by the connected GitHub integration (GitHub returned 403 for the protection endpoint). Vercel production was verified directly, but the configured required-check/branch-protection policy needs an admin-capable GitHub check before claiming enforced merge gating. Issue #16 is open to track that administrative verification. The Unit 3 / Unit 4 lecture slides were not present in the repository; these test documents follow the checked-in STP v1.3 and project records.
+
+
+## Local full-suite verification — 2026-11-17
+
+| Check | Environment / command | Result |
+|---|---|---|
+| Full Python test suite | Windows, Python 3.13.15, pytest 8.3.4; `pytest tests/ -v` | PASS — **171 passed, 2 skipped, 0 failed in 9.21 seconds** (173 items collected). |
+| API test subset | Windows, Python 3.13.15; `pytest tests/test_api.py -v` | PASS — **10 passed in 4.13 seconds** after installing the project dependencies with `python -m pip install -e .`. One Starlette deprecation warning was emitted. |
+| CLI test subset | Windows, Python 3.13.15; `pytest tests/test_cli.py -v` | PASS — **9 passed in 1.89 seconds**. |
+| Security contract subset | Windows, Python 3.13.15; `pytest tests/test_security_contracts.py -v` | PASS — **1 passed, 2 skipped in 0.41 seconds**. The skipped checks require POSIX file-mode semantics and do not verify Windows ACLs. |
+| Architecture boundary subset | Windows, Python 3.13.15; `pytest tests/test_architecture_boundaries.py -v` | PASS — **1 passed in 0.45 seconds**. |
+| Agent configuration subset | Windows, Python 3.13.15; `pytest tests/test_agent.py -v` | PASS — **2 passed in 0.34 seconds**. |
+| Pipeline benchmark test | Windows, Python 3.13.15; `pytest tests/test_benchmark_pipeline.py -v` | PASS — **1 passed in 2.35 seconds**. |
+| End-to-end session integration subset | Windows, Python 3.13.15; `pytest tests/test_session_integration.py -v` | PASS — **1 passed in 1.05 seconds**. |
+
+The two full-suite skips are the POSIX permission-mode tests because the run was performed on Windows. The single Starlette warning concerns deprecated use of `httpx` with `starlette.testclient`; it did not fail the API tests or full suite.
+
+This local run is a separate verification snapshot from the earlier CI and coverage results above. It does not replace them. Hardware acceptance remains subject to the manual checks listed earlier; in particular, these automated tests do not establish Wi-Fi monitor-mode, BLE radio capture, Windows ACL, physical multi-adapter, Raspberry Pi throughput, or live packet-drop behavior.
