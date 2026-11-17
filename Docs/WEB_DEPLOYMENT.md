@@ -2,9 +2,9 @@
 
 ## Hosting choice
 
-The dashboard is deployed through Vercel's GitHub integration. Vercel creates preview deployments for pull requests and production deployments for the configured production branch. GitHub Actions CI runs the Python lint/tests and frontend type check/build on pull requests and pushes. Require those CI checks before merging to the production branch so production CD runs only for checked commits.
+The dashboard is deployed through Vercel's GitHub integration. Vercel creates preview deployments for pull requests and production deployments for the configured production branch. GitHub Actions CI runs Python lint/tests with statement and branch coverage on Ubuntu and Windows, plus frontend type-check/build/browser tests. Production availability and the merged UI were verified on 2026-11-17. Branch protection could not be inspected with the connected GitHub integration, so required-check merge gating is not asserted here.
 
-Vercel Hobby is free for personal, non-commercial use. If the project is used commercially, choose a plan/provider that permits that use before production deployment. Vercel's GitHub integration is connected to this repository and has created a Ready preview for this change.
+Vercel Hobby is free for personal, non-commercial use. If the project is used commercially, choose a plan/provider that permits that use before production deployment. Vercel's GitHub integration is connected to this repository and its production deployment serves the current dashboard.
 
 ## Capture architecture
 
@@ -20,6 +20,8 @@ Friends do not need a source checkout or Python environment. The Settings page l
 2. Vercel builds pull request previews through its GitHub integration.
 3. Merge to the configured production branch triggers Vercel's production deployment.
 4. The production site serves the dashboard only; no packet data or capture API is uploaded.
+
+GitHub Actions and Vercel deployment are separate integrations. Branch protection must require the appropriate CI checks to make passing CI a hard merge gate; that setting could not be inspected with the current GitHub integration and is tracked in issue #16.
 
 No packet data, demo traffic, or local capture API is uploaded during deployment.
 

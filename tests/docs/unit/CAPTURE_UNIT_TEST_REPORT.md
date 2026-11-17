@@ -10,7 +10,7 @@ The tests cover PCAP replay, live-capture backend behavior, packet metadata, cap
 
 ### 2.1 Capture Layer
 
-File: `test_files/test_capture_layer.py`
+File: `tests/test_capture_layer.py`
 
 Tests PCAP replay, timestamp and link-type metadata, packet limits, stop events, malformed and truncated files, Scapy backend behavior, interface resolution, permissions, startup failures, callback errors, lifecycle diagnostics, and input validation.
 
@@ -18,7 +18,7 @@ Result: 37 tests passed.
 
 ### 2.2 Concurrent Capture
 
-File: `test_files/test_concurrent_capture.py`
+File: `tests/test_concurrent_capture.py`
 
 Tests concurrent packet capture, metadata preservation across backends, aggregate packet limits, backend failure handling, backend validation, and graceful interruption.
 
@@ -35,7 +35,7 @@ Both selected test files were executed individually using pytest.
 
 ## 4. Screenshots
 
-Execution screenshots are stored in the `screenshots/` directory.
+Execution screenshots are stored under `tests/docs/evidence/unit/capture/`.
 
 ## 5. Conclusion
 

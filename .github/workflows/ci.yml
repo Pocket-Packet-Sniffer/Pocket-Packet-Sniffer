@@ -46,12 +46,20 @@ jobs:
         if: runner.os == 'Linux'
         env:
           PYTHONPATH: src
-        run: pytest -q
+        run: python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
       - name: Run full test suite (Windows)
         if: runner.os == 'Windows'
         env:
           PYTHONPATH: src
-        run: python -m pytest -q
+        run: python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
+      - name: Publish Python coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage-${{ matrix.os }}
+          path: coverage.xml
+          if-no-files-found: ignore
+          retention-days: 14
 
   web-build:
     name: Build Next.js dashboard

@@ -59,7 +59,7 @@ All five selected test files were executed individually using pytest.
 
 ## 4. Screenshots
 
-Execution evidence is available in the screenshots directory.
+Execution evidence is available under `tests/docs/evidence/unit/analysis/`.
 
 1. `01_packet_parser.png`
 2. `02_parser_edge_cases.png`

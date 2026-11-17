@@ -1,11 +1,11 @@
 # Pocket Packet Sniffer — Test Execution Report
 
-**SRS:** v1.3  
-**STP:** v1.3  
-**Implementation under test:** `main` after PR #38 and PR #42 merges  
-**Code revision at latest CI run:** `b79ab365611ce301b85ebd20fad484846df0bbab`  
-**CI evidence:** [GitHub Actions run 40915380388](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40915380388)  
-**Run date:** 2026-10-29
+**SRS:** v1.3; dashboard change proposal adds web requirements
+**STP:** v1.3
+**Current implementation:** `main` after PR #57
+**Current closeout date:** 2026-11-17
+
+This report retains dated historical results below. The authoritative current snapshot is in [Current closeout verification](#current-closeout-verification-2026-11-17); older rows are not presented as the newest run.
 
 ## Latest main verification after PR #38 and PR #42 (2026-10-29)
 
@@ -87,7 +87,7 @@ PR #42 added visible query-time suspicious-traffic filtering and explanations. T
 | Python lint | Windows 11 Home Single Language, Python 3.13.12; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — “All checks passed!” |
 | Unit/integration suite | Windows 11 Home Single Language, Python 3.13.12; `python -m pytest -q -rs` with `PYTHONPATH=src` | PASS — **126 passed, 2 skipped in 7.45 seconds**. Includes missing-metadata alert and exited-process liveness regression tests. Both skips are POSIX permission-mode tests because Windows ACL checks are separate. |
 | External stop-request regression | `python -m pytest -q tests/test_capture_control.py::test_active_capture_session_exits_after_external_stop_request` with `PYTHONPATH=src` | PASS — **1 passed in 0.60 seconds**. The Windows process-liveness check now uses a non-destructive process handle instead of `os.kill(pid, 0)`. |
-| Synthetic end-to-end demo | Windows 11, generated local PCAPs, `python -m pocket_packet_sniffer` commands documented in `Docs/DEMO_SCRIPT.md` | PASS — five packets replayed/stored; TCP, address and time filters returned expected data; the ARP conflict was the one `SUSPICIOUS/REVIEW` result with rule/reason, four records showed `NO RULE MATCHED`, CSV/PDF each exported five records, and two-source concurrent replay stored six packets. No traffic was transmitted. |
+| Synthetic end-to-end demo | Windows 11, generated local PCAPs, `python -m pocket_packet_sniffer` commands documented in `../../Docs/DEMO_SCRIPT.md` | PASS — five packets replayed/stored; TCP, address and time filters returned expected data; the ARP conflict was the one `SUSPICIOUS/REVIEW` result with rule/reason, four records showed `NO RULE MATCHED`, CSV/PDF each exported five records, and two-source concurrent replay stored six packets. No traffic was transmitted. |
 
 The local synthetic demo used an isolated temporary directory and removed its artifacts afterward. Suspicious classification is passive metadata-only heuristic triage; it is not proof of malicious activity or safety.
 
@@ -109,3 +109,19 @@ The local synthetic demo used an isolated temporary directory and removed its ar
 The CI workflow now runs the full Python test suite on both Linux and Windows and runs dashboard type-check, production build, and browser tests. Its initial Windows run exposed parser fixtures that let Scapy resolve IPv6 MAC addresses through real host interfaces; fixtures now fill missing MAC fields without changing explicitly supplied addresses. The final pre-merge [GitHub Actions run 44120006956](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44120006956) passed on Ubuntu and Windows. PR #53 was merged, Vercel's production deployment check succeeded, and the public URL returned the new dashboard.
 
 **Hardware acceptance remains NOT RUN:** no live adapter was started during this verification. Wi-Fi monitor mode, BLE radio capture, Windows ACL review, physical concurrent interfaces, Raspberry Pi throughput, and live packet/drop counters remain unverified. No result above establishes those platform-specific claims.
+
+## Current closeout verification — 2026-11-17
+
+| Check | Environment / command | Result |
+|---|---|---|
+| Python lint | Windows workspace; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — All checks passed. |
+| Python suite with coverage | Windows 11, Python 3.13.1; `python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml` | PASS — **171 passed, 2 skipped in 24.20 seconds**. Statement coverage **79.46%** (1,899/2,390); branch coverage **68.29%** (519/760). The skipped tests are platform-conditional and do not validate Windows ACLs. |
+| Dashboard type check | `npm run typecheck` in `web/` | PASS. |
+| GitHub Actions CI after PR #57 merge | [Run 44140380761](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44140380761) | PASS — Ubuntu lint/tests, Windows lint/tests/demo, and dashboard build/type/browser jobs all succeeded. |
+| Tagged Windows agent CI/package | [CI run 44140456073](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44140456073); [package run 44140452688](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44140452688) | PASS — tag CI succeeded; the Windows executable built, passed the targeted regressions and started successfully for its health smoke test. Release `agent-v0.2.2` was published. |
+| Dashboard deployment | [Production dashboard](https://pocket-packet-sniffer.vercel.app) | PASS — HTTP 200; served dashboard bundle contains the updated live-history UI. Vercel Git integration performs CD; this is not a GitHub Actions deploy job. |
+| Repository state | GitHub PR/issue review | PASS with tracked follow-up — no open PRs; sprint tracker #39 and completed dashboard work are closed. Issue #28 remains open for unrun target-hardware evidence; issue #16 was reopened for unverified admin-only branch protection/security/project settings. |
+
+Coverage instrumentation was first unavailable in the local interpreter, so the declared `pytest-cov` development dependency was installed and the full command rerun successfully. CI now measures statement and branch coverage on both operating systems and uploads each XML report for 14 days. No minimum threshold is set yet; the results establish a baseline.
+
+**Not verified by this closeout:** branch-protection settings could not be read by the connected GitHub integration (GitHub returned 403 for the protection endpoint). Vercel production was verified directly, but the configured required-check/branch-protection policy needs an admin-capable GitHub check before claiming enforced merge gating. Issue #16 is open to track that administrative verification. The Unit 3 / Unit 4 lecture slides were not present in the repository; these test documents follow the checked-in STP v1.3 and project records.

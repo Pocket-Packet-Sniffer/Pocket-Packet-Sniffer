@@ -1,6 +1,6 @@
 # Pocket Packet Sniffer — Sprint Plan and Closeout
 
-**Closeout snapshot:** 2026-10-26. Sprint 1's core implementation goal is delivered and merged. The evidence-based closeout review is documented in `Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md`. This record distinguishes automated test evidence from manual hardware checks and distinguishes the maintainer's asynchronous review from a synchronous team meeting (none is recorded in the repository).
+**Current closeout snapshot:** 2026-11-17. Sprint 1 and Sprint 3 coordinator issues are closed in GitHub; no open pull requests or active sprint tracker remain. Issues #28 (target-hardware acceptance) and #16 (admin-only repository controls) remain open with explicit limits. Sprint 1's evidence-based closeout is documented in `Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md`. This record distinguishes automated test evidence from manual hardware checks and distinguishes the maintainer's asynchronous review from a synchronous team meeting (none is recorded in the repository).
 
 ## Sprint 1 — Foundation and core packet pipeline
 
@@ -84,7 +84,7 @@ Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket
 | Platform/security verification | Verify Windows ACL behavior only if Windows is a supported target. Validate Wi-Fi monitor mode and BLE capture only if those live capabilities will be claimed. Record PASS/FAIL/NOT RUN and exact environment; do not infer hardware support from parser fixtures. | Conditional on supported platform claims |
 | Performance verification | If Raspberry Pi performance/no-drop is in scope, run `tools/benchmark_pipeline.py` on the target and separately measure live offered/received packets and available driver/kernel drop counters. Synthetic replay throughput is not proof of zero live packet loss. | Conditional on target/performance claim |
 | End-to-end demo | Follow [Docs/DEMO_SCRIPT.md](DEMO_SCRIPT.md) from a clean setup: generate synthetic PCAP, replay/capture, query protocol/address, inspect statistics/alerts, export CSV and PDF, and exercise concurrent replay. Keep all traffic local and synthetic unless live capture is explicitly authorized. | High |
-| Final evidence/documentation closeout | Update [Docs/REQUIREMENT_TRACEABILITY.md](REQUIREMENT_TRACEABILITY.md), [Docs/TEST_EXECUTION_REPORT.md](TEST_EXECUTION_REPORT.md), and the implementation-gap audit with actual commands, results, environment, linked CI/PR evidence, and remaining limitations. Review README/setup, safe-use guidance, local-only data handling, and SRS/SASD/STP consistency. | High; after test/demo results |
+| Final evidence/documentation closeout | Update [Docs/REQUIREMENT_TRACEABILITY.md](REQUIREMENT_TRACEABILITY.md), [tests/docs/TEST_EXECUTION_REPORT.md](../tests/docs/TEST_EXECUTION_REPORT.md), and the implementation-gap audit with actual commands, results, environment, linked CI/PR evidence, and remaining limitations. Review README/setup, safe-use guidance, local-only data handling, and SRS/SASD/STP consistency. | High; after test/demo results |
 | Optional web dashboard | [Issue #27](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/27) remains optional/stretch. Only continue after backend acceptance and if the team/instructor requires it. It must reuse existing layers, require explicit capture initiation, bind locally, and never upload packet data externally. | Stretch; not a blocker for the CLI SRS scope |
 
 ### Existing issues to close or update
@@ -93,6 +93,13 @@ Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket
 - **#28:** remains the authoritative backend demo and target-environment verification gate. Do not close until agreed checks are completed or the supported scope is formally narrowed and documented.
 - **#27:** optional dashboard; do not let it block core CLI acceptance unless explicitly required.
 - **#39:** sprint coordinator issue; close only when all required Sprint 3 acceptance criteria have evidence.
+
+### Current closeout — 2026-11-17
+
+- Sprint coordinator issue #39 is closed. Completed dashboard work (#27) and dashboard packet-refresh work (#57) are merged to `main`; there are no open pull requests.
+- Issue #28 remains open only for actual authorized live-interface start/stop, conditional Wi-Fi/BLE hardware checks, target-device performance/drop measurements, and Windows ACL evidence where those claims are in scope. These checks need the actual supported hardware/environment and have not been fabricated or inferred from fixtures.
+- No active sprint issue is left to close. Keep the completed sprint trackers closed; #28 remains for target acceptance and #16 remains for GitHub admin controls that this integration cannot inspect or change.
+- The current CI/CD workflow runs Python lint/tests on Ubuntu and Windows, dashboard type/build/browser checks, and tagged Windows agent packaging. Vercel Git integration handles preview and production dashboard deployment. Latest main CI and `agent-v0.2.2` packaging succeeded; current evidence is indexed in `tests/docs/TEST_EXECUTION_REPORT.md`.
 
 ### Definition of done
 

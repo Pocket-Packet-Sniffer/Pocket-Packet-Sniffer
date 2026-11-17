@@ -59,7 +59,7 @@ pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.p
 
 ## Verification gate
 
-The requirement-to-test execution record is published at [Docs/TEST_EXECUTION_REPORT.md](TEST_EXECUTION_REPORT.md). It separates automated CI results from not-yet-executed live-interface, Wi-Fi/BLE hardware, Windows ACL, and Raspberry Pi packet-loss checks.
+The requirement-to-test execution record is published in [tests/docs/TEST_EXECUTION_REPORT.md](../tests/docs/TEST_EXECUTION_REPORT.md), indexed from [tests/README.md](../tests/README.md). It separates automated CI results from not-yet-executed live-interface, Wi-Fi/BLE hardware, Windows ACL, and Raspberry Pi packet-loss checks.
 
 ## Dashboard scope and privacy boundary
 
