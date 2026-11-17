@@ -2,10 +2,21 @@
 
 **SRS:** v1.3  
 **STP:** v1.3  
-**Implementation under test:** `main` after PR #29 merge  
-**Code revision at latest CI run:** `cd80e958bf572c32126c3f222579aec638da04b7`  
-**CI evidence:** [GitHub Actions run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511)  
-**Run date:** 2026-10-27
+**Implementation under test:** `main` after PR #38 and PR #42 merges  
+**Code revision at latest CI run:** `b79ab365611ce301b85ebd20fad484846df0bbab`  
+**CI evidence:** [GitHub Actions run 40915380388](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40915380388)  
+**Run date:** 2026-10-29
+
+## Latest main verification after PR #38 and PR #42 (2026-10-29)
+
+| Check | Environment / command | Result |
+|---|---|---|
+| Main-branch CI | Ubuntu 24.04, Python 3.12.15; Ruff + `pytest -q` | PASS — Ruff clean; **122 passed in 2.24 seconds** ([run 40915380388](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40915380388)) |
+| Windows CI | `windows-latest`; lint and Windows synthetic demo/replay/query/export steps | PASS — job succeeded |
+| Parser regression subset | Windows, Python 3.13.15; `python -m pytest tests/test_analysis_parser_edge_cases.py -v` | PASS — **8 passed in 0.69 seconds** (developer-provided local terminal evidence) |
+| Suspicious-traffic demo | Windows; generated `issue41-demo.pcap`, local replay and query | PASS — 5 packets stored; one ARP conflict flagged with rule/reason; classification view showed one flagged and four no-rule-matched records (developer-provided local terminal evidence) |
+
+The local terminal evidence above was supplied on 2026-10-29. CI evidence is independently available from GitHub Actions. The synthetic demo does not validate live adapters or hardware performance.
 
 ## Automated result
 
@@ -36,7 +47,7 @@ CI uses generated PCAP fixtures and mocked capture backends. It does not require
 
 | SRS/STP claim | Automated/code evidence | Remaining gap |
 |---|---|---|
-| Passive-only behavior | Capture strategies listen; PCAP replay only reads a local file. Automated tests use mocks/fixtures; code review of the CLI found no packet-send/injection command. | Continue review on future changes. No packet injection is part of the intended design. |
+| Passive-only behavior | Capture strategies listen; PCAP replay only reads a local file. Automated tests use mocks/fixtures; code review of the CLI found no packet-send/injection command. Issue #10's branch adds an AST contract test that rejects packet-transmission API calls/imports in capture backends. | The branch-level regression is not included in the cited `main` CI run. Continue review on future changes; no packet injection is part of the intended design. |
 | Saved artifacts stay local and private | Storage permission tests cover POSIX directory mode 0700 and PCAP/SQLite file mode 0600. CSV/PDF exporters refuse overwrite and omit payload bytes. | Windows ACL behavior is not verified. Real captures can contain sensitive metadata/payloads; protect local files. |
 | Refresh within two seconds | The CLI dashboard refresh interval is configured to 2.0 seconds and renderer behavior has tests. | Live terminal responsiveness on the target hardware remains unmeasured. |
 | Raspberry Pi processing and zero drops | `tools/benchmark_pipeline.py` can measure synthetic PCAP replay → parsing → local PCAP/SQLite write throughput on the machine where it is run. A test verifies its accounting and session reuse guard. | **No Raspberry Pi throughput measurement and no live NIC/kernel-drop counter measurement is recorded.** Replay throughput does not establish zero live packet loss. Run on the approved target and record board, OS, adapter/driver, traffic rate, duration, received/stored counts, and available drop counters. |
@@ -56,3 +67,28 @@ CI uses generated PCAP fixtures and mocked capture backends. It does not require
 ## Overall disposition
 
 The backend and synthetic demo path are merged into `main`. Latest main CI run 40479490511 passed Ruff and 106 tests in 1.87 seconds. The SRS is **not yet fully hardware-verified**: live-source support, Raspberry Pi performance/drop behavior, Wi-Fi monitor mode, BLE-adapter behavior, Windows ACLs and other platform-specific checks remain open.
+
+
+## Sprint 3 verification addendum — 2026-10-29
+
+PR #38 added parser regression tests for IPv6 TCP/UDP, ICMPv6, non-IP Ethernet frames, capture metadata preservation, unsupported link types, and empty packet rejection. It merged as `b79ab365611ce301b85ebd20fad484846df0bbab`. The new main CI run passed Ruff and 122 tests in 2.24 seconds; the local Windows parser test subset passed all eight tests.
+
+PR #42 added visible query-time suspicious-traffic filtering and explanations. The synthetic demo recorded five packets and flagged the ARP address conflict using rule `arp-address-conflict`. The `NO RULE MATCHED` label is explicitly not a safety verdict.
+
+**Manual verification remains NOT RUN / pending evidence:** live authorized interface start/stop and permission behavior; Windows ACL review if Windows is in scope; real Wi-Fi monitor-mode and BLE adapter behavior if claimed; and Raspberry Pi/live packet-drop measurements if performance/no-drop remains a claim. These must not be inferred from CI or PCAP replay.
+
+## Sprint 3 verification update — 2026-11-07
+
+**Main baseline checked:** `origin/main` at `19bdf4610863b9cfed32d79953c1dc1d69b15f29`; the issue #39 worktree was based on that exact revision. PR #42 is merged and issue #41 is closed. This work reuses its query-time classification rather than duplicating the alert pipeline.
+
+| Check | Environment / command | Result |
+|---|---|---|
+| Current main CI | [Run 40934901326](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40934901326), commit `19bdf4610863b9cfed32d79953c1dc1d69b15f29` | PASS — Ubuntu and Windows jobs succeeded. Windows CI ran lint and synthetic replay/query/export steps; Linux CI ran the full suite. |
+| Python lint | Windows 11 Home Single Language, Python 3.13.12; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — “All checks passed!” |
+| Unit/integration suite | Windows 11 Home Single Language, Python 3.13.12; `python -m pytest -q -rs` with `PYTHONPATH=src` | PASS — **126 passed, 2 skipped in 7.45 seconds**. Includes missing-metadata alert and exited-process liveness regression tests. Both skips are POSIX permission-mode tests because Windows ACL checks are separate. |
+| External stop-request regression | `python -m pytest -q tests/test_capture_control.py::test_active_capture_session_exits_after_external_stop_request` with `PYTHONPATH=src` | PASS — **1 passed in 0.60 seconds**. The Windows process-liveness check now uses a non-destructive process handle instead of `os.kill(pid, 0)`. |
+| Synthetic end-to-end demo | Windows 11, generated local PCAPs, `python -m pocket_packet_sniffer` commands documented in `Docs/DEMO_SCRIPT.md` | PASS — five packets replayed/stored; TCP, address and time filters returned expected data; the ARP conflict was the one `SUSPICIOUS/REVIEW` result with rule/reason, four records showed `NO RULE MATCHED`, CSV/PDF each exported five records, and two-source concurrent replay stored six packets. No traffic was transmitted. |
+
+The local synthetic demo used an isolated temporary directory and removed its artifacts afterward. Suspicious classification is passive metadata-only heuristic triage; it is not proof of malicious activity or safety.
+
+**Manual checks: NOT RUN.** No authorized live interface/driver was selected, so live start/stop and real permission/startup diagnostics were not exercised. Windows ACL behavior was not evaluated; the two POSIX mode-bit tests were skipped and are not ACL evidence. Wi-Fi monitor mode, BLE capture, Raspberry Pi throughput, live offered/received/drop counters, and simultaneous live-adapter capture were also not tested. Do not infer these results from CI or synthetic replay.

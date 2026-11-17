@@ -1,4 +1,7 @@
+
 from datetime import UTC, datetime
+
+import pytest
 
 from pocket_packet_sniffer.analysis.models import PacketRecord
 from pocket_packet_sniffer.analysis.statistics import TrafficStatistics
@@ -52,3 +55,15 @@ def test_protocols_and_top_talkers_are_sorted_by_count_then_name():
     snapshot = stats.snapshot()
     assert snapshot["protocols"] == [("TCP", 2), ("UDP", 1)]
     assert snapshot["top_talkers"][0] == ("192.0.2.1", 2)
+
+
+@pytest.mark.parametrize("window_seconds", [None, "2", True, False])
+def test_statistics_rejects_non_numeric_window_seconds(window_seconds):
+    with pytest.raises(TypeError, match="window_seconds"):
+        TrafficStatistics(window_seconds=window_seconds)
+
+
+@pytest.mark.parametrize("window_seconds", [0, -1, -0.5])
+def test_statistics_rejects_non_positive_window_seconds(window_seconds):
+    with pytest.raises(ValueError, match="window_seconds"):
+        TrafficStatistics(window_seconds=window_seconds)

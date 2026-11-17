@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from io import StringIO
@@ -80,6 +81,17 @@ def test_dashboard_refreshes_and_stops_with_event():
 @pytest.mark.parametrize("interval", [0, -0.1, 2.01, 3, float("inf"), float("nan")])
 def test_dashboard_rejects_invalid_refresh_interval(interval):
     with pytest.raises(ValueError, match="refresh_interval"):
+        run_live_dashboard(
+            lambda: example_snapshot(),
+            Event(),
+            output=StringIO(),
+            refresh_interval=interval,
+        )
+
+
+@pytest.mark.parametrize("interval", [None, "0.5", True])
+def test_dashboard_rejects_non_numeric_refresh_interval(interval):
+    with pytest.raises(TypeError, match="refresh_interval"):
         run_live_dashboard(
             lambda: example_snapshot(),
             Event(),

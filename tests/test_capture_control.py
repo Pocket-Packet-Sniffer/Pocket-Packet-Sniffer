@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
-from threading import Event
+from threading import Event, Thread
 from time import monotonic, sleep
 
 import pytest
 
+from pocket_packet_sniffer.application.session import CaptureSession
 from pocket_packet_sniffer.presentation.capture_control import (
     CaptureControl,
     CaptureControlError,
 )
+from pocket_packet_sniffer.storage import PcapSqliteRepository
 
 
 def test_stop_request_from_another_cli_context_sets_stop_event(tmp_path):
@@ -32,6 +36,13 @@ def test_stop_request_from_another_cli_context_sets_stop_event(tmp_path):
 def test_request_for_inactive_session_returns_false(tmp_path):
     tmp_path.mkdir(exist_ok=True)
     assert CaptureControl.request_stop(tmp_path, "missing-session") is False
+
+
+def test_exited_process_is_not_reported_alive():
+    with subprocess.Popen([sys.executable, "-c", "pass"]) as process:
+        process.wait(timeout=5)
+
+    assert not CaptureControl._process_is_alive(process.pid)
 
 
 def test_control_refuses_second_active_owner_for_same_session(tmp_path):
@@ -61,21 +72,66 @@ def test_unreadable_active_marker_fails_closed(tmp_path):
 def test_private_file_publishes_complete_marker_atomically(tmp_path, monkeypatch):
     target = tmp_path / ".stop.request"
     expected = '{"session_id":"session-one","requested_unix":1}'
-    original_link = __import__("os").link
+    import os
+
+    publish = os.rename if os.name == "nt" else os.link
+    original_publish = publish
     observed = []
 
-    def checked_link(source, destination, *args, **kwargs):
+    def checked_publish(source, destination, *args, **kwargs):
         source_path = Path(source)
         destination_path = Path(destination)
         assert not destination_path.exists()
         assert source_path.read_text(encoding="utf-8") == expected
         observed.append(True)
-        return original_link(source, destination, *args, **kwargs)
+        return original_publish(source, destination, *args, **kwargs)
 
-    monkeypatch.setattr("os.link", checked_link)
+    monkeypatch.setattr(os, "rename" if os.name == "nt" else "link", checked_publish)
     CaptureControl._private_file(target, expected)
 
     assert observed == [True]
     assert target.read_text(encoding="utf-8") == expected
     assert not list(tmp_path.glob("*.tmp"))
     assert not list(tmp_path.glob(".*.tmp"))
+
+
+
+def test_active_capture_session_exits_after_external_stop_request(tmp_path):
+    started = Event()
+    finished = Event()
+    results = []
+
+    class WaitingCapturer:
+        name = "controlled-live"
+
+        def capture(self, _on_packet, stop_event, count=None):
+            started.set()
+            stop_event.wait(timeout=2)
+            finished.set()
+
+    control = CaptureControl(
+        tmp_path, "controlled-session", "controlled-live", poll_interval=0.01
+    )
+    stop_event = Event()
+    session = CaptureSession(
+        WaitingCapturer(),
+        PcapSqliteRepository(tmp_path),
+        session_id="controlled-session",
+    )
+    control.activate()
+    control.start_watcher(stop_event)
+    worker = Thread(target=lambda: results.append(session.run(stop_event)))
+    try:
+        worker.start()
+        assert started.wait(timeout=1)
+        assert CaptureControl.request_stop(tmp_path, "controlled-session") is True
+        worker.join(timeout=2)
+        assert not worker.is_alive(), "capture session did not exit after stop request"
+        assert stop_event.is_set()
+        assert finished.is_set()
+        assert len(results) == 1
+        assert results[0].exit_code == 0
+    finally:
+        control.close()
+        if worker.is_alive():
+            worker.join(timeout=1)

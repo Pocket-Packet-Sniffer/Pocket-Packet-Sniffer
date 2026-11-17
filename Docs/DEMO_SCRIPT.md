@@ -39,6 +39,8 @@ This command replays a local file. It does not transmit packets to a network.
 pocket-packet-sniffer sessions --storage-dir demo-captures
 pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --protocol TCP
 pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --address 192.0.2.1
+pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --suspicious-only
+pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --show-classification
 pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --start 2026-10-27T10:00:00+00:00 --end 2026-10-27T10:00:04+00:00
 ```
 
@@ -47,6 +49,8 @@ Expected outcomes:
 - The TCP query returns the fixture's matching TCP metadata.
 - The address query returns ARP metadata for the synthetic address `192.0.2.1`.
 - Query results show timestamps, normalized protocol, source/destination metadata, size, and session ID. Raw packet payloads are not printed.
+- `--suspicious-only` re-parses the saved PCAP records and displays records that trigger a configured heuristic, with a rule ID and reason. The synthetic ARP conflict should show one `SUSPICIOUS/REVIEW` record.
+- `--show-classification` shows `SUSPICIOUS/REVIEW` or `NO RULE MATCHED` for each record. A no-match is not proof that traffic is safe. For allowlist rules, pass repeated `--known-device MAC` or `--known-access-point BSSID` options to the query command.
 
 ## 4. Export local reports
 
@@ -78,7 +82,17 @@ pytest -q
 
 The latest `main` GitHub Actions run after PR #29 merged passed Ruff and reported **106 passing tests in 1.87 seconds**: [CI run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511). This verifies the automated suite, not live adapter support or target-hardware performance.
 
-## 7. Measure replay processing/storage throughput
+## 7. Parser edge-case regression evidence
+
+The regression tests added in PR #38 are included in the automated suite. To run only these cases on Windows or another development machine:
+
+```powershell
+python -m pytest tests/test_analysis_parser_edge_cases.py -v
+```
+
+The test group covers IPv6 TCP/UDP, ICMPv6 echo request, non-IP Ethernet frames and MAC metadata, capture metadata/backend preservation, unsupported link types, and rejection of empty capture bytes. The local Windows run on 2026-10-29 passed 8 tests in 0.69 seconds. The latest main CI run passed 122 tests; see [run 40915380388](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40915380388).
+
+## 8. Measure replay processing/storage throughput
 
 Run the synthetic pipeline benchmark on the machine whose performance you want to record:
 
@@ -90,7 +104,7 @@ The default five-packet fixture repeated 1,000 times produces 5,000 synthetic pa
 
 For a useful target-hardware record, note the actual device/CPU (e.g. Raspberry Pi model), OS, Python version, storage medium, repeats, elapsed time, and stored-packet rate. This is a **file-replay throughput measurement**, not evidence of zero packet loss on a live interface. Live capture drops require a separate test on the actual adapter/driver with representative authorized traffic.
 
-## 8. Optional authorized live-capture check
+## 9. Optional authorized live-capture check
 
 Only use a device/network you own or are explicitly authorized to monitor. Confirm the interface name and capture driver for your OS before running:
 

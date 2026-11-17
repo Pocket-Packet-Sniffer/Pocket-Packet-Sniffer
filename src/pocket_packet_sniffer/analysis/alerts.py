@@ -63,7 +63,8 @@ class AlertPublisher:
         for observer in observers:
             try:
                 observer(event)
-            except Exception:
+            # Observer failures must never interrupt packet capture.
+            except Exception:  # noqa: BLE001
                 with self._lock:
                     self._notification_failures += 1
 
@@ -147,18 +148,22 @@ class SuspiciousActivityDetector:
                         )
                     self._ip_to_mac[source_address] = source_mac
 
-            if self.known_devices and source_mac and source_mac not in self.known_devices:
-                if source_mac not in self._unknown_seen:
-                    self._unknown_seen.add(source_mac)
-                    events.append(
-                        AlertEvent(
-                            rule_id="unrecognized-device",
-                            severity="info",
-                            message=f"Observed source device {source_mac} is not in the configured device allowlist",
-                            timestamp=timestamp,
-                            evidence={"source_mac": source_mac, "source_address": source_address},
-                        )
+            if (
+                self.known_devices
+                and source_mac
+                and source_mac not in self.known_devices
+                and source_mac not in self._unknown_seen
+            ):
+                self._unknown_seen.add(source_mac)
+                events.append(
+                    AlertEvent(
+                        rule_id="unrecognized-device",
+                        severity="info",
+                        message=f"Observed source device {source_mac} is not in the configured device allowlist",
+                        timestamp=timestamp,
+                        evidence={"source_mac": source_mac, "source_address": source_address},
                     )
+                )
 
             if (
                 record.protocol == "WIFI_BEACON"

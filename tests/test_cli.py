@@ -6,15 +6,23 @@ from pathlib import Path
 
 from scapy.layers.inet import IP, TCP
 from scapy.layers.l2 import Ether
+from scapy.packet import Raw
 
 from pocket_packet_sniffer.cli import main
 from pocket_packet_sniffer.presentation.capture_control import CaptureControl
 from pocket_packet_sniffer.storage import PcapSqliteRepository
 from tools.create_demo_pcap import create_demo_pcap
 
+SECRET_PAYLOAD = b"PRIVATE_PACKET_PAYLOAD_MARKER"
+
 
 def write_one_packet_pcap(path: Path) -> None:
-    frame = bytes(Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02") / IP(src="192.0.2.5", dst="198.51.100.5") / TCP())
+    frame = bytes(
+        Ether(src="02:00:00:00:00:01", dst="02:00:00:00:00:02")
+        / IP(src="192.0.2.5", dst="198.51.100.5")
+        / TCP()
+        / Raw(load=SECRET_PAYLOAD)
+    )
     with path.open("wb") as stream:
         stream.write(b"\xd4\xc3\xb2\xa1")
         stream.write(struct.pack("<HHIIII", 2, 4, 0, 0, 65535, 1))
@@ -43,12 +51,16 @@ def test_cli_capture_query_and_export_using_local_pcap(tmp_path, capsys):
     assert code == 0
     assert "stored=1" in captured.out
     assert "TCP" in captured.out
+    assert SECRET_PAYLOAD.decode() not in captured.out
+    assert SECRET_PAYLOAD.decode() not in captured.err
 
     code = main(["sessions", "--storage-dir", str(storage)])
     sessions_result = capsys.readouterr()
     assert code == 0
     assert "cli-session" in sessions_result.out
     assert "1 session(s)" in sessions_result.out
+    assert SECRET_PAYLOAD.decode() not in sessions_result.out
+    assert SECRET_PAYLOAD.decode() not in sessions_result.err
 
     code = main(
         [
@@ -60,6 +72,8 @@ def test_cli_capture_query_and_export_using_local_pcap(tmp_path, capsys):
     assert code == 0
     assert "192.0.2.5" in query_result.out
     assert "1 packet(s)" in query_result.out
+    assert SECRET_PAYLOAD.decode() not in query_result.out
+    assert SECRET_PAYLOAD.decode() not in query_result.err
 
     code = main(
         [
@@ -75,6 +89,7 @@ def test_cli_capture_query_and_export_using_local_pcap(tmp_path, capsys):
     export_result = capsys.readouterr()
     assert code == 0
     assert "exported 1 packet(s)" in export_result.out
+    assert SECRET_PAYLOAD.decode() not in report.read_text(encoding="utf-8")
     with report.open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
     assert len(rows) == 1
@@ -97,6 +112,7 @@ def test_cli_capture_query_and_export_using_local_pcap(tmp_path, capsys):
     pdf_result = capsys.readouterr()
     assert code == 0
     assert "PDF" in pdf_result.out
+    assert SECRET_PAYLOAD not in pdf_report.read_bytes()
     assert pdf_report.read_bytes().startswith(b"%PDF-1.4")
 
 
@@ -231,3 +247,42 @@ def test_cli_replay_supports_relative_storage_directory(tmp_path, monkeypatch, c
     assert "seen=5 stored=5 ignored=0 exit_code=0" in result.out
     repository = PcapSqliteRepository("demo-captures")
     assert len(repository.query_session("demo-session")) == 5
+
+
+def test_cli_query_can_filter_and_explain_suspicious_records(tmp_path, capsys):
+    source = tmp_path / "suspicious-query-demo.pcap"
+    create_demo_pcap(source)
+    storage = tmp_path / "captures"
+    code = main(
+        [
+            "capture", "--pcap-file", str(source), "--storage-dir", str(storage),
+            "--session-id", "suspicious-query-session",
+        ]
+    )
+    capsys.readouterr()
+    assert code == 0
+
+    code = main(
+        [
+            "query", "--storage-dir", str(storage), "--session-id", "suspicious-query-session",
+            "--suspicious-only",
+        ]
+    )
+    suspicious = capsys.readouterr()
+    assert code == 0
+    assert "SUSPICIOUS/REVIEW" in suspicious.out
+    assert "arp-address-conflict" in suspicious.out
+    assert "192.0.2.1" in suspicious.out
+    assert "1 packet(s)" in suspicious.out
+
+    code = main(
+        [
+            "query", "--storage-dir", str(storage), "--session-id", "suspicious-query-session",
+            "--show-classification",
+        ]
+    )
+    all_records = capsys.readouterr()
+    assert code == 0
+    assert "NO RULE MATCHED" in all_records.out
+    assert "SUSPICIOUS/REVIEW" in all_records.out
+    assert "not a guarantee that traffic is safe" in all_records.out

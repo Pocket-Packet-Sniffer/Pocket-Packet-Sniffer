@@ -15,6 +15,7 @@ A captured record carries timezone-aware UTC timestamp, raw link-layer bytes, in
 - Only capture on networks/devices you own or are explicitly authorized to monitor.
 - Capture is listen-only: the Capture Layer must not inject, modify or replay packets onto the monitored network.
 - PCAP replay reads a local file and never transmits its frames.
+- The optional BPF filter applies to live capture only; it is not an authorization control and does not filter local PCAP replay.
 - Do not commit real capture files or payloads to the repository.
 - Wi-Fi monitor mode requires compatible hardware/driver and operating-system configuration.
 - BLE advertisement scanning is a stretch requirement and depends on the BLE sniffer/HCI adapter and OS delivering a supported BLE PCAP link type; the generic parser/test fixtures do not prove a working BLE radio capture path.

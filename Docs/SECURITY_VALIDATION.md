@@ -10,7 +10,7 @@ This document separates automated/code-reviewed safeguards from target-environme
 - POSIX tests check private directory/file modes. Storage uses mode 0700 for capture directories and 0600 for PCAP/SQLite files when supported by the OS.
 - Capture-runner tests cover stable exit statuses, one-line known errors and Ctrl+C cleanup.
 - Analysis alert events contain packet metadata, not raw captured bytes. Alert detection is a heuristic, not an attack verdict.
-- PDF and CSV reports use exclusive file creation, refuse overwrite, and omit packet payload bytes.
+- CLI capture/query output and PDF/CSV reports display metadata only; generated-PCAP tests assert packet payload markers are not exposed. Reports use exclusive file creation and refuse overwrite.
 - Concurrent capture uses existing capturer strategies, shared cancellation and an aggregate packet callback. Its synthetic tests do not require privileges or live network traffic.
 
 ## Required operating controls
@@ -21,6 +21,8 @@ This document separates automated/code-reviewed safeguards from target-environme
 - Do not interpret ARP conflicts or inventory mismatches as proof of malicious intent.
 
 ## Manual checks still required
+
+For each completed check, record the test date, OS/version, adapter and driver, interface mode, privilege context, authorized test-traffic source, observed startup/stop result, and packet/drop counts when available. Mark checks **not run** until evidence is collected; do not attach raw capture files to the record.
 
 - Live capture start/stop and permission diagnostics on each target OS, capture driver and adapter.
 - Wi-Fi monitor mode with the actual supported adapter/driver.

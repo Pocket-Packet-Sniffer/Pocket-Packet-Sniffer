@@ -166,11 +166,21 @@ class FakeSniffer:
         self.running = False
 
 
-def install_fake_scapy(monkeypatch, *, interfaces=None, sniffer_factory=FakeSniffer, layer_map=None):
+def install_fake_scapy(
+    monkeypatch,
+    *,
+    interfaces=None,
+    sniffer_factory=FakeSniffer,
+    layer_map=None,
+    interface_objects=None,
+):
     fake_all = types.ModuleType("scapy.all")
     fake_all.AsyncSniffer = sniffer_factory
     fake_all.get_if_list = lambda: interfaces if interfaces is not None else ["eth-test"]
-    fake_all.conf = types.SimpleNamespace(l2types=types.SimpleNamespace(layer2num=layer_map or {FakePacket: 1}))
+    fake_all.conf = types.SimpleNamespace(
+        l2types=types.SimpleNamespace(layer2num=layer_map or {FakePacket: 1}),
+        ifaces=types.SimpleNamespace(values=lambda: interface_objects or []),
+    )
     fake_scapy = types.ModuleType("scapy")
     fake_scapy.__path__ = []
     fake_all.__package__ = "scapy"
@@ -186,6 +196,33 @@ def test_scapy_backend_delivers_raw_packet_without_dependency_leak(monkeypatch):
     assert records[0].packet_data == b"\x01\x02\x03\x04"
     assert records[0].interface == "eth-test"
     assert records[0].timestamp.tzinfo is not None
+
+
+def test_scapy_backend_resolves_windows_friendly_interface_name(monkeypatch):
+    npf_path = r"\\Device\\NPF_{FBD103DA-BD49-4BA2-8D29-B53004E2A3C0}"
+    wifi_interface = types.SimpleNamespace(
+        name="Wi-Fi",
+        description="Realtek RTL8852BE WiFi 6 802.11ax PCIe Adapter",
+        network_name=npf_path,
+    )
+    sniffers = []
+
+    class TrackingSniffer(FakeSniffer):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            sniffers.append(self)
+
+    install_fake_scapy(
+        monkeypatch,
+        interfaces=[npf_path],
+        sniffer_factory=TrackingSniffer,
+        interface_objects=[wifi_interface],
+    )
+    records = []
+    ScapyCapturer("Wi-Fi").capture(records.append, Event(), count=1)
+
+    assert len(records) == 1
+    assert sniffers[0].kwargs["iface"] is wifi_interface
 
 
 def test_unavailable_interface_lists_detected_interfaces(monkeypatch):
@@ -297,3 +334,66 @@ def test_callback_error_does_not_disclose_arbitrary_custom_text(tmp_path):
 
     assert "RuntimeError" in str(error.value)
     assert "secret-payload" not in str(error.value)
+
+
+def test_scapy_backend_reports_unexpected_sniffer_exit(monkeypatch):
+    class ExitingSniffer(FakeSniffer):
+        def start(self):
+            super().start()
+            # Simulate Scapy's worker ending without a stop request or count limit.
+            self.running = False
+
+    install_fake_scapy(monkeypatch, sniffer_factory=ExitingSniffer)
+    with pytest.raises(CaptureStartupError, match="stopped unexpectedly"):
+        ScapyCapturer("eth-test", poll_interval=0.001).capture(lambda _record: None, Event(), count=100)
+
+
+def test_live_capture_lifecycle_diagnostics_are_opt_in(monkeypatch, capsys):
+    install_fake_scapy(monkeypatch)
+    monkeypatch.setenv("PPS_DEBUG_CAPTURE_LIFECYCLE", "1")
+
+    ScapyCapturer("eth-test", poll_interval=0.001).capture(
+        lambda _record: None, Event(), count=1
+    )
+
+    diagnostic = capsys.readouterr().err
+    assert "capture_lifecycle reason=packet_count" in diagnostic
+    assert "delivered=1" in diagnostic
+    assert "count_reached=True" in diagnostic
+
+
+
+@pytest.mark.parametrize("link_type", [None, "1", True, False, 1.5])
+def test_captured_packet_rejects_invalid_link_type_type(link_type):
+    with pytest.raises(TypeError, match="link_type"):
+        CapturedPacket(
+            timestamp=datetime.now(timezone.utc),
+            packet_data=b"frame",
+            interface="eth-test",
+            link_type=link_type,
+            original_length=5,
+        )
+
+
+@pytest.mark.parametrize("link_type", [-1, 0x100000000])
+def test_captured_packet_rejects_out_of_range_link_type(link_type):
+    with pytest.raises(ValueError, match="link_type"):
+        CapturedPacket(
+            timestamp=datetime.now(timezone.utc),
+            packet_data=b"frame",
+            interface="eth-test",
+            link_type=link_type,
+            original_length=5,
+        )
+
+
+@pytest.mark.parametrize("delay", [None, "0.1", True, False])
+def test_pcap_capturer_rejects_invalid_delay_type(tmp_path, delay):
+    with pytest.raises(TypeError, match="delay"):
+        PcapFileCapturer(tmp_path / "sample.pcap", delay=delay)
+
+
+@pytest.mark.parametrize("delay", [-0.1, float("inf"), float("nan")])
+def test_pcap_capturer_rejects_invalid_delay_value(tmp_path, delay):
+    with pytest.raises(ValueError, match="delay"):
+        PcapFileCapturer(tmp_path / "sample.pcap", delay=delay)

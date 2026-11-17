@@ -12,11 +12,11 @@ from .report_export import ReportExportError, export_session_report_csv
 from .report_pdf import export_session_report_pdf
 
 __all__ = [
-    "CaptureControl",
-    "CaptureControlError",
     "EXIT_CAPTURE_ERROR",
     "EXIT_INTERRUPTED",
     "EXIT_SUCCESS",
+    "CaptureControl",
+    "CaptureControlError",
     "ReportExportError",
     "export_session_report_csv",
     "export_session_report_pdf",

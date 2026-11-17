@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import os
 import textwrap
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from pocket_packet_sniffer.presentation.report_export import ReportExportError
 from pocket_packet_sniffer.storage.models import PacketRecord, SessionSummary

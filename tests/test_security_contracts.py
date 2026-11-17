@@ -1,12 +1,40 @@
 from __future__ import annotations
 
+import ast
 import os
 import stat
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
 from pocket_packet_sniffer.storage import PacketRecord, PcapSqliteRepository
+
+
+def test_capture_backends_do_not_call_packet_transmission_apis():
+    forbidden_apis = {
+        "send",
+        "sendp",
+        "sendpfast",
+        "sr",
+        "sr1",
+        "srp",
+        "srp1",
+        "srloop",
+        "srploop",
+    }
+    capture_dir = Path(__file__).resolve().parents[1] / "src" / "pocket_packet_sniffer" / "capture"
+
+    for source_path in capture_dir.glob("*.py"):
+        tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                function = node.func
+                name = function.id if isinstance(function, ast.Name) else function.attr if isinstance(function, ast.Attribute) else None
+                assert name not in forbidden_apis, f"{source_path.name} calls prohibited packet API {name}"
+            elif isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("scapy"):
+                imported_apis = {alias.name for alias in node.names} & forbidden_apis
+                assert not imported_apis, f"{source_path.name} imports prohibited packet APIs: {sorted(imported_apis)}"
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX file-mode checks do not apply to Windows ACLs")

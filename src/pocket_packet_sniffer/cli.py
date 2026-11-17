@@ -17,6 +17,7 @@ from pocket_packet_sniffer.analysis.pipeline import AnalyzerPipeline
 from pocket_packet_sniffer.application.session import CaptureSession
 from pocket_packet_sniffer.capture import PcapFileCapturer, ScapyCapturer
 from pocket_packet_sniffer.capture.concurrent import ConcurrentCapturer
+from pocket_packet_sniffer.capture.models import CapturedPacket
 from pocket_packet_sniffer.presentation import (
     EXIT_SUCCESS,
     ReportExportError,
@@ -95,6 +96,10 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("--address")
     query.add_argument("--start", type=_aware_datetime)
     query.add_argument("--end", type=_aware_datetime)
+    query.add_argument("--suspicious-only", action="store_true", help="show only records that match a configured suspicious-activity heuristic")
+    query.add_argument("--show-classification", action="store_true", help="show suspicious/review or no-rule-matched status for each queried record")
+    query.add_argument("--known-device", action="append", default=[], metavar="MAC", help="known device MAC for classification; repeat for an inventory")
+    query.add_argument("--known-access-point", action="append", default=[], metavar="BSSID", help="known Wi-Fi access point for classification; repeat for an allowlist")
 
     export = commands.add_parser("export", help="export one local session to CSV")
     export.add_argument("--storage-dir", type=Path, default=Path("captures"))
@@ -279,28 +284,99 @@ def _run_stop(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def _classify_stored_records(
+    records: list[object],
+    *,
+    known_devices: set[str],
+    known_access_points: set[str],
+) -> dict[str, list[str]]:
+    """Re-run metadata heuristics over stored packet bytes without exporting payloads."""
+    alerts_by_record: dict[str, list[str]] = {}
+    records_by_session: dict[str, list[object]] = {}
+    for record in records:
+        records_by_session.setdefault(record.session_id, []).append(record)
+
+    for session_records in records_by_session.values():
+        events = []
+        publisher = AlertPublisher()
+        publisher.subscribe(events.append)
+        detector = SuspiciousActivityDetector(
+            publisher,
+            known_devices=known_devices,
+            known_access_points=known_access_points,
+        )
+        parser = PacketParser()
+        for stored in session_records:
+            captured = CapturedPacket(
+                timestamp=stored.timestamp,
+                packet_data=stored.packet_data,
+                interface=stored.interface or "stored-record",
+                link_type=stored.link_type,
+                original_length=stored.original_length,
+                capture_backend=stored.capture_backend,
+            )
+            analyzed = parser.parse(captured, backend=stored.capture_backend)
+            if analyzed is None:
+                continue
+            before = len(events)
+            detector.inspect(analyzed)
+            if len(events) > before:
+                alerts_by_record[stored.record_id] = [
+                    f"{event.rule_id}: {event.message}" for event in events[before:]
+                ]
+    return alerts_by_record
+
+
 def _run_query(args: argparse.Namespace) -> int:
     if args.start is not None and args.end is not None and args.start > args.end:
         print("error: --start must not be after --end", file=sys.stderr)
         return 2
     repository = PcapSqliteRepository(args.storage_dir)
     time_window = (args.start, args.end) if args.start is not None or args.end is not None else None
+
+    classifications: dict[str, list[str]] = {}
+    if args.suspicious_only or args.show_classification:
+        # Reprocess the complete session history so stateful rules such as ARP
+        # conflict detection are not broken by protocol/address/time filters.
+        history = (
+            repository.query_session(args.session_id)
+            if args.session_id
+            else repository.query()
+        )
+        classifications = _classify_stored_records(
+            history,
+            known_devices=set(args.known_device),
+            known_access_points=set(args.known_access_point),
+        )
+
     records = repository.query(
         protocol=args.protocol,
         address=args.address,
         time_window=time_window,
         session_id=args.session_id,
     )
+    if args.suspicious_only:
+        records = [record for record in records if record.record_id in classifications]
     if not records:
         print("No matching packets.")
+        if args.suspicious_only:
+            print("No configured suspicious heuristic matched these records; this does not prove the traffic is safe.")
         return EXIT_SUCCESS
     for record in records:
-        print(
+        status = "SUSPICIOUS/REVIEW" if record.record_id in classifications else "NO RULE MATCHED"
+        line = (
             f"{record.timestamp.isoformat()}\t{record.protocol}\t"
             f"{record.source_address or '-'}\t{record.destination_address or '-'}\t"
             f"{record.original_length}\t{record.session_id}"
         )
+        if args.show_classification or args.suspicious_only:
+            line += f"\t{status}"
+        print(line)
+        for reason in classifications.get(record.record_id, []):
+            print(f"  reason: {reason}")
     print(f"{len(records)} packet(s)")
+    if args.show_classification and not args.suspicious_only:
+        print("NO RULE MATCHED is not a guarantee that traffic is safe.")
     return EXIT_SUCCESS
 
 

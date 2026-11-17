@@ -1,8 +1,11 @@
+
 """Passive live packet capture using Scapy's asynchronous sniffer."""
 
 from __future__ import annotations
 
 import math
+import os
+import sys
 import time
 from datetime import datetime, timezone
 from threading import Event, Lock
@@ -74,12 +77,45 @@ class ScapyCapturer(Capturer):
             interfaces = list(get_if_list())
         except Exception as exc:
             raise CaptureStartupError(f"Could not enumerate network interfaces: {exc}") from exc
-        if self.interface not in interfaces:
-            available = ", ".join(sorted(str(name) for name in interfaces)) or "none detected"
-            raise CaptureInterfaceError(
-                f"Interface '{self.interface}' is unavailable. Available interfaces: {available}. "
-                "Check the interface name, adapter state, and driver installation."
+
+        # On Windows, get_if_list() commonly returns Npcap device paths while
+        # conf.ifaces also exposes friendly names such as "Wi-Fi". Accept
+        # either form and pass the resolved Scapy interface object to the sniffer.
+        resolved_interface: Any = self.interface
+        available_names = {str(name) for name in interfaces}
+        scapy_interfaces = getattr(conf, "ifaces", None)
+        try:
+            interface_objects = list(scapy_interfaces.values()) if scapy_interfaces is not None else []
+        except (AttributeError, TypeError):
+            interface_objects = []
+
+        if self.interface not in available_names:
+            matched_interface = next(
+                (
+                    candidate
+                    for candidate in interface_objects
+                    if self.interface
+                    in {
+                        str(getattr(candidate, attribute, ""))
+                        for attribute in ("name", "description", "network_name")
+                        if getattr(candidate, attribute, None) is not None
+                    }
+                ),
+                None,
             )
+            if matched_interface is None:
+                for candidate in interface_objects:
+                    for attribute in ("name", "description", "network_name"):
+                        value = getattr(candidate, attribute, None)
+                        if value is not None:
+                            available_names.add(str(value))
+                available = ", ".join(sorted(available_names)) or "none detected"
+                raise CaptureInterfaceError(
+                    f"Interface '{self.interface}' is unavailable. Available interfaces: {available}. "
+                    "Check the interface name, adapter state, and driver installation."
+                )
+            resolved_interface = matched_interface
+
         if stop_event.is_set():
             return
 
@@ -125,13 +161,14 @@ class ScapyCapturer(Capturer):
                 on_packet(record)
                 with count_lock:
                     delivered += 1
-            except Exception as exc:
+            # Preserve callback failures for reporting by the capture thread.
+            except Exception as exc:  # noqa: BLE001
                 callback_error.append(exc)
 
         sniffer = None
         try:
             sniffer = AsyncSniffer(
-                iface=self.interface,
+                iface=resolved_interface,
                 store=False,
                 prn=handle,
                 filter=self.bpf_filter,
@@ -158,19 +195,41 @@ class ScapyCapturer(Capturer):
                     "Check adapter state, capture driver, and permissions."
                 )
 
+            count_reached = False
+            exit_reason = "unknown"
             while True:
-                if stop_event.is_set() or callback_error:
+                if stop_event.is_set():
+                    exit_reason = "stop_event"
+                    break
+                if callback_error:
+                    exit_reason = "callback_error"
                     break
                 with count_lock:
                     count_reached = count is not None and delivered >= count
-                if count_reached or not getattr(sniffer, "running", True):
+                if count_reached:
+                    exit_reason = "packet_count"
+                    break
+                if not getattr(sniffer, "running", True):
+                    exit_reason = "sniffer_not_running"
                     break
                 stop_event.wait(self.poll_interval)
 
+            if os.environ.get("PPS_DEBUG_CAPTURE_LIFECYCLE") == "1":
+                thread = getattr(sniffer, "thread", None)
+                print(
+                    "capture_lifecycle "
+                    f"reason={exit_reason} delivered={delivered} "
+                    f"count_reached={count_reached} stop_event={stop_event.is_set()} "
+                    f"sniffer_running={getattr(sniffer, 'running', None)} "
+                    f"thread_alive={thread.is_alive() if thread is not None else None} "
+                    f"backend_exception_type={type(getattr(sniffer, 'exception', None)).__name__ if getattr(sniffer, 'exception', None) is not None else 'none'}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+
             if getattr(sniffer, "running", False):
                 # On Windows/Npcap, a blocking join inside Scapy's stop() can
-                # leave the API stuck in "stopping" when the adapter read is
-                # blocked. Request stop first, then bound how long we wait.
+                # leave the API stuck in "stopping" when an adapter read blocks.
                 sniffer.stop(join=False)
                 thread = getattr(sniffer, "thread", None)
                 if thread is not None:
@@ -197,6 +256,11 @@ class ScapyCapturer(Capturer):
             backend_error = getattr(sniffer, "exception", None)
             if backend_error is not None:
                 raise _translate_backend_error(backend_error, self.interface)
+            if not stop_event.is_set() and not count_reached and not getattr(sniffer, "running", True):
+                raise CaptureStartupError(
+                    f"Capture on '{self.interface}' stopped unexpectedly before a stop request "
+                    "or packet-count limit was reached. Check the adapter, capture driver, and backend logs."
+                )
         except KeyboardInterrupt:
             # Ctrl+C must stop the background sniffer before the CLI returns.
             stop_event.set()
@@ -219,8 +283,8 @@ def _stop_sniffer_safely(sniffer: Any) -> None:
         thread = getattr(sniffer, "thread", None)
         if thread is not None and thread.is_alive():
             thread.join(timeout=0.5)
-    except Exception:
-        # Preserve the primary startup/capture error; cleanup is best-effort.
+    # Cleanup must not mask the original capture or startup error.
+    except Exception:  # noqa: BLE001, S110
         pass
 
 
