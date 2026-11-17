@@ -109,6 +109,8 @@ type Alert = {
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const CURRENT_AGENT_VERSION = "0.2.2";
+const SUPPORTED_AGENT_VERSIONS = new Set(["0.2.1", CURRENT_AGENT_VERSION]);
 type LoopbackPermissionState = "prompt" | "granted" | "denied";
 function localFetch(input: RequestInfo | URL, init?: RequestInit) {
   const target = new URL(typeof input === "string" || input instanceof URL ? input.toString() : input.url, window.location.href);
@@ -231,6 +233,7 @@ export default function App() {
   const [captureBusy, setCaptureBusy] = useState(false);
   const [reportBusy, setReportBusy] = useState("");
   const [online, setOnline] = useState(false);
+  const [agentUpdateAvailable, setAgentUpdateAvailable] = useState(false);
   const [loopbackPermission, setLoopbackPermission] = useState<LoopbackPermissionState>("prompt");
   const [connectionRequested, setConnectionRequested] = useState(false);
   const [error, setError] = useState("");
@@ -247,6 +250,8 @@ export default function App() {
   const searchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const sensorHealthRequest = useRef<Promise<Record<string, unknown>> | null>(null);
+  const captureSnapshot = useRef(capture);
+  captureSnapshot.current = capture;
 
   async function checkSensorHealth() {
     if (sensorHealthRequest.current) return sensorHealthRequest.current;
@@ -256,7 +261,7 @@ export default function App() {
       if (!response.ok || health.status !== "ok") {
         throw new Error(String(health.detail || "The local sensor is not ready yet."));
       }
-      if (health.version !== "0.2.1") {
+      if (!SUPPORTED_AGENT_VERSIONS.has(String(health.version))) {
         throw new Error("Your capture sensor needs an update. Download and open the latest sensor, then reconnect.");
       }
       return health;
@@ -358,10 +363,13 @@ export default function App() {
     let consecutiveFailures = 0;
     async function refresh() {
       if (!connectionRequested) return;
+      let needsUpdate = false;
       try {
-        await checkSensorHealth();
+        const health = await checkSensorHealth();
         if (cancelled) return;
         consecutiveFailures = 0;
+        needsUpdate = health.version !== CURRENT_AGENT_VERSION;
+        setAgentUpdateAvailable(needsUpdate);
         setOnline(true);
         setError("");
       } catch (cause) {
@@ -373,33 +381,42 @@ export default function App() {
         return;
       }
 
-      const results = await Promise.allSettled([
-        localFetch(`${API}/api/overview`, { cache: "no-store" }),
-        localFetch(`${API}/api/packets?limit=250`, { cache: "no-store" }),
-        localFetch(`${API}/api/sessions`, { cache: "no-store" }),
-        localFetch(`${API}/api/alerts?limit=100`, { cache: "no-store" }),
-        localFetch(`${API}/api/statistics`, { cache: "no-store" }),
-      ]);
-      if (cancelled) return;
-      const [summary, packetResult, sessionResult, alertResult, statisticsResult] = results;
-      if (summary.status === "fulfilled" && summary.value.ok) {
-        try { setOverview(await summary.value.json()); } catch { /* Keep the last complete snapshot. */ }
-      }
-      if (packetResult.status === "fulfilled" && packetResult.value.ok) {
+      const updateFrom = async (path: string, update: (data: Record<string, any>) => void) => {
         try {
-          const data = await packetResult.value.json();
-          setRows((data.packets || []).map(packetFromApi));
-        } catch { /* Keep the last complete packet list. */ }
-      }
-      if (sessionResult.status === "fulfilled" && sessionResult.value.ok) {
-        try { setSessions(await sessionResult.value.json()); } catch { /* Keep the last session list. */ }
-      }
-      if (alertResult.status === "fulfilled" && alertResult.value.ok) {
-        try { setAlerts((await alertResult.value.json()).alerts || []); } catch { /* Keep the last alert list. */ }
-      }
-      if (statisticsResult.status === "fulfilled" && statisticsResult.value.ok) {
-        try { setStatistics(await statisticsResult.value.json()); } catch { /* Keep the last rate snapshot. */ }
-      }
+          const response = await localFetch(`${API}${path}`, {
+            cache: "no-store",
+            signal: AbortSignal.timeout(12000),
+          });
+          if (!response.ok) return;
+          const data = await response.json();
+          if (!cancelled) update(data);
+        } catch {
+          // Keep the last successful values; each panel refreshes independently.
+        }
+      };
+      const liveSessionId = captureSnapshot.current.session_id;
+      const packetPath = needsUpdate
+        ? liveSessionId ? `/api/packets?limit=250&session_id=${encodeURIComponent(liveSessionId)}` : null
+        : "/api/packets?limit=250";
+      await Promise.all([
+        needsUpdate ? Promise.resolve() : updateFrom("/api/overview", (data) => setOverview(data as unknown as Overview)),
+        packetPath ? updateFrom(packetPath, (data) => setRows(((data.packets || []) as Record<string, unknown>[]).map(packetFromApi))) : Promise.resolve(),
+        updateFrom("/api/sessions", (data) => setSessions(data as unknown as Session[])),
+        updateFrom("/api/alerts?limit=100", (data) => setAlerts((data.alerts || []) as Alert[])),
+        updateFrom("/api/statistics", (data) => {
+          const snapshot = data as unknown as TrafficStatistics;
+          setStatistics(snapshot);
+          if (needsUpdate) {
+            setOverview({
+              total_packets: snapshot.total_packets,
+              total_bytes: snapshot.total_bytes,
+              active_sessions: snapshot.total_packets ? 1 : 0,
+              protocols: Object.fromEntries(snapshot.protocols),
+              top_talkers: snapshot.top_talkers,
+            });
+          }
+        }),
+      ]);
       if (!cancelled) timer = window.setTimeout(refresh, 2500);
     }
     if (connectionRequested) void refresh();
@@ -489,7 +506,8 @@ export default function App() {
   async function connectSensor() {
     setError("Allow this site to access the local network if your browser asks, then keep the sensor running.");
     try {
-      await checkSensorHealth();
+      const health = await checkSensorHealth();
+      setAgentUpdateAvailable(health.version !== CURRENT_AGENT_VERSION);
       setOnline(true);
       setError("");
       setConnectionRequested(true);
@@ -627,7 +645,7 @@ export default function App() {
         </nav>
         <div className="sidebar-bottom">
           <div className="privacy-card"><LockKeyhole size={17} /><div><strong>Your data stays here</strong><small>Nothing sent to the cloud</small></div><Check size={15} /></div>
-          <div className="operator"><span className="avatar"><BrandLogo size={25} /></span><div><strong>Local monitor</strong><small>Authorized capture only</small></div></div>
+          <div className="operator"><span className="avatar" aria-hidden="true">LS</span><div><strong>Local monitor</strong><small>Authorized capture only</small></div></div>
         </div>
       </aside>
 
@@ -656,7 +674,7 @@ export default function App() {
               <p className="welcome-privacy"><LockKeyhole size={15} /> The sensor stays on this PC. Packet data is never sent to this website.</p>
             </section>
           ) : (
-            <section className="connected-note" role="status"><span><Check size={16} /></span><div><strong>Your sensor is connected on this computer.</strong><small>Captured packets and reports are stored locally. This dashboard does not upload them.</small></div><span className="connected-note-local"><i /> LOCAL ONLY</span></section>
+            <section className="connected-note" role="status"><span><Check size={16} /></span><div><strong>Your sensor is connected on this computer.</strong><small>Captured packets and reports are stored locally. This dashboard does not upload them.</small>{agentUpdateAvailable && <a className="agent-update-link" href={AGENT_DOWNLOAD} target="_blank" rel="noreferrer">Update sensor for faster packet history <ArrowRight size={13} /></a>}</div><span className="connected-note-local"><i /> LOCAL ONLY</span></section>
           )}
           {online && error && <div className="inline-error" role="alert">{error}</div>}
 
@@ -803,7 +821,7 @@ function EmptyNote({ icon, title, text }: { icon: React.ReactNode; title: string
 }
 
 function PacketTable({ rows, empty = "No saved packets yet.", onSelect }: { rows: Packet[]; empty?: string; onSelect?: (packet: Packet) => void }) {
-  return <div className="table-wrap"><table><thead><tr><th>Time</th><th>Type of message</th><th>From</th><th>To</th><th>Size</th><th>Network</th></tr></thead><tbody>{rows.length ? rows.map((packet) => <tr key={packet.id} className={onSelect ? "packet-table-row" : ""} onClick={() => onSelect?.(packet)} onKeyDown={(event) => { if (onSelect && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onSelect(packet); } }} tabIndex={onSelect ? 0 : undefined} aria-label={onSelect ? `Inspect ${packet.protocol} packet from ${packet.source} to ${packet.destination}` : undefined}><td className="time-cell">{packet.time}</td><td><span className={`proto-tag proto-${packet.protocol.toLowerCase()}`}>{packet.protocol}</span></td><td className="ip">{packet.source}{packet.source_port ? <small className="port-label">:{packet.source_port}</small> : null}</td><td className="ip">{packet.destination}{packet.destination_port ? <small className="port-label">:{packet.destination_port}</small> : null}</td><td className="length">{packet.length.toLocaleString()} B</td><td className="info">{packet.interface || packet.capture_backend || "Unknown"}</td></tr>) : <tr><td colSpan={6} className="empty">{empty}</td></tr>}</tbody></table></div>;
+  return <div className="table-wrap"><table><thead><tr><th>Time</th><th>Type of message</th><th>Source · port</th><th>Destination · port</th><th>Size</th><th>Network</th></tr></thead><tbody>{rows.length ? rows.map((packet) => <tr key={packet.id} className={onSelect ? "packet-table-row" : ""} onClick={() => onSelect?.(packet)} onKeyDown={(event) => { if (onSelect && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onSelect(packet); } }} tabIndex={onSelect ? 0 : undefined} aria-label={onSelect ? `Inspect ${packet.protocol} packet from ${packet.source}${packet.source_port ? ` port ${packet.source_port}` : ""} to ${packet.destination}${packet.destination_port ? ` port ${packet.destination_port}` : ""}` : undefined}><td className="time-cell">{packet.time}</td><td><span className={`proto-tag proto-${packet.protocol.toLowerCase()}`}>{packet.protocol}</span></td><td className="ip">{packet.source}{packet.source_port ? <small className="port-label">:{packet.source_port}</small> : null}</td><td className="ip">{packet.destination}{packet.destination_port ? <small className="port-label">:{packet.destination_port}</small> : null}</td><td className="length">{packet.length.toLocaleString()} B</td><td className="info">{packet.interface || packet.capture_backend || "Unknown"}</td></tr>) : <tr><td colSpan={6} className="empty">{empty}</td></tr>}</tbody></table></div>;
 }
 
 function PacketDetails({ packet, onClose }: { packet: Packet; onClose: () => void }) {

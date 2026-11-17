@@ -423,6 +423,101 @@ class PcapSqliteRepository(Repository):
         except OSError as exc:
             raise RepositoryError("PCAP read failed") from exc
 
+    def query_page(
+        self,
+        *,
+        protocol: str | None = None,
+        address: str | None = None,
+        time_window: Sequence[datetime | None] | None = None,
+        session_id: str | None = None,
+        search: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[PacketRecord], int]:
+        """Load one newest-first page without reading unrelated PCAP payloads."""
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+            raise InvalidRecordError("limit must be a positive integer")
+        if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
+            raise InvalidRecordError("offset must be a non-negative integer")
+        protocol, address, start_us, end_us, session_id = self._validate_query(
+            protocol, address, time_window, session_id
+        )
+        clauses: list[str] = []
+        params: list[object] = []
+        if protocol is not None:
+            clauses.append("p.protocol = ?")
+            params.append(protocol)
+        if address is not None:
+            clauses.append("(p.source_address = ? OR p.destination_address = ?)")
+            params.extend((address, address))
+        if session_id is not None:
+            clauses.append("p.session_id = ?")
+            params.append(session_id)
+        if start_us is not None:
+            clauses.append("p.timestamp_us >= ?")
+            params.append(start_us)
+        if end_us is not None:
+            clauses.append("p.timestamp_us <= ?")
+            params.append(end_us)
+        if search and search.strip():
+            clauses.append(
+                "instr(lower(coalesce(p.record_id, '') || ' ' || coalesce(p.session_id, '') "
+                "|| ' ' || coalesce(p.protocol, '') || ' ' || coalesce(p.source_address, '') "
+                "|| ' ' || coalesce(p.destination_address, '') || ' ' || coalesce(p.interface_name, '') "
+                "|| ' ' || coalesce(p.capture_backend, '')), lower(?)) > 0"
+            )
+            params.append(search.strip())
+        join = " FROM packets p JOIN capture_files cf ON cf.session_id = p.session_id AND cf.link_type = p.link_type"
+        where = " WHERE " + " AND ".join(clauses) if clauses else ""
+        try:
+            with self._connection() as db:
+                total = db.execute("SELECT COUNT(*)" + join + where, params).fetchone()[0]
+                rows = db.execute(
+                    "SELECT p.*, cf.pcap_name, cf.link_type AS file_link_type" + join + where
+                    + " ORDER BY p.timestamp_us DESC, p.record_id DESC LIMIT ? OFFSET ?",
+                    [*params, limit, offset],
+                ).fetchall()
+            return [self._load_record(row) for row in rows], total
+        except PermissionError as exc:
+            raise StorageAccessError("permission denied while querying captures") from exc
+        except FileNotFoundError as exc:
+            raise StorageUnavailableError("metadata or capture file is unavailable") from exc
+        except sqlite3.Error as exc:
+            raise RepositoryError("metadata query failed") from exc
+        except OSError as exc:
+            raise RepositoryError("PCAP read failed") from exc
+
+    def overview_snapshot(self) -> dict[str, object]:
+        """Aggregate saved packet metadata in SQLite without opening every PCAP."""
+        try:
+            with self._connection() as db:
+                totals = db.execute(
+                    "SELECT COUNT(*) AS packets, COALESCE(SUM(captured_length), 0) AS bytes, "
+                    "COUNT(DISTINCT session_id) AS sessions FROM packets"
+                ).fetchone()
+                protocols = db.execute(
+                    "SELECT protocol, COUNT(*) AS packet_count FROM packets "
+                    "GROUP BY protocol ORDER BY packet_count DESC, protocol"
+                ).fetchall()
+                talkers = db.execute(
+                    "SELECT address, COUNT(*) AS packet_count FROM ("
+                    "SELECT source_address AS address FROM packets "
+                    "UNION ALL SELECT destination_address AS address FROM packets"
+                    ") WHERE address IS NOT NULL AND address != '' "
+                    "GROUP BY address ORDER BY packet_count DESC, address LIMIT 5"
+                ).fetchall()
+            return {
+                "total_packets": totals["packets"],
+                "total_bytes": totals["bytes"],
+                "active_sessions": totals["sessions"],
+                "protocols": {row["protocol"]: row["packet_count"] for row in protocols},
+                "top_talkers": [[row["address"], row["packet_count"]] for row in talkers],
+            }
+        except PermissionError as exc:
+            raise StorageAccessError("permission denied while summarizing captures") from exc
+        except sqlite3.Error as exc:
+            raise RepositoryError("metadata summary query failed") from exc
+
     def _load_record(self, row: sqlite3.Row) -> PacketRecord:
         path = self._pcap_path(row["pcap_name"])
         try:

@@ -53,7 +53,7 @@ _allowed_origins = list(dict.fromkeys(
     for origin in f"{_default_origins},{os.getenv('PPS_ALLOWED_ORIGINS', '')}".split(",")
     if origin.strip()
 ))
-app = FastAPI(title="Pocket Packet Sniffer API", version="0.2.1")
+app = FastAPI(title="Pocket Packet Sniffer API", version="0.2.2")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
@@ -72,6 +72,8 @@ async def validate_browser_origin(request: Request, call_next):
     return await call_next(request)
 
 _capture_lock = threading.RLock()
+_repository_cache_lock = threading.Lock()
+_repository_cache: dict[Path, PcapSqliteRepository] = {}
 _alerts_lock = threading.Lock()
 _alert_history: deque[dict] = deque(maxlen=500)
 _capture: dict = {"state": "idle", "session_id": None, "source": None, "interface": None, "started_at": None, "result": None, "error": None, "thread": None, "stop_event": None, "session": None}
@@ -90,7 +92,13 @@ class CaptureStart(BaseModel):
 
 
 def get_repository() -> PcapSqliteRepository:
-    return PcapSqliteRepository(STORAGE_DIR)
+    directory = STORAGE_DIR.expanduser().resolve()
+    with _repository_cache_lock:
+        repository = _repository_cache.get(directory)
+        if repository is None:
+            repository = PcapSqliteRepository(directory)
+            _repository_cache[directory] = repository
+        return repository
 
 
 def packet_json(packet):
@@ -243,12 +251,13 @@ def statistics():
     with _capture_lock:
         session = _capture.get("session")
     if session is None:
+        snapshot = get_repository().overview_snapshot()
         return {
-            "total_packets": 0,
-            "total_bytes": 0,
+            "total_packets": snapshot["total_packets"],
+            "total_bytes": snapshot["total_bytes"],
             "packets_per_sec": 0.0,
-            "protocols": [],
-            "top_talkers": [],
+            "protocols": list(snapshot["protocols"].items()),
+            "top_talkers": snapshot["top_talkers"],
         }
     return session.statistics_snapshot()
 
@@ -508,27 +517,16 @@ def packets(
                 raise HTTPException(status_code=422, detail="Time filters must include a timezone.")
         if start is not None and end is not None and start > end:
             raise HTTPException(status_code=422, detail="The start time must be earlier than the end time.")
-        records = get_repository().query(
+        records, total = get_repository().query_page(
             session_id=session_id,
             protocol=protocol.upper() if protocol else None,
             address=address,
             time_window=(start, end) if start is not None or end is not None else None,
+            search=search,
+            limit=limit,
+            offset=offset,
         )
-        if search:
-            needle = search.casefold().strip()
-            records = [
-                record
-                for record in records
-                if needle in " ".join(
-                    (record.record_id, record.session_id, record.protocol,
-                     record.source_address or "", record.destination_address or "",
-                     record.interface or "", record.capture_backend or "")
-                ).casefold()
-            ]
-        total = len(records)
-        newest_first = list(reversed(records))
-        page = newest_first[offset : offset + limit]
-        return {"total": total, "count": len(page), "limit": limit, "offset": offset, "packets": [packet_json(packet) for packet in page]}
+        return {"total": total, "count": len(records), "limit": limit, "offset": offset, "packets": [packet_json(packet) for packet in records]}
     except HTTPException:
         raise
     except Exception as exc:
@@ -567,15 +565,6 @@ def session_report(session_id: str, format: str = Query(default="csv", pattern="
 @app.get("/api/overview")
 def overview():
     try:
-        repository = get_repository()
-        records = repository.query()
-        protocol_counts = {}
-        address_counts = {}
-        for packet in records:
-            protocol_counts[packet.protocol] = protocol_counts.get(packet.protocol, 0) + 1
-            for address in (packet.source_address, packet.destination_address):
-                if address:
-                    address_counts[address] = address_counts.get(address, 0) + 1
-        return {"total_packets":len(records),"total_bytes":sum(len(packet.packet_data) for packet in records),"active_sessions":len(repository.list_sessions()),"protocols":protocol_counts,"top_talkers":sorted(address_counts.items(),key=lambda item:item[1],reverse=True)[:5]}
+        return get_repository().overview_snapshot()
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
