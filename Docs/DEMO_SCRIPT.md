@@ -120,6 +120,10 @@ pocket-packet-sniffer stop --storage-dir live-captures --session-id live-check
 
 Record the operating system, interface/adapter, driver, permission context, start/stop result, and any errors. Do not claim that Wi-Fi monitor mode, BLE scanning, Windows ACL behavior, or Raspberry Pi throughput/drop rate passed unless it was tested on the corresponding target hardware.
 
+## 10. Real hosted dashboard and local sensor
+
+Open the production dashboard at `https://pocket-packet-sniffer.vercel.app`. The hosted page contains no bundled sample traffic. Download and run the Windows capture sensor on the computer whose network you are authorized to monitor; install Npcap to use live adapters. Allow the browser's local-network connection to `127.0.0.1` if prompted. The dashboard should show the connected sensor, its actual interfaces and actual saved traffic. Select an adapter to capture or choose a local classic PCAP to replay. Search packet metadata and export a session's CSV/PDF report. The packet file, SQLite index and reports remain on that computer; the hosted website receives no packet data. A PCAP fixture from Sections 1-5 is synthetic test input and must not be presented as live traffic.
+
 ## Troubleshooting
 
 - **A demo file already exists:** choose a new filename. The generator and report exporters deliberately refuse silent overwrites.

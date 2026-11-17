@@ -16,9 +16,13 @@ Friends do not need a source checkout or Python environment. The Settings page l
 
 ## CI and CD flow
 
-1. Pull requests run Python lint/tests and the frontend type check/build.
+1. Pull requests run Python lint/tests, frontend type-check/build, and browser checks for capture, replay, search, reports, and mobile layout.
 2. Vercel builds pull request previews through its GitHub integration.
 3. Merge to the configured production branch triggers Vercel's production deployment.
 4. The production site serves the dashboard only; no packet data or capture API is uploaded.
 
 No packet data, demo traffic, or local capture API is uploaded during deployment.
+
+## Friend / hosted-dashboard flow
+
+Open `https://pocket-packet-sniffer.vercel.app` in a browser. To see a private network, download the Windows capture agent from the page, install Npcap for live capture, and run the agent on that same computer. The browser asks the agent at `127.0.0.1`; the agent permits only configured dashboard origins for browser write requests. Choose an adapter or select a local classic PCAP. Captures, database records, and reports stay on that computer. Ordinary Wi-Fi mode may show only traffic visible to that adapter; monitor mode requires compatible hardware and drivers. No synthetic packets are presented as live activity.

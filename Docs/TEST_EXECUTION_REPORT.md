@@ -92,3 +92,18 @@ PR #42 added visible query-time suspicious-traffic filtering and explanations. T
 The local synthetic demo used an isolated temporary directory and removed its artifacts afterward. Suspicious classification is passive metadata-only heuristic triage; it is not proof of malicious activity or safety.
 
 **Manual checks: NOT RUN.** No authorized live interface/driver was selected, so live start/stop and real permission/startup diagnostics were not exercised. Windows ACL behavior was not evaluated; the two POSIX mode-bit tests were skipped and are not ACL evidence. Wi-Fi monitor mode, BLE capture, Raspberry Pi throughput, live offered/received/drop counters, and simultaneous live-adapter capture were also not tested. Do not infer these results from CI or synthetic replay.
+
+## Dashboard and local-agent verification — 2026-11-17
+
+| Check | Environment / command | Result |
+|---|---|---|
+| Python lint | Windows workspace; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — All checks passed. |
+| Full Python suite | Windows workspace; `python -m pytest -q` | PASS — **170 passed, 2 skipped in 10.00 seconds** after making IPv6 parser fixtures independent of host network interfaces. The skips are existing platform-conditional checks; this is not evidence of Windows ACL behavior. |
+| Dashboard type check | Node; `npm run typecheck` | PASS — TypeScript clean. |
+| Production dashboard build | Node; `npm run build` | PASS — Next.js production build completed; `/` is statically rendered. |
+| Browser flow tests | Chromium; `npx playwright test --workers=2` | PASS — **7 passed in 1.1 minutes**. Covers offline onboarding, actual-data overview/rate, adapter/BPF capture request, packet filtering/details, local PCAP replay transfer, CSV/PDF session reports, and mobile layout. Browser API calls were stubbed; this validates UI behavior, not physical adapter capture. |
+| API integration/security tests | Included in the full Python suite | PASS — Local PCAP upload/replay through Analysis and Storage, server-side filters, metadata-only packet details/reports, interface fan-in, and rejection of unapproved browser write origins. |
+
+The CI workflow now runs the full Python test suite on both Linux and Windows and runs dashboard type-check, production build, and browser tests. Its first Windows run found four existing parser fixtures that allowed Scapy to resolve IPv6 MAC addresses through real host interfaces; the fixtures now fill missing MAC fields without changing explicitly supplied fixture addresses. The corrected [GitHub Actions run 44119512490](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44119512490) passed on Ubuntu and Windows: Ruff passed on both, Windows reported **170 passed, 2 skipped in 16.32 seconds**, and the frontend job completed type-check/build plus **7 browser tests passed in 12.5 seconds**. The Vercel PR preview check also passed. Production remains the previous version until merge and CD complete.
+
+**Hardware acceptance remains NOT RUN:** no live adapter was started during this verification. Wi-Fi monitor mode, BLE radio capture, Windows ACL review, physical concurrent interfaces, Raspberry Pi throughput, and live packet/drop counters remain unverified. No result above establishes those platform-specific claims.

@@ -17,7 +17,7 @@
 | REQ-9 (stretch): ARP spoofing, rogue AP, and unfamiliar device events via Observer | New `analysis/alerts.py` publishes metadata-only `AlertEvent` objects to subscribers. Rules flag ARP address-to-MAC conflicts; unknown source MACs when a device allowlist is supplied; and observed Wi-Fi beacons outside an AP allowlist. CLI subscribes and prints alert summaries. | **Implemented on main as conservative heuristics.** Inventory-based rules need operator-supplied allowlists; AP detection requires decoded Wi-Fi beacon packets. A match is a review signal, not proof of an attack. An unfamiliar-device rule cannot identify devices absent from observed traffic. CI passed; target-hardware validation remains required. |
 | REQ-10 (stretch): run multiple capture backends concurrently without capture-source-specific changes to downstream layers | New `capture/concurrent.py` fans multiple `Capturer` instances into one callback with shared stop/count semantics; CLI `capture-multi`; stored records retain interface/backend; storage maps different link types to separate PCAP files within one session. | **Implemented on main.** Automated tests cover aggregation, cancellation/error propagation and mixed link types; actual two-interface capture must be validated on available target hardware. |
 | Optional Zeek integration | No live Zeek adapter/log importer exists in the current code. | **Not implemented.** SRS calls Zeek optional/stretch. Do not claim integration. |
-| Web dashboard | No browser UI/local HTTP API yet. | **Deferred deliberately** until backend/demo readiness is accepted; it is described as a stretch/optional addition in SRS Section 3.1. |
+| Web dashboard / local sensor | `web/` hosts a browser dashboard; `src/pocket_packet_sniffer/api.py` exposes local capture, replay, packet search, statistics, alerts, sessions and report endpoints. The hosted dashboard talks only to a separately installed loopback agent. | **Implemented for the supported local-agent flow.** Browser tests and local API integration tests cover UI-to-agent behavior. The cloud page does not capture packets; each operator must run the Windows agent and install Npcap for live capture. |
 
 ## Non-functional requirements (SRS Section 6)
 
@@ -60,6 +60,12 @@ pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.p
 ## Verification gate
 
 The requirement-to-test execution record is published at [Docs/TEST_EXECUTION_REPORT.md](TEST_EXECUTION_REPORT.md). It separates automated CI results from not-yet-executed live-interface, Wi-Fi/BLE hardware, Windows ACL, and Raspberry Pi packet-loss checks.
+
+## Dashboard scope and privacy boundary
+
+The browser dashboard consumes real local-agent responses. It has no synthetic sample traffic. It supports actual interface capture and local classic-PCAP replay, server-side protocol/address/session/time search, packet metadata inspection, statistics, alerts, and local CSV/PDF session reports. Packet payloads are not exposed by the API or UI. A selected PCAP file is posted to the operator's loopback agent for local staging and replay; it is not posted to the hosted website. Standard Wi-Fi mode only exposes frames the adapter/driver supplies; monitor mode requires compatible hardware. The UI labels this limitation.
+
+Plaintext credential inspection from an older functional-requirements draft is excluded: it would require payload inspection and conflicts with the approved SRS's metadata-only privacy boundary. Optional Zeek remains unimplemented. See the current test execution addendum for exact automated results and the remaining physical-device checks.
 
 - [x] CI Ruff check passes on latest main — [run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511), all selected checks passed.
 - [x] Full pytest suite passes — latest main CI [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) reports **106 passed in 1.87s**, including the concurrent-capture Ctrl+C cleanup regression test.

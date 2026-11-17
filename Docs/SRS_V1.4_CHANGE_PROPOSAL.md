@@ -10,7 +10,7 @@ This proposal records features added after SRS v1.3 and establishes a safe scope
 
 Keep SRS v1.3 requirements REQ-1 through REQ-8 as the original baseline. Add the two implemented stretch requirements (suspicious-activity alerts and concurrent capture) to the maintained requirements set, and specify the Next.js dashboard, its local API boundary, and a cloud-hosted demonstration mode.
 
-Cloud hosting is for the static dashboard and synthetic demonstration data. Packet capture, packet bytes, indexes, and reports remain on the operator's computer. A cloud service must not receive live capture traffic or control a capture process.
+Cloud hosting serves the dashboard interface only. The browser may connect to an explicitly installed loopback sensor on the same computer; the cloud service itself receives no capture traffic and cannot capture a remote computer. Packet files, indexes, and reports remain on the operator's computer. The production page has honest empty/offline states and does not invent synthetic packet activity.
 
 ## 2. Proposed functional requirements
 
@@ -32,9 +32,9 @@ The system shall provide a responsive browser dashboard for local capture sessio
 
 Live capture shall require an explicit operator action and interface selection. PCAP replay shall require an explicit local file selection/path. The dashboard shall show backend connectivity, capture state, errors, empty states, and whether displayed data is synthetic or locally captured.
 
-### REQ-12 — Hosted demonstration mode
+### REQ-12 — Hosted dashboard and local sensor boundary
 
-The project may publish a static dashboard demonstration using clearly labelled synthetic data. In hosted demonstration mode, capture controls and local-system access shall be unavailable, and the page shall not call a capture API or transmit packet records. A user shall be able to distinguish synthetic demonstration data from locally captured data at all times.
+The project may host the dashboard over HTTPS. When the local sensor is unavailable, the page shall show setup guidance and no fabricated packet records. When the sensor is available, explicit capture and selected local-file replay controls shall communicate only with the user's loopback sensor. A user shall be able to distinguish stored local records from an empty state; the hosted website shall never receive packet records.
 
 ## 3. Proposed non-functional and security requirements
 
@@ -46,8 +46,8 @@ The project may publish a static dashboard demonstration using clearly labelled 
 
 ## 4. Explicit exclusions
 
-- Public cloud packet capture, remote interface selection, or remote control of the local capture process.
-- Uploading packet payloads, PCAP files, SQLite indexes, or reports to a hosted dashboard by default.
+- Public cloud packet capture, remote interface selection, or remote access to the capture API.
+- Uploading packet payloads, SQLite indexes, or reports to the hosted website. Explicit PCAP file selection transfers the chosen file only to the user's local loopback sensor for replay.
 - Packet injection, traffic alteration, or replay onto a network.
 - Claims of validated Wi-Fi monitor mode, BLE radio support, Windows ACL security, Raspberry Pi throughput/no-drop performance, or physical multi-adapter capture without target-environment evidence.
 - Optional Zeek integration until a separate requirement, scope, and acceptance criteria are approved.
@@ -59,18 +59,18 @@ The project may publish a static dashboard demonstration using clearly labelled 
 | REQ-9 alerts | Automated match/non-match tests; synthetic demo showing rule and reason; documented heuristic limitations. |
 | REQ-10 concurrent sources | Automated synthetic fan-in, stop/error, and mixed-link-type tests; separate live multi-adapter record if claimed. |
 | REQ-11 local dashboard | Responsive UI review; API/session lifecycle checks; local capture and PCAP replay demo; query/filter and report export evidence; accessibility review. |
-| REQ-12 hosted demo | Inspect deployed build/network behavior to confirm synthetic-only data, no capture controls, no API calls, and clear demo labeling. |
+| REQ-12 hosted UI | Browser checks confirm honest offline state, local-agent-only data flow, explicit local replay, no packet-data requests to the hosted origin, and clear capture/privacy messaging. |
 | NFR-11 through NFR-14 | Inspect bind address, CORS/origin policy, request validation, GitHub Actions gates, deployment branch/environment settings, and production build configuration. |
 | Original SRS hardware claims | Record exact OS, hardware, adapter, driver, permissions, test procedure, offered/received traffic, and available drop counters. CI and synthetic replay do not satisfy these checks. |
 
 ## 6. Delivery order
 
 1. Review and approve this SRS change proposal; then publish the controlled SRS revision and update the SRS-to-test traceability matrix.
-2. Finalize the hosting boundary: GitHub Pages is the initial static-host candidate for a synthetic demo only; all real capture stays local. Record this as an architecture decision.
-3. Finish the local dashboard UX and explicit local-vs-demo modes; resolve responsive layout, loading/empty/error states, accessibility, and clear capture safety messaging.
+2. Hosting boundary: Vercel serves the HTTPS dashboard; each user runs a loopback capture sensor. Real capture stays local. Record this as an architecture decision.
+3. Finish the dashboard UX, responsive layout, loading/empty/error states, accessibility, and clear capture safety messaging.
 4. Harden and validate the local API boundary before connecting or packaging the dashboard for real capture.
 5. Extend CI to install frontend dependencies from the lockfile and run backend lint/tests plus frontend type-check/build and API/UI checks.
-6. Add CD: production static deploy from `main` only after CI passes. Add PR preview deployments later if needed, restricted to synthetic demo mode. Keep local capture API and data out of cloud deployment.
+6. Add CD: production dashboard deploy from `main` only after CI passes. Keep the local capture API and packet data out of cloud deployment.
 7. Run the release acceptance checklist, record target-hardware checks or explicitly narrow support claims, then update the SRS audit, traceability, demo guide, and release notes.
 
 ## 7. Decisions needed for approval

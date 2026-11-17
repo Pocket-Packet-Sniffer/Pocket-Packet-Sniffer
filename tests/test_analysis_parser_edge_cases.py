@@ -17,6 +17,12 @@ def parser():
 
 
 def make_capture(packet, *, timestamp=None, interface="fixture1", link_type=1):
+    if packet.haslayer(Ether):
+        ethernet = packet[Ether]
+        if ethernet.getfieldval("src") is None:
+            ethernet.src = "02:00:00:00:00:01"
+        if ethernet.getfieldval("dst") is None:
+            ethernet.dst = "02:00:00:00:00:02"
     raw = bytes(packet)
     return CapturedPacket(
         timestamp=timestamp or datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC),
