@@ -71,7 +71,4 @@ jobs:
       - name: Type-check dashboard
         run: npm run typecheck
       - name: Build frontend
-        env:
-          NEXT_PUBLIC_DEMO_MODE: "true"
-          NEXT_BASE_PATH: "/Pocket-Packet-Sniffer"
         run: npm run build

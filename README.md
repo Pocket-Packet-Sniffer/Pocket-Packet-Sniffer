@@ -11,7 +11,7 @@ The design follows the four-layer architecture defined by the SRS and SASD:
 3. **Storage** — persists PCAP data and indexed metadata through a Repository interface.
 4. **Presentation** — provides the primary CLI for capture control, live statistics, queries, and reports.
 
-WiFi, Ethernet, and BLE are represented by the requirements. PR #29 merged support for Ethernet/IP, ARP, conditional 802.11 beacon/frame metadata and conditional BLE advertisement metadata, plus heuristic alert events and concurrent capture. Actual live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. The Next.js dashboard is being completed on the dashboard feature branch; its hosted build is a static synthetic demo, while real capture remains local.
+WiFi, Ethernet, and BLE are represented by the requirements. The dashboard uses a dark purple visual system and displays only data from the local capture agent. Live capture and PCAP replay are explicit operator actions; metadata-only heuristic alerts identify suspicious patterns for review. Live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. Vercel hosts the interface only; real capture remains local.
 
 ## Requirements and project documents
 
@@ -197,7 +197,7 @@ Known limitations remain: classic PCAP only; passive live capture depends on pla
 Please retain third-party acknowledgements in project submissions and follow each dependency's distribution/licensing terms.
 ## Local dashboard + API
 
-The Next.js dashboard reads stored packet metadata from the local FastAPI API and can explicitly start or stop a local capture/replay session. Its public static deployment uses synthetic demo data only and never connects to the capture API.
+The Next.js dashboard reads real stored packet metadata from the local FastAPI API and can explicitly start or stop a local capture/replay session. It contains no synthetic user-facing data. Vercel hosts the interface only; the capture API and packet storage stay on the operator's computer. See [dashboard deployment](Docs/WEB_DEPLOYMENT.md) for the local-sensor connection boundary and CI/CD setup.
 
 ### Start on Windows (PowerShell)
 

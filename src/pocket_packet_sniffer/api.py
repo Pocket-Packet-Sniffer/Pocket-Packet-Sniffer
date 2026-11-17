@@ -8,12 +8,19 @@ import platform
 import subprocess
 import threading
 import uuid
+from collections import deque
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from scapy.all import get_if_list
+
+from pocket_packet_sniffer.analysis.alerts import (
+    AlertEvent,
+    AlertPublisher,
+    SuspiciousActivityDetector,
+)
 
 try:
     from scapy.arch.windows import get_windows_if_list
@@ -27,16 +34,24 @@ from pocket_packet_sniffer.capture import PcapFileCapturer, ScapyCapturer
 from pocket_packet_sniffer.storage import PcapSqliteRepository
 
 STORAGE_DIR = Path(os.getenv("PPS_STORAGE_DIR", "captures")).expanduser()
+_default_origins = "http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173,http://localhost:4173"
+_allowed_origins = list(dict.fromkeys(
+    origin.strip()
+    for origin in f"{_default_origins},{os.getenv('PPS_ALLOWED_ORIGINS', '')}".split(",")
+    if origin.strip()
+))
 app = FastAPI(title="Pocket Packet Sniffer API", version="0.2.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:4173", "http://localhost:4173"],
+    allow_origins=_allowed_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
 _capture_lock = threading.RLock()
+_alerts_lock = threading.Lock()
+_alert_history: deque[dict] = deque(maxlen=500)
 _capture: dict = {"state": "idle", "session_id": None, "source": None, "interface": None, "started_at": None, "result": None, "error": None, "thread": None, "stop_event": None, "session": None}
 
 
@@ -54,6 +69,21 @@ def get_repository() -> PcapSqliteRepository:
 
 def packet_json(packet):
     return {"id": packet.record_id, "session_id": packet.session_id, "time": packet.timestamp.isoformat(), "protocol": packet.protocol, "source": packet.source_address, "destination": packet.destination_address, "length": len(packet.packet_data), "info": f"{packet.protocol} packet", "interface": packet.interface, "capture_backend": packet.capture_backend}
+
+
+def _store_alert(session_id: str, event: AlertEvent) -> None:
+    with _alerts_lock:
+        _alert_history.appendleft(
+            {
+                "id": str(uuid.uuid4()),
+                "session_id": session_id,
+                "rule_id": event.rule_id,
+                "severity": event.severity,
+                "message": event.message,
+                "time": event.timestamp.isoformat(),
+                "evidence": dict(event.evidence),
+            }
+        )
 
 
 def capture_status():
@@ -116,6 +146,13 @@ def health():
 @app.get("/api/capture/status")
 def get_capture_status():
     return capture_status()
+
+
+@app.get("/api/alerts")
+def alerts(limit: int = Query(default=100, ge=1, le=500)):
+    """Return bounded, metadata-only heuristic alerts from this API process."""
+    with _alerts_lock:
+        return {"alerts": list(_alert_history)[:limit]}
 
 
 @app.get("/api/interfaces")
@@ -250,8 +287,23 @@ def start_capture(request: CaptureStart):
             interface = request.interface
         session_id = str(uuid.uuid4())
         stop_event = threading.Event()
+        publisher = AlertPublisher()
+        publisher.subscribe(lambda event: _store_alert(session_id, event))
+        detector = SuspiciousActivityDetector(
+            publisher,
+            known_devices={
+                item.strip()
+                for item in os.getenv("PPS_KNOWN_DEVICES", "").split(",")
+                if item.strip()
+            },
+            known_access_points={
+                item.strip()
+                for item in os.getenv("PPS_KNOWN_ACCESS_POINTS", "").split(",")
+                if item.strip()
+            },
+        )
         try:
-            session = CaptureSession(capturer, get_repository(), session_id=session_id, analyzer=AnalyzerPipeline([PacketParser()]))
+            session = CaptureSession(capturer, get_repository(), session_id=session_id, analyzer=AnalyzerPipeline([PacketParser()]), alert_detector=detector)
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Could not initialize capture storage: {exc}") from exc
         thread = threading.Thread(target=_run_capture, args=(session, stop_event), name=f"pps-capture-{session_id[:8]}", daemon=True)
