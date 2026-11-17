@@ -53,7 +53,7 @@ _allowed_origins = list(dict.fromkeys(
     for origin in f"{_default_origins},{os.getenv('PPS_ALLOWED_ORIGINS', '')}".split(",")
     if origin.strip()
 ))
-app = FastAPI(title="Pocket Packet Sniffer API", version="0.2.0")
+app = FastAPI(title="Pocket Packet Sniffer API", version="0.2.1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
@@ -215,7 +215,12 @@ def _run_capture(session, stop_event):
 def health():
     try:
         repository = get_repository()
-        return {"status": "ok", "service": "pocket-packet-sniffer", "storage": str(repository.directory)}
+        return {
+            "status": "ok",
+            "service": "pocket-packet-sniffer",
+            "version": app.version,
+            "storage": str(repository.directory),
+        }
     except Exception as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 

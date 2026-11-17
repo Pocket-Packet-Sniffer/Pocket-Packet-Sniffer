@@ -265,4 +265,5 @@ def test_live_statistics_and_dashboard_cors_boundary(client):
     blocked = client.get("/api/health", headers={"Origin": "https://untrusted.example"})
 
     assert allowed.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
+    assert allowed.json()["version"] == "0.2.1"
     assert "access-control-allow-origin" not in blocked.headers

@@ -109,6 +109,13 @@ type Alert = {
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+type LoopbackPermissionState = "prompt" | "granted" | "denied";
+function localFetch(input: RequestInfo | URL, init?: RequestInit) {
+  const target = new URL(typeof input === "string" || input instanceof URL ? input.toString() : input.url, window.location.href);
+  const isLoopback = ["127.0.0.1", "localhost", "[::1]"].includes(target.hostname);
+  const options = { ...init, ...(isLoopback ? { targetAddressSpace: "loopback" } : {}) } as RequestInit;
+  return fetch(input, options);
+}
 const AGENT_DOWNLOAD = "https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/releases/latest/download/pocket-packet-sniffer-agent-windows.zip";
 const EMPTY_OVERVIEW: Overview = {
   total_packets: 0,
@@ -224,6 +231,8 @@ export default function App() {
   const [captureBusy, setCaptureBusy] = useState(false);
   const [reportBusy, setReportBusy] = useState("");
   const [online, setOnline] = useState(false);
+  const [loopbackPermission, setLoopbackPermission] = useState<LoopbackPermissionState>("prompt");
+  const [connectionRequested, setConnectionRequested] = useState(false);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [addressFilter, setAddressFilter] = useState("");
@@ -237,6 +246,26 @@ export default function App() {
   const [toast, setToast] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function inspectPermission() {
+      try {
+        const permission = await navigator.permissions.query({ name: "loopback-network" as PermissionName });
+        if (cancelled) return;
+        setLoopbackPermission(permission.state as LoopbackPermissionState);
+        if (permission.state === "granted") setConnectionRequested(true);
+        permission.addEventListener("change", () => {
+          setLoopbackPermission(permission.state as LoopbackPermissionState);
+          if (permission.state === "granted") setConnectionRequested(true);
+        });
+      } catch {
+        // Older browsers do not expose this permission; the explicit Connect action still works.
+      }
+    }
+    void inspectPermission();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     try {
@@ -269,10 +298,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!online) return;
     let cancelled = false;
     async function loadInterfaces() {
       try {
-        const response = await fetch(`${API}/api/interfaces`, { cache: "no-store" });
+        const response = await localFetch(`${API}/api/interfaces`, { cache: "no-store" });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || "Could not find your network adapters.");
         if (cancelled) return;
@@ -303,12 +333,14 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     async function refresh() {
+      if (!connectionRequested) return;
       try {
-        const healthResponse = await fetch(`${API}/api/health`, { cache: "no-store" });
+        const healthResponse = await localFetch(`${API}/api/health`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
         const health = await healthResponse.json();
         if (!healthResponse.ok || health.status !== "ok") {
           throw new Error(health.detail || "The local sensor is not ready yet.");
         }
+        if (health.version !== "0.2.1") throw new Error("Your capture sensor needs an update. Download and open the latest sensor, then reconnect.");
         if (cancelled) return;
         setOnline(true);
         setError("");
@@ -320,11 +352,11 @@ export default function App() {
       }
 
       const results = await Promise.allSettled([
-        fetch(`${API}/api/overview`, { cache: "no-store" }),
-        fetch(`${API}/api/packets?limit=250`, { cache: "no-store" }),
-        fetch(`${API}/api/sessions`, { cache: "no-store" }),
-        fetch(`${API}/api/alerts?limit=100`, { cache: "no-store" }),
-        fetch(`${API}/api/statistics`, { cache: "no-store" }),
+        localFetch(`${API}/api/overview`, { cache: "no-store" }),
+        localFetch(`${API}/api/packets?limit=250`, { cache: "no-store" }),
+        localFetch(`${API}/api/sessions`, { cache: "no-store" }),
+        localFetch(`${API}/api/alerts?limit=100`, { cache: "no-store" }),
+        localFetch(`${API}/api/statistics`, { cache: "no-store" }),
       ]);
       if (cancelled) return;
       const [summary, packetResult, sessionResult, alertResult, statisticsResult] = results;
@@ -347,17 +379,18 @@ export default function App() {
         try { setStatistics(await statisticsResult.value.json()); } catch { /* Keep the last rate snapshot. */ }
       }
     }
-    void refresh();
+    if (connectionRequested) void refresh();
     const timer = window.setInterval(() => void refresh(), 2500);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, []);
+  }, [connectionRequested]);
 
   useEffect(() => {
+    if (!online) return;
     let cancelled = false;
     let timer: number | undefined;
     const poll = async () => {
       try {
-        const response = await fetch(`${API}/api/capture/status`, { cache: "no-store" });
+        const response = await localFetch(`${API}/api/capture/status`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
         if (!response.ok) throw new Error("Capture status request failed.");
         const status = (await response.json()) as CaptureStatus;
         if (!cancelled) setCapture(status);
@@ -369,9 +402,9 @@ export default function App() {
         timer = window.setTimeout(poll, active ? 400 : 1500);
       }
     };
-    void poll();
+    if (online) void poll();
     return () => { cancelled = true; if (timer !== undefined) window.clearTimeout(timer); };
-  }, [capture.state]);
+  }, [capture.state, online]);
 
   useEffect(() => {
     if (!toast) return;
@@ -393,7 +426,7 @@ export default function App() {
     if (sessionFilter) params.set("session_id", sessionFilter);
     if (startTime) params.set("start", new Date(startTime).toISOString());
     if (endTime) params.set("end", new Date(endTime).toISOString());
-    void fetch(`${API}/api/packets?${params.toString()}`, { cache: "no-store" })
+    void localFetch(`${API}/api/packets?${params.toString()}`, { cache: "no-store" })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || "Could not search captured packets.");
@@ -431,6 +464,28 @@ export default function App() {
   }, [rows]);
   const maxActivity = Math.max(...activityBins, 1);
 
+  async function connectSensor() {
+    setConnectionRequested(true);
+    setError("Allow this site to access the local network if your browser asks, then keep the sensor running.");
+    try {
+      const response = await localFetch(`${API}/api/health`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+      const health = await response.json();
+      if (!response.ok || health.status !== "ok") throw new Error(health.detail || "The local sensor is not ready yet.");
+      if (health.version !== "0.2.1") throw new Error("Your capture sensor needs an update. Download and open the latest sensor, then reconnect.");
+      setOnline(true);
+      setError("");
+    } catch (cause) {
+      setOnline(false);
+      setError(loopbackPermission === "denied"
+        ? "Local network access is blocked. In your browser’s site settings, allow Loopback/Local Network access for this dashboard, then try Connect again."
+        : cause instanceof Error && /needs an update/i.test(cause.message)
+          ? cause.message
+        : cause instanceof Error && cause.name === "TimeoutError"
+          ? "The sensor did not respond. Make sure PocketSniff is running on this computer, then connect again."
+          : "Could not reach the local sensor. Allow Loopback/Local Network access when prompted and make sure PocketSniff is running.");
+    }
+  }
+
   async function startCapture() {
     setCaptureBusy(true);
     setCapture({ ...IDLE_CAPTURE, state: "starting", source: captureMode });
@@ -440,7 +495,7 @@ export default function App() {
         if (!pcapFile) throw new Error("Choose a PCAP file from this computer first.");
         const form = new FormData();
         form.set("file", pcapFile);
-        const uploadResponse = await fetch(`${API}/api/capture/upload`, { method: "POST", body: form, cache: "no-store" });
+        const uploadResponse = await localFetch(`${API}/api/capture/upload`, { method: "POST", body: form, cache: "no-store", signal: AbortSignal.timeout(30000) });
         const uploaded = await uploadResponse.json();
         if (!uploadResponse.ok) throw new Error(uploaded.detail || "That PCAP file could not be opened.");
         payload = { mode: "pcap", upload_id: uploaded.upload_id, delay: 0 };
@@ -455,11 +510,12 @@ export default function App() {
           known_access_points: splitAddresses(knownAccessPoints),
         };
       }
-      const response = await fetch(`${API}/api/capture/start`, {
+      const response = await localFetch(`${API}/api/capture/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         cache: "no-store",
+        signal: AbortSignal.timeout(15000),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `Could not start capture (HTTP ${response.status}).`);
@@ -477,7 +533,7 @@ export default function App() {
   async function stopCapture() {
     setCaptureBusy(true);
     try {
-      const response = await fetch(`${API}/api/capture/stop`, { method: "POST", cache: "no-store" });
+      const response = await localFetch(`${API}/api/capture/stop`, { method: "POST", cache: "no-store", signal: AbortSignal.timeout(15000) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Could not stop capture.");
       setCapture((current) => ({ ...current, state: data.state || "stopping" }));
@@ -502,7 +558,7 @@ export default function App() {
   async function downloadSessionReport(sessionId: string, format: "csv" | "pdf") {
     setReportBusy(`${sessionId}-${format}`);
     try {
-      const response = await fetch(`${API}/api/sessions/${encodeURIComponent(sessionId)}/report?format=${format}`, { cache: "no-store" });
+      const response = await localFetch(`${API}/api/sessions/${encodeURIComponent(sessionId)}/report?format=${format}`, { cache: "no-store" });
       if (!response.ok) {
         const message = await response.json().catch(() => ({}));
         throw new Error(message.detail || "The session report could not be created.");
@@ -574,8 +630,10 @@ export default function App() {
               <div className="setup-steps">
                 <div className="setup-step"><span>1</span><div><strong>Download the sensor</strong><small>It runs on your own computer.</small></div><a className="setup-link" href={AGENT_DOWNLOAD} target="_blank" rel="noreferrer" aria-label="Download the Windows capture sensor"><Download size={17} /></a></div>
                 <div className="setup-step"><span>2</span><div><strong>Install Npcap on Windows</strong><small>Windows needs this driver to listen to Wi-Fi or Ethernet.</small></div><a className="setup-text-link" href="https://npcap.com/#download" target="_blank" rel="noreferrer">Get Npcap <ArrowRight size={14} /></a></div>
-                <div className="setup-step"><span>3</span><div><strong>Open the sensor, then this page</strong><small>Keep its window open. Allow the browser’s local-network prompt.</small></div><span className="step-check"><Clock3 size={16} /></span></div>
+                <div className="setup-step"><span>3</span><div><strong>Open the latest sensor, then this page</strong><small>Keep it running and allow local-network access when asked.</small></div><span className="step-check"><Clock3 size={16} /></span></div>
               </div>
+              {error && <div className="inline-error" role="alert">{error}{/update|latest sensor/i.test(error) && <> <a href={AGENT_DOWNLOAD} target="_blank" rel="noreferrer">Download the updated sensor</a></>}</div>}
+              <div className="connect-sensor-action"><button className="btn primary" onClick={() => void connectSensor()}><Radio size={16} /> Connect to this computer</button><small>{loopbackPermission === "denied" ? "Allow local network access in your browser’s site settings, then reconnect." : "This will ask your browser to let the dashboard reach its local sensor."}</small></div>
               <p className="welcome-privacy"><LockKeyhole size={15} /> The sensor stays on this PC. Packet data is never sent to this website.</p>
             </section>
           ) : (
