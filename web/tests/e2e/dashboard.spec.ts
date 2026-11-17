@@ -29,6 +29,8 @@ type MockOptions = {
   reportRequests?: string[];
   uploadRequests?: string[];
   packetRequests?: URL[];
+  loopbackPermission?: "prompt" | "granted" | "denied";
+  healthRequests?: number[];
 };
 
 async function mockLocalAgent(page: Page, options: MockOptions = {}) {
@@ -40,13 +42,26 @@ async function mockLocalAgent(page: Page, options: MockOptions = {}) {
     reportRequests = [],
     uploadRequests = [],
     packetRequests = [],
+    loopbackPermission = "granted",
+    healthRequests = [],
   } = options;
+
+  await page.addInitScript((permissionState) => {
+    const originalQuery = navigator.permissions.query.bind(navigator.permissions);
+    navigator.permissions.query = ((descriptor: PermissionDescriptor) => {
+      if ((descriptor.name as string) === "loopback-network") {
+        return Promise.resolve({ state: permissionState, onchange: null, addEventListener() {}, removeEventListener() {} } as unknown as PermissionStatus);
+      }
+      return originalQuery(descriptor);
+    }) as typeof navigator.permissions.query;
+  }, loopbackPermission);
 
   await page.route(`${API}/**`, async (route: Route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
     if (path === "/api/health") {
-      return route.fulfill({ status: online ? 200 : 503, json: online ? { status: "ok" } : { detail: "Sensor not running" } });
+      healthRequests.push(Date.now());
+      return route.fulfill({ status: online ? 200 : 503, json: online ? { status: "ok", version: "0.2.1" } : { detail: "Sensor not running" } });
     }
     if (path === "/api/interfaces") {
       return route.fulfill({ json: { interfaces: [{ name: "\\Device\\NPF_{TEST}", description: "Intel Wi-Fi 6 Adapter", friendly_name: "Wi-Fi", ips: ["192.0.2.10"], mac: "02:00:00:00:00:10", status: "Up", capture_candidate: true, recommended: true }] } });
@@ -103,6 +118,18 @@ test("offline landing explains setup without asking visitors to run project scri
   await expect(page.getByRole("link", { name: "Get Npcap" })).toBeVisible();
   await expect(page.getByText("run-local.ps1")).toHaveCount(0);
   await expect(page.getByText("Packet data is never sent to this website.")).toBeVisible();
+});
+
+test("local sensor waits for an explicit connection when loopback permission is pending", async ({ page }) => {
+  const requests: number[] = [];
+  await mockLocalAgent(page, { healthRequests: requests, loopbackPermission: "prompt" });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Connect to this computer" })).toBeVisible();
+  await page.waitForTimeout(150);
+  expect(requests).toHaveLength(0);
+
+  await page.getByRole("button", { name: "Connect to this computer" }).click();
+  await expect.poll(() => requests.length).toBeGreaterThan(0);
 });
 
 test("overview explains real activity with rate and an address diagram", async ({ page }) => {

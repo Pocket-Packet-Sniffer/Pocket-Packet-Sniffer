@@ -1132,6 +1132,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .step-check { color:#c6b2f0; }
 .welcome-privacy { position:relative; z-index:1; display:flex; align-items:center; gap:7px; margin:16px 0 0; color:#c2b5d0; font-size:11px; }
 .welcome-privacy svg { color:#d3c0ff; }
+.connect-sensor-action { position:relative; z-index:1; display:flex; align-items:center; gap:13px; margin-top:16px; }
+.connect-sensor-action small { color:#b9a9cb; font-size:11px; line-height:1.5; }
 .connected-note { display:flex; align-items:center; gap:12px; padding:13px 16px; margin-bottom:22px; border:1px solid #5d477b; border-radius:13px; background:linear-gradient(105deg,#261b37,#181322); box-shadow:inset 0 1px #ffffff09; }
 .connected-note > span:first-child { display:grid; width:31px; height:31px; place-items:center; color:#e1d4ff; border-radius:10px; background:#3a2851; }
 .connected-note div { flex:1; }
@@ -1395,6 +1397,7 @@ thead { position: static; }
 @media (max-width:900px) {
   .setup-steps { grid-template-columns:1fr; }
   .setup-step { min-height:62px; }
+  .connect-sensor-action { align-items:flex-start; flex-direction:column; }
   .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .network-grid { grid-template-columns:1fr; }
   .lower { grid-template-columns:1fr; }
