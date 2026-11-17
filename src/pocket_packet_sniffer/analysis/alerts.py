@@ -6,9 +6,10 @@ of malicious activity.
 """
 from __future__ import annotations
 
+from collections import deque
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import RLock
 from typing import Protocol
 
@@ -89,17 +90,36 @@ class SuspiciousActivityDetector:
         *,
         known_devices: set[str] | None = None,
         known_access_points: set[str] | None = None,
+        destination_fanout_threshold: int = 30,
+        destination_window_seconds: int = 30,
+        packet_burst_threshold: int = 500,
+        packet_window_seconds: int = 10,
     ) -> None:
         if not isinstance(publisher, AlertPublisher):
             raise TypeError("publisher must be an AlertPublisher")
         self.publisher = publisher
         self.known_devices = self._normalize_set(known_devices)
         self.known_access_points = self._normalize_set(known_access_points)
+        for name, value in (
+            ("destination_fanout_threshold", destination_fanout_threshold),
+            ("destination_window_seconds", destination_window_seconds),
+            ("packet_burst_threshold", packet_burst_threshold),
+            ("packet_window_seconds", packet_window_seconds),
+        ):
+            if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+                raise ValueError(f"{name} must be a positive integer")
+        self.destination_fanout_threshold = destination_fanout_threshold
+        self.destination_window_seconds = destination_window_seconds
+        self.packet_burst_threshold = packet_burst_threshold
+        self.packet_window_seconds = packet_window_seconds
         self._lock = RLock()
         self._ip_to_mac: dict[str, str] = {}
         self._unknown_seen: set[str] = set()
         self._rogue_aps_seen: set[str] = set()
         self._arp_conflicts_seen: set[tuple[str, str, str]] = set()
+        self._source_observations: dict[str, deque[tuple[datetime, str]]] = {}
+        self._fanout_seen: set[str] = set()
+        self._burst_seen: set[str] = set()
 
     @staticmethod
     def _normalize_set(values: set[str] | None) -> set[str]:
@@ -122,6 +142,81 @@ class SuspiciousActivityDetector:
         source_address = (record.source or "").strip()
 
         with self._lock:
+            if source_address and record.destination:
+                observations = self._source_observations.setdefault(
+                    source_address, deque()
+                )
+                observations.append((timestamp, record.destination))
+                fanout_cutoff = timestamp - timedelta(
+                    seconds=self.destination_window_seconds
+                )
+                burst_cutoff = timestamp - timedelta(
+                    seconds=self.packet_window_seconds
+                )
+                while observations and observations[0][0] < min(
+                    fanout_cutoff, burst_cutoff
+                ):
+                    observations.popleft()
+
+                unique_destinations = {
+                    destination
+                    for seen_at, destination in observations
+                    if seen_at >= fanout_cutoff
+                }
+                if (
+                    source_address not in self._fanout_seen
+                    and len(unique_destinations) >= self.destination_fanout_threshold
+                ):
+                    self._fanout_seen.add(source_address)
+                    events.append(
+                        AlertEvent(
+                            rule_id="destination-fanout",
+                            severity="warning",
+                            message=(
+                                f"Possible network scan: {source_address} contacted "
+                                f"{len(unique_destinations)} destinations within "
+                                f"{self.destination_window_seconds} seconds"
+                            ),
+                            timestamp=timestamp,
+                            evidence={
+                                "source_address": source_address,
+                                "unique_destinations": str(len(unique_destinations)),
+                                "window_seconds": str(self.destination_window_seconds),
+                            },
+                        )
+                    )
+
+                packet_count = sum(
+                    seen_at >= burst_cutoff for seen_at, _ in observations
+                )
+                if (
+                    source_address not in self._burst_seen
+                    and packet_count >= self.packet_burst_threshold
+                ):
+                    self._burst_seen.add(source_address)
+                    events.append(
+                        AlertEvent(
+                            rule_id="traffic-volume-burst",
+                            severity="warning",
+                            message=(
+                                f"Unusually high packet volume from {source_address}: "
+                                f"{packet_count} packets in "
+                                f"{self.packet_window_seconds} seconds"
+                            ),
+                            timestamp=timestamp,
+                            evidence={
+                                "source_address": source_address,
+                                "packet_count": str(packet_count),
+                                "window_seconds": str(self.packet_window_seconds),
+                            },
+                        )
+                    )
+
+                if len(self._source_observations) > 2048:
+                    oldest_source = next(iter(self._source_observations))
+                    if oldest_source != source_address:
+                        del self._source_observations[oldest_source]
+
             if record.protocol == "ARP" and source_address and source_mac:
                 previous_mac = self._ip_to_mac.get(source_address)
                 if previous_mac is None:

@@ -1,13 +1,10 @@
 # Pocket Packet Sniffer dashboard
 
-The dashboard uses Next.js App Router and has two deliberately separate modes:
+The dashboard displays only data received from the real local capture agent. It contains no bundled packet samples or synthetic demo mode. Until the agent is running and a capture or PCAP replay has populated local storage, the dashboard shows an honest empty state.
 
-- **Local mode** connects to the FastAPI service on this computer and can control explicitly requested passive capture or local PCAP replay.
-- **Hosted demo mode** is a static export with a fixed synthetic dataset. It makes no API requests and cannot access a network interface or local files.
+Vercel hosts the interface only. The Python capture agent, packet files, SQLite index, and analysis remain on the operator's computer. To use a hosted dashboard with the local sensor, configure the exact dashboard origin in `PPS_ALLOWED_ORIGINS` on the sensor and grant the browser's local network access prompt. Keep the capture API bound to loopback and do not expose it publicly.
 
-The hosted demo is not a remote capture service. Live capture, packet bytes, SQLite indexes, and reports stay on the operator's computer.
-
-## Run local mode
+## Run locally
 
 Requirements: Python 3.10+, Node.js 20.9+, and npm. From the repository root:
 
@@ -24,22 +21,8 @@ In another terminal, start the local API from the repository root:
 python -m uvicorn pocket_packet_sniffer.api:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:5173`. The API binds to loopback. Use only an interface and network you own or are authorized to monitor.
+Open `http://127.0.0.1:5173`. Select an active adapter and start live capture, or choose a local PCAP file for replay. Use only an interface and network you own or are authorized to monitor.
 
-## Build the hosted synthetic demo locally
+## Deploy
 
-```powershell
-cd web
-$env:NEXT_PUBLIC_DEMO_MODE = "true"
-$env:NEXT_BASE_PATH = "/Pocket-Packet-Sniffer"
-npm ci
-npm run build
-```
-
-Next.js writes the static site to `out/`. The demo build includes synthetic records only. Its capture panel is hidden and its frontend does not request the local API.
-
-## Deployment
-
-`.github/workflows/deploy-dashboard.yml` builds and publishes the static demo to GitHub Pages after main-branch CI succeeds. The repository must have Pages configured to use **GitHub Actions** under **Settings → Pages → Build and deployment**. The workflow does not deploy the Python API or any capture data.
-
-See [`Docs/WEB_DEPLOYMENT.md`](../Docs/WEB_DEPLOYMENT.md) for the hosting decision, provider alternatives, and deployment boundary.
+The `Deploy dashboard to Vercel` GitHub Actions workflow deploys the tested `main` commit after CI succeeds. Configure GitHub Actions secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` for the linked Vercel project. Vercel hosts only the dashboard; capture and stored packet data remain local.

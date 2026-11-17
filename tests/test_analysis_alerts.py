@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -18,11 +18,13 @@ def record(
     source_mac: str | None,
     *,
     destination_mac: str | None = None,
+    destination: str = "192.0.2.20",
+    timestamp: datetime | None = None,
 ) -> PacketRecord:
     return PacketRecord(
-        timestamp=datetime(2026, 10, 27, tzinfo=timezone.utc),
+        timestamp=timestamp or datetime(2026, 10, 27, tzinfo=timezone.utc),
         source=source,
-        destination="192.0.2.20",
+        destination=destination,
         protocol=protocol,
         packet_size=60,
         interface="fixture0",
@@ -206,3 +208,62 @@ def test_allowlist_rejects_invalid_entries():
             publisher,
             known_devices={"02:00:00:00:00:01", ""},
         )
+
+
+def test_destination_fanout_emits_a_cautious_scan_indicator():
+    publisher = AlertPublisher()
+    events: list[AlertEvent] = []
+    publisher.subscribe(events.append)
+    detector = SuspiciousActivityDetector(
+        publisher,
+        destination_fanout_threshold=3,
+        packet_burst_threshold=20,
+    )
+    start = datetime(2026, 10, 27, tzinfo=timezone.utc)
+
+    for index in range(3):
+        detector.inspect(
+            record(
+                "TCP",
+                "192.0.2.5",
+                "02:00:00:00:00:05",
+                destination=f"198.51.100.{index + 1}",
+                timestamp=start + timedelta(seconds=index),
+            )
+        )
+
+    assert len(events) == 1
+    assert events[0].rule_id == "destination-fanout"
+    assert events[0].severity == "warning"
+    assert events[0].evidence["unique_destinations"] == "3"
+    assert "packet_data" not in events[0].evidence
+
+
+def test_packet_burst_emits_one_review_indicator():
+    publisher = AlertPublisher()
+    events: list[AlertEvent] = []
+    publisher.subscribe(events.append)
+    detector = SuspiciousActivityDetector(
+        publisher,
+        destination_fanout_threshold=20,
+        packet_burst_threshold=3,
+    )
+    start = datetime(2026, 10, 27, tzinfo=timezone.utc)
+
+    for index in range(4):
+        detector.inspect(
+            record(
+                "UDP",
+                "192.0.2.9",
+                "02:00:00:00:00:09",
+                timestamp=start + timedelta(seconds=index),
+            )
+        )
+
+    assert [event.rule_id for event in events] == ["traffic-volume-burst"]
+    assert events[0].evidence["packet_count"] == "3"
+
+
+def test_traffic_rule_thresholds_must_be_positive_integers():
+    with pytest.raises(ValueError, match="packet_burst_threshold"):
+        SuspiciousActivityDetector(AlertPublisher(), packet_burst_threshold=0)
