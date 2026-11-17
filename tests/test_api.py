@@ -109,6 +109,37 @@ def test_packet_search_time_filter_pagination_and_safe_transport_metadata(client
     assert "opaque-payload-marker" not in response.text
 
 
+def test_dashboard_summaries_and_packet_pages_use_saved_capture_records(client, tmp_path):
+    repository = PcapSqliteRepository(tmp_path / "captures")
+    timestamp = datetime(2026, 11, 2, tzinfo=timezone.utc)
+    repository.save(_packet(record_id="first", session_id="live-session", timestamp=timestamp))
+    repository.save(
+        _packet(
+            record_id="second",
+            session_id="live-session",
+            timestamp=timestamp + timedelta(seconds=1),
+            protocol="UDP",
+        )
+    )
+
+    overview = client.get("/api/overview").json()
+    statistics = client.get("/api/statistics").json()
+    first_page = client.get("/api/packets", params={"limit": 1}).json()
+    second_page = client.get("/api/packets", params={"limit": 1, "offset": 1}).json()
+    searched = client.get("/api/packets", params={"search": "first"}).json()
+
+    assert overview["total_packets"] == 2
+    assert overview["total_bytes"] == len(b"opaque-payload-marker") * 2
+    assert overview["active_sessions"] == 1
+    assert overview["protocols"] == {"TCP": 1, "UDP": 1}
+    assert statistics["total_packets"] == 2
+    assert first_page["total"] == 2
+    assert first_page["packets"][0]["id"] == "second"
+    assert second_page["packets"][0]["id"] == "first"
+    assert searched["total"] == 1
+    assert searched["packets"][0]["id"] == "first"
+
+
 @pytest.mark.parametrize(
     ("params", "detail"),
     [
@@ -265,5 +296,5 @@ def test_live_statistics_and_dashboard_cors_boundary(client):
     blocked = client.get("/api/health", headers={"Origin": "https://untrusted.example"})
 
     assert allowed.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
-    assert allowed.json()["version"] == "0.2.1"
+    assert allowed.json()["version"] == "0.2.2"
     assert "access-control-allow-origin" not in blocked.headers

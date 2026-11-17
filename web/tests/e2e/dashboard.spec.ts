@@ -32,6 +32,9 @@ type MockOptions = {
   loopbackPermission?: "prompt" | "granted" | "denied";
   healthRequests?: number[];
   healthSequence?: boolean[];
+  overviewDelayMs?: number;
+  statisticsPackets?: number;
+  agentVersion?: string;
 };
 
 async function mockLocalAgent(page: Page, options: MockOptions = {}) {
@@ -46,6 +49,9 @@ async function mockLocalAgent(page: Page, options: MockOptions = {}) {
     loopbackPermission = "granted",
     healthRequests = [],
     healthSequence = [],
+    overviewDelayMs = 0,
+    statisticsPackets = 1,
+    agentVersion = "0.2.2",
   } = options;
 
   await page.addInitScript((permissionState) => {
@@ -64,12 +70,13 @@ async function mockLocalAgent(page: Page, options: MockOptions = {}) {
     if (path === "/api/health") {
       healthRequests.push(Date.now());
       const healthy = healthSequence.length ? healthSequence.shift() ?? online : online;
-      return route.fulfill({ status: healthy ? 200 : 503, json: healthy ? { status: "ok", version: "0.2.1" } : { detail: "Sensor not running" } });
+      return route.fulfill({ status: healthy ? 200 : 503, json: healthy ? { status: "ok", version: agentVersion } : { detail: "Sensor not running" } });
     }
     if (path === "/api/interfaces") {
       return route.fulfill({ json: { interfaces: [{ name: "\\Device\\NPF_{TEST}", description: "Intel Wi-Fi 6 Adapter", friendly_name: "Wi-Fi", ips: ["192.0.2.10"], mac: "02:00:00:00:00:10", status: "Up", capture_candidate: true, recommended: true }] } });
     }
     if (path === "/api/overview") {
+      if (overviewDelayMs) await new Promise((resolve) => setTimeout(resolve, overviewDelayMs));
       return route.fulfill({ json: { total_packets: 1, total_bytes: 74, active_sessions: 1, protocols: { TCP: 1 }, top_talkers: [["192.0.2.10", 1]] } });
     }
     if (path === "/api/packets") {
@@ -85,7 +92,7 @@ async function mockLocalAgent(page: Page, options: MockOptions = {}) {
       return route.fulfill({ json: { alerts: [{ id: "alert-1", session_id: "session-abc123", rule_id: "arp-address-conflict", severity: "warning", message: "An address was claimed by two devices", time: samplePacket.time, evidence: { ip_address: "192.0.2.10" } }] } });
     }
     if (path === "/api/statistics") {
-      return route.fulfill({ json: { total_packets: 1, total_bytes: 74, packets_per_sec: 5, protocols: [["TCP", 1]], top_talkers: [["192.0.2.10", 1]] } });
+      return route.fulfill({ json: { total_packets: statisticsPackets, total_bytes: 74, packets_per_sec: 5, protocols: [["TCP", statisticsPackets]], top_talkers: [["192.0.2.10", statisticsPackets]] } });
     }
     if (path === "/api/capture/status") {
       const state = started ? "running" : captureState;
@@ -145,6 +152,19 @@ test("a single missed health check does not drop an established sensor connectio
   await expect(page.getByText("Your sensor is connected on this computer.")).toBeVisible();
 });
 
+test("live statistics update while the historical summary is still loading", async ({ page }) => {
+  await mockLocalAgent(page, { overviewDelayMs: 2500, statisticsPackets: 321 });
+  await page.goto("/");
+  await expect(page.getByText("321", { exact: true })).toBeVisible({ timeout: 2000 });
+});
+
+test("the current sensor version stays connected while offering the optimized update", async ({ page }) => {
+  await mockLocalAgent(page, { agentVersion: "0.2.1" });
+  await page.goto("/");
+  await expect(page.getByText("SENSOR READY", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Update sensor for faster packet history" })).toHaveAttribute("href", /releases\/latest\/download/);
+});
+
 test("overview explains real activity with rate and an address diagram", async ({ page }) => {
   await mockLocalAgent(page);
   await page.goto("/");
@@ -187,6 +207,8 @@ test("packet filters use server-side time, session and protocol search, and rows
   expect(filtered?.searchParams.get("session_id")).toBe("session-abc123");
   expect(filtered?.searchParams.get("address")).toBe("192.0.2.10");
 
+  await expect(page.getByText(":43123", { exact: true })).toBeVisible();
+  await expect(page.getByText(":443", { exact: true })).toBeVisible();
   await page.getByRole("row", { name: /Inspect TCP packet/ }).click();
   await expect(page.getByRole("heading", { name: "A closer look at one message" })).toBeVisible();
   await expect(page.getByText("443", { exact: true })).toBeVisible();
