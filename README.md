@@ -44,10 +44,11 @@ Use Python 3.10 or newer. From the repository root:
 python -m pip install -e .
 python -m pip install -r requirements-dev.txt
 ruff check --select E4,E7,E9,F,I src tests tools
-pytest -q pytest --cov=pocket_packet_sniffer --cov-report=term-missing
+python -m pytest -q
+python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing
 ```
 
-The tests use generated PCAP fixtures and mocked capture backends; they do not require root privileges or live network traffic. The repository now includes the Capture, Analysis, Storage, and Presentation/application session path, plus CLI and generated-PCAP integration tests. The latest recorded `main` CI run completed successfully with Ruff passing and 106 tests passing. Live-interface and target-platform behaviour still needs manual verification.
+Automated tests use generated fixtures and mocked capture sources; they do not put synthetic traffic into the live product or require administrator privileges. The current Windows acceptance run and all outstanding hardware limits are recorded in the [SRS acceptance report](tests/docs/ACCEPTANCE_TEST_REPORT.md). For tomorrow's presentation, use the [real-traffic demo guide](Docs/DEMO_SCRIPT.md).
 
 ## Planning and traceability
 
@@ -56,6 +57,9 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 - [Sprint Plan and closeout](Docs/SPRINT_PLAN.md) — completed sprint records and the remaining evidence-based follow-up.
 - [Sprint 1 review/retrospective](Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md) — verified deliveries, asynchronous evidence review, limitations, and process improvements.
 - [GitHub Operating Guide](Docs/GITHUB_OPERATING_GUIDE.md) — repository workflow, milestones, labels, reviews and security settings.
+- [Course alignment](Docs/COURSE_ALIGNMENT.md) — maps Unit 3 network topics and Unit 4 software-quality/testing topics to project evidence.
+- [Privacy guidelines](Docs/PRIVACY_GUIDELINES.md) — authorized use, local capture handling, and sharing precautions.
+- [SRS acceptance report](tests/docs/ACCEPTANCE_TEST_REPORT.md) — current real-interface result, automated verification, and remaining acceptance gates.
 
 ## Team engineering resources
 
@@ -68,7 +72,7 @@ The tests use generated PCAP fixtures and mocked capture backends; they do not r
 - [Security validation record](Docs/SECURITY_VALIDATION.md) — automated permission checks and remaining manual platform verification.
 - [Capture Layer guide](Docs/CAPTURE_LAYER.md) — capture backends, typed failures, setup and limitations.
 - [End-to-end guide](Docs/END_TO_END_GUIDE.md) — CLI install/usage, layer contracts, tests and manual checks.
-- [End-to-end demo script](Docs/DEMO_SCRIPT.md) — reproducible PCAP replay, alerts, queries, CSV/PDF exports, and concurrent-capture demo.
+- [Live-traffic presentation guide](Docs/DEMO_SCRIPT.md) — real authorized capture, dashboard walkthrough, and local report export.
 - [Test documentation and execution reports](tests/README.md) — test plan, categorized test reports, coverage evidence, requirement mapping, and pending hardware checks.
 - [Replay throughput benchmark](tools/benchmark_pipeline.py) — measures synthetic replay, analysis, and local storage throughput; it is not a live packet-loss test.
 
@@ -113,6 +117,8 @@ The implementation is limited to persistence and querying; capture, analysis, an
 ## Safe use
 
 Only capture traffic on networks/devices you own or are explicitly authorized to monitor. This tool is intended to be passive: it must not inject, alter, or replay network traffic. Capture files may contain sensitive information; keep them local and protect them with suitable file permissions. The CLI must not silently upload captured data.
+
+For dashboard-specific guidance on local storage, replay files, reports, and visibility limits, see [Privacy and responsible-use guidelines](Docs/PRIVACY_GUIDELINES.md).
 
 ## CLI usage
 
@@ -159,7 +165,9 @@ pocket-packet-sniffer export --storage-dir captures --session-id demo-session --
 
 The query command accepts optional timezone-aware `--start` and `--end` ISO-8601 datetimes. `--suspicious-only` re-parses the saved records and shows only packets that trigger a configured heuristic, including the rule and reason; `--show-classification` labels all queried records `SUSPICIOUS/REVIEW` or `NO RULE MATCHED`. Optional query-time `--known-device MAC` and `--known-access-point BSSID` arguments enable inventory-based rules. A no-match does not mean traffic is safe, and these heuristics are not a guaranteed malware detector. CSV and PDF exports refuse to overwrite an existing file and include session/packet metadata, not raw packet payloads. Capture outputs and the SQLite index remain local under the configured storage directory. The PCAP files contain original captured bytes; metadata-only query and report output does not redact or remove payloads from those files.
 
-## Reproducible synthetic demo
+## Generated PCAP fixture for automated testing only
+
+This generated fixture is for regression/CI checks only. It is not a product demo and must never be presented as live traffic. For the presentation, use the [live-traffic guide](Docs/DEMO_SCRIPT.md).
 
 ```bash
 python -m pip install -r requirements-dev.txt -r requirements-capture.txt
@@ -183,9 +191,9 @@ pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.p
 
 ## Current implementation status
 
-The Capture → Analysis → Storage → Presentation/CLI workflow and SRS backend-completion work are merged into `main` (PRs #24 and #29). Latest successful `main` CI: [run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511), Ruff passed and `pytest -q` reported **106 passed in 1.87s**.
+The Capture → Analysis → Storage → Presentation workflow, local sensor, dashboard, and CI/CD are implemented. The latest verified `main` baseline at this checkout is commit `6a682b6`; GitHub Actions [run 44352549033](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44352549033) passed. On 2026-11-18, the local Windows acceptance run captured **175 real packets**, stored all 175, and exported CSV and PDF reports. Python checks reported 171 passed / 2 skipped; the dashboard build and all 13 browser tests passed. Full results are in the acceptance report.
 
-Known limitations remain: classic PCAP only; passive live capture depends on platform/driver/permissions; live Wi-Fi monitor-mode and BLE-adapter support are not hardware-verified; Raspberry Pi packet-loss/performance figures have not been measured; Windows ACL behavior remains unverified. PR #29 is merged into `main`; the latest main CI run ([40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511)) passed Ruff and all 106 tests. These automated checks do not replace target-hardware validation. Repository branch protection and plan-available security settings still require maintainer UI verification.
+Live Wi-Fi monitor mode, live BLE scanning, simultaneous physical adapters, Windows ACL behavior, and Raspberry Pi throughput/drop rates are not validated. The current Windows sensor does not include live BLE scanning. The hosted production site returned HTTP 200 during this review; this local release candidate is not deployed yet. Branch-protection and GitHub security settings remain subject to admin-level verification.
 
 ## Third-party acknowledgements
 

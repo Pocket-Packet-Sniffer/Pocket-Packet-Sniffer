@@ -32,7 +32,9 @@
 | Usability and graceful errors | CLI subcommands, typed errors, usage text and actionable capture failures. | Automated code paths covered; actual live-device permission messages remain platform-dependent. |
 | Operating environment / BLE hardware | Python 3.10+, Scapy/libpcap-dependent live path; BLE/802.11 metadata decode is conditional on provided link type. | **Not verified on Raspberry Pi, ESP32-class hardware, BLE dongle, or Wi-Fi monitor-mode adapter in this environment.** Do not claim tested support until a real hardware smoke test is recorded. |
 
-## Reproducible synthetic demo
+## Generated PCAP fixture for automated testing only
+
+The generated PCAP steps below are internal fixture validation, not a product presentation. Never label their packets as live traffic. The public dashboard contains no bundled records; use [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the real authorized live-capture presentation flow.
 
 Install the project and test dependencies, then use generated traffic only:
 

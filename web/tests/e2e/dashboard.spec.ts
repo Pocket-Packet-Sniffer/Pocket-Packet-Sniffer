@@ -130,6 +130,23 @@ test("offline landing explains setup without asking visitors to run project scri
   await expect(page.getByText("Packet data is never sent to this website.")).toBeVisible();
 });
 
+test("privacy guidance stays visible and explains local handling and authorized use", async ({ page }) => {
+  await mockLocalAgent(page);
+  await page.goto("/");
+
+  const notice = page.locator(".privacy-notice");
+  await expect(notice.getByText("Privacy & responsible use")).toBeVisible();
+  await notice.locator("summary").click();
+  await expect(notice).toContainText("explicitly authorized to inspect");
+  await expect(notice).toContainText("Captures can contain sensitive information");
+  await expect(notice).toContainText("sent to the sensor on this same computer only");
+
+  await notice.getByRole("button", { name: "Open setup & privacy" }).click();
+  await expect(page.getByRole("heading", { name: "Sensor setup & privacy" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Capture compatibility" })).toBeVisible();
+  await expect(page.getByText("Live BLE scanning is not included in the current Windows sensor.")).toBeVisible();
+});
+
 test("local sensor waits for an explicit connection when loopback permission is pending", async ({ page }) => {
   const requests: number[] = [];
   await mockLocalAgent(page, { healthRequests: requests, loopbackPermission: "prompt" });
@@ -177,6 +194,17 @@ test("overview explains real activity with rate and an address diagram", async (
   await expect(page.getByText("192.0.2.10").first()).toBeVisible();
   await expect(page.getByText("Packet data is never sent to this website.")).toHaveCount(0);
   await page.screenshot({ path: "test-results/dashboard-review.png", fullPage: true });
+});
+
+test("selecting an observed map address opens packets filtered to that address", async ({ page }) => {
+  await mockLocalAgent(page);
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Show packets involving source 192.0.2.10" }).click();
+
+  await expect(page.getByRole("heading", { name: "Explore packet details" })).toBeVisible();
+  await expect(page.getByLabel("Filter by exact address")).toHaveValue("192.0.2.10");
+  await expect(page.locator("tbody")).toContainText("198.51.100.20");
 });
 
 test("live capture sends selected adapters, BPF and local allowlists to the sensor", async ({ page }) => {

@@ -44,7 +44,7 @@ CI runs lint and the Python suite on Ubuntu and Windows, then type-checks/builds
 - [Software Test Plan v1.3](docs/test-plan/Pocket_Packet_Sniffer_Software_Test_Plan.pdf) is the preserved source plan.
 - [Unit screenshots](docs/evidence/unit/) are supporting evidence, not substitutes for test output.
 - The canonical implementation tests are the `tests/test_*.py` files. Former duplicate capture test copies were identical to the canonical files and have been consolidated.
-- Unit 3 / Unit 4 lecture slide files were not present in the checked-out repository. This test map follows the versioned STP v1.3, SRS, RTM, and recorded project evidence; add the course slides if their exact taxonomy or marking rubric must be followed.
+- Course alignment is summarized in [Docs/COURSE_ALIGNMENT.md](../Docs/COURSE_ALIGNMENT.md). It maps Unit 3 network-layer/transport-layer learning to parser coverage and Unit 4 testing, security, validation, and quality-metric topics to the existing reports. The original course slides are reference material and are not redistributed in this repository; the approved SRS v1.3 and STP v1.3 are checked in as the project requirements and plan.
 
 ## Evidence rules
 

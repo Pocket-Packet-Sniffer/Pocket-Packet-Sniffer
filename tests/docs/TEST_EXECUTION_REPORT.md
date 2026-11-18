@@ -2,10 +2,11 @@
 
 **SRS:** v1.3; dashboard change proposal adds web requirements
 **STP:** v1.3
-**Current implementation:** `main` after PR #57
-**Current closeout date:** 2026-11-17
+**Latest main baseline:** `6a682b6a853ebc7026a29ad9d896e7597659c7ff`; GitHub CI run [44352549033](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44352549033) passed.
+**Current local candidate:** `release/submission-readiness` (verification below is local and is not yet part of `main`).
+**Current closeout date:** 2026-11-18
 
-This report retains dated historical results below. The authoritative current snapshot is in [Current closeout verification](#current-closeout-verification-2026-11-17); older rows are not presented as the newest run.
+This report retains dated historical results below. The authoritative current local-candidate snapshot is in [Final acceptance verification](#final-acceptance-verification-2026-11-18); older rows are not presented as the newest run.
 
 ## Latest main verification after PR #38 and PR #42 (2026-10-29)
 
@@ -143,3 +144,20 @@ Coverage instrumentation was first unavailable in the local interpreter, so the 
 The two full-suite skips are the POSIX permission-mode tests because the run was performed on Windows. The single Starlette warning concerns deprecated use of `httpx` with `starlette.testclient`; it did not fail the API tests or full suite.
 
 This local run is a separate verification snapshot from the earlier CI and coverage results above. It does not replace them. Hardware acceptance remains subject to the manual checks listed earlier; in particular, these automated tests do not establish Wi-Fi monitor-mode, BLE radio capture, Windows ACL, physical multi-adapter, Raspberry Pi throughput, or live packet-drop behavior.
+
+## Final acceptance verification — 2026-11-18
+
+| Check | Environment / command | Result |
+|---|---|---|
+| Latest merged-main CI baseline | GitHub Actions run [44352549033](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44352549033), commit `6a682b6a853ebc7026a29ad9d896e7597659c7ff` | PASS — workflow conclusion `success`. This run predates the local candidate changes below. |
+| Python lint | Windows 11, Python 3.13.1; `ruff check --select E4,E7,E9,F,I src tests tools` | PASS — all checks passed. |
+| Full Python suite and coverage | Windows 11, Python 3.13.1; pytest-cov with statement and branch coverage | PASS — **171 passed, 2 skipped**; 79.46% statement coverage (1,899/2,390), 68.29% branch coverage (519/760). POSIX permission tests skipped; Windows ACLs remain unverified. |
+| Dashboard type check / production build | Node 22; `npm run typecheck`, `npm run build` | PASS. |
+| Browser flows | Chromium; `npm run test:e2e -- --workers=1` | PASS — **13 passed**, including real-address map navigation, privacy/capability messaging, capture request, search, replay, reports, and mobile layout. API responses are mocked in these UI tests. |
+| Live interface acceptance | Windows 11; local sensor/Npcap on the connected Wi-Fi adapter; 2026-11-18 23:02 local time | PASS — live statistics observed at 14, 32, 4, 7, and 30 packets/second; **175 real packets seen, 175 stored, 0 ignored**, clean stop, exit code 0. No generated or injected traffic was used. |
+| Live-session query / reports | Same local session, isolated app-data capture folder | PASS — session query returned 175 records; CSV and PDF endpoints each returned HTTP 200. No packet file, address, or session identifier is committed. |
+| Production availability | `https://pocket-packet-sniffer.vercel.app` | PASS — HTTP 200 before the candidate is merged. Vercel Git integration performs CD separately from GitHub Actions; this local candidate has not been deployed. |
+
+The coverage command emitted non-fatal `ResourceWarning` messages from coverage.py's internal SQLite collector during shutdown; pytest exited with status 0. The warning is retained in the acceptance report and was not suppressed.
+
+**Acceptance limits:** this run verifies ordinary live Windows Wi-Fi capture only. It does not validate Wi-Fi monitor mode, live BLE scanning (not included in the current Windows agent), physical concurrent adapters, Windows ACL behavior, Raspberry Pi performance, or live packet-drop counters. The complete requirement-by-requirement disposition is in [ACCEPTANCE_TEST_REPORT.md](ACCEPTANCE_TEST_REPORT.md). Generated PCAPs remain internal test/CI inputs and are not part of the presentation flow.

@@ -1,135 +1,51 @@
-# Pocket Packet Sniffer — End-to-End Demo Script
+# PocketSniff live-traffic presentation guide
 
-This script demonstrates the backend implementation for SRS v1.3 using synthetic traffic. It does not require administrator privileges or an active network interface. It complements, rather than replaces, target-hardware smoke tests.
+This is the presentation flow for showing **real traffic from an authorized adapter**. The dashboard does not bundle, generate, or display sample packet activity. Automated fixtures are used only by the test suite and CI; never present them as live capture.
 
-## 1. Prepare the environment
+## Before presenting
 
-Use Python 3.10 or newer and run the following from the repository root:
+1. Use a computer and network you own or are explicitly authorized to monitor.
+2. On Windows, install Npcap and start the current `pocket-packet-sniffer-agent.exe` from the [latest agent release](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/releases/latest). Keep its window open. The agent stores captures under the current user's local application data folder and listens only on `127.0.0.1`.
+3. Open the [PocketSniff dashboard](https://pocket-packet-sniffer.vercel.app). Allow the browser's local-network permission when prompted, then connect to the sensor.
+4. Confirm the dashboard says **Sensor Ready** and lists a connected Ethernet or Wi-Fi adapter. If the browser cannot reach the agent, use the local dashboard and local API together, as described in `Docs/WEB_DEPLOYMENT.md`.
 
-```powershell
-python -m pip install -e .
-python -m pip install -r requirements-dev.txt -r requirements-capture.txt
-```
+## Live demonstration
 
-Generate a new synthetic classic-PCAP file. The generator refuses to overwrite an existing file, so choose a fresh filename or remove the old demo file first.
+1. On Overview, explain that the dashboard displays real packet metadata from the selected local sensor. Capture is passive: it does not inject or alter network traffic.
+2. Select the connected adapter you are authorized to monitor. Leave the optional capture filter blank to see all supported traffic, or use a narrow filter such as `tcp port 443` if you want to focus the view.
+3. Click **Start watching**. Generate ordinary activity on this computer, such as loading a page you choose. Do not use a packet generator or fabricated traffic for the presentation.
+4. Point out the actual packet rate, session count, saved traffic, protocol breakdown, address rankings, activity chart, and source/destination ports in Packets. Click an address in the network map to open the matching saved packets.
+5. Explain any review signals as rule-based prompts. They are not proof of an attack, and no signal does not prove a network is safe. Do not attempt an attack or create suspicious traffic for this demo.
+6. Click **Stop watching**. Open Sessions to show the real saved session and download its CSV or PDF metadata report. Explain that capture files and reports stay on this computer and should be treated as sensitive.
 
-```powershell
-python tools/create_demo_pcap.py demo.pcap
-```
+## Explain capability limits clearly
 
-Expected outcome: a message that a synthetic PCAP with five packets was created. It contains controlled TCP, DNS/UDP, ICMP, and two conflicting ARP claims. It contains no live user traffic.
-
-## 2. Replay through the full pipeline
-
-```powershell
-pocket-packet-sniffer capture --pcap-file demo.pcap --storage-dir demo-captures --session-id demo-session
-```
-
-Expected results:
-- The CLI prints the session identifier and final counters.
-- The fixture should report five packets seen and five stored with no ignored packets.
-- A metadata-only ARP address-conflict alert is printed to standard error. It is a heuristic investigation signal, not proof of an attack.
-- Real PCAP data is written locally and indexed in `demo-captures/metadata.sqlite3`.
-
-This command replays a local file. It does not transmit packets to a network.
-
-## 3. List sessions and query stored metadata
-
-```powershell
-pocket-packet-sniffer sessions --storage-dir demo-captures
-pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --protocol TCP
-pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --address 192.0.2.1
-pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --suspicious-only
-pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --show-classification
-pocket-packet-sniffer query --storage-dir demo-captures --session-id demo-session --start 2026-10-27T10:00:00+00:00 --end 2026-10-27T10:00:04+00:00
-```
-
-Expected outcomes:
-- The session list includes `demo-session` with five stored packets.
-- The TCP query returns the fixture's matching TCP metadata.
-- The address query returns ARP metadata for the synthetic address `192.0.2.1`.
-- Query results show timestamps, normalized protocol, source/destination metadata, size, and session ID. Raw packet payloads are not printed.
-- `--suspicious-only` re-parses the saved PCAP records and displays records that trigger a configured heuristic, with a rule ID and reason. The synthetic ARP conflict should show one `SUSPICIOUS/REVIEW` record.
-- `--show-classification` shows `SUSPICIOUS/REVIEW` or `NO RULE MATCHED` for each record. A no-match is not proof that traffic is safe. For allowlist rules, pass repeated `--known-device MAC` or `--known-access-point BSSID` options to the query command.
-
-## 4. Export local reports
-
-```powershell
-pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.csv --format csv
-pocket-packet-sniffer export --storage-dir demo-captures --session-id demo-session --output demo-session.pdf --format pdf
-```
-
-Expected outcome: both files are written locally and contain the session summary and packet metadata, not raw payloads. Export fails rather than overwriting an existing destination. Use a new filename for a repeat demo.
-
-## 5. Demonstrate concurrent capture safely
-
-Generate two independent synthetic fixtures:
-
-```powershell
-python tools/create_demo_pcap.py demo-a.pcap
-python tools/create_demo_pcap.py demo-b.pcap
-pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.pcap --storage-dir demo-multi-captures --session-id multi-demo --count 6
-```
-
-Expected outcome: the concurrent capturer delivers six total packets from two sources, records source/backend metadata, and combines the statistics. Both input sources are local files, so this demonstration does not need live interfaces or elevated capture permissions.
-
-## 6. Run automated verification
-
-```powershell
-ruff check --select E4,E7,E9,F,I src tests tools
-pytest -q
-```
-
-The latest `main` GitHub Actions run after PR #29 merged passed Ruff and reported **106 passing tests in 1.87 seconds**: [CI run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511). This verifies the automated suite, not live adapter support or target-hardware performance.
-
-## 7. Parser edge-case regression evidence
-
-The regression tests added in PR #38 are included in the automated suite. To run only these cases on Windows or another development machine:
-
-```powershell
-python -m pytest tests/test_analysis_parser_edge_cases.py -v
-```
-
-The test group covers IPv6 TCP/UDP, ICMPv6 echo request, non-IP Ethernet frames and MAC metadata, capture metadata/backend preservation, unsupported link types, and rejection of empty capture bytes. The local Windows run on 2026-10-29 passed 8 tests in 0.69 seconds. The latest main CI run passed 122 tests; see [run 40915380388](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40915380388).
-
-## 8. Measure replay processing/storage throughput
-
-Run the synthetic pipeline benchmark on the machine whose performance you want to record:
-
-```powershell
-python tools/benchmark_pipeline.py --repeats 1000 --storage-dir benchmark-captures
-```
-
-The default five-packet fixture repeated 1,000 times produces 5,000 synthetic packets. The tool prints input/seen/stored counts, elapsed seconds, and stored packets per second for PCAP replay → Analysis → local PCAP/SQLite persistence. Use a fresh session ID for each run if supplying one explicitly. The benchmark refuses to append to a session that already contains packets.
-
-For a useful target-hardware record, note the actual device/CPU (e.g. Raspberry Pi model), OS, Python version, storage medium, repeats, elapsed time, and stored-packet rate. This is a **file-replay throughput measurement**, not evidence of zero packet loss on a live interface. Live capture drops require a separate test on the actual adapter/driver with representative authorized traffic.
-
-## 9. Optional authorized live-capture check
-
-Only use a device/network you own or are explicitly authorized to monitor. Confirm the interface name and capture driver for your OS before running:
-
-```powershell
-pocket-packet-sniffer capture --interface <YOUR_AUTHORIZED_INTERFACE> --storage-dir live-captures --session-id live-check --live-dashboard
-```
-
-Stop with Ctrl+C, or from another terminal using the same storage directory:
-
-```powershell
-pocket-packet-sniffer stop --storage-dir live-captures --session-id live-check
-```
-
-Record the operating system, interface/adapter, driver, permission context, start/stop result, and any errors. Do not claim that Wi-Fi monitor mode, BLE scanning, Windows ACL behavior, or Raspberry Pi throughput/drop rate passed unless it was tested on the corresponding target hardware.
-
-## 10. Real hosted dashboard and local sensor
-
-Open the production dashboard at `https://pocket-packet-sniffer.vercel.app`. The hosted page contains no bundled sample traffic. Download and run the Windows capture sensor on the computer whose network you are authorized to monitor; install Npcap to use live adapters. Allow the browser's local-network connection to `127.0.0.1` if prompted. The dashboard should show the connected sensor, its actual interfaces and actual saved traffic. Select an adapter to capture or choose a local classic PCAP to replay. Search packet metadata and export a session's CSV/PDF report. The packet file, SQLite index and reports remain on that computer; the hosted website receives no packet data. A PCAP fixture from Sections 1-5 is synthetic test input and must not be presented as live traffic.
+- Ordinary Wi-Fi shows what the adapter and driver provide; it commonly shows this computer's own traffic.
+- Wi-Fi monitor mode needs a compatible adapter and driver configured for that mode. PocketSniff does not enable radio modes, and this setup has not been validated with a monitor-mode adapter.
+- The current Windows sensor does not perform live Bluetooth LE scanning. Supported BLE PCAP link types can be decoded from a selected capture file, but that is not a live BLE radio capture.
+- Classic `.pcap` and `.cap` replay is supported. PCAPNG is not supported. A selected replay file is sent only to the local sensor on the same computer.
+- Raspberry Pi throughput/drop rates, Windows ACLs, and simultaneous physical adapters have not been verified for this presentation build.
 
 ## Troubleshooting
 
-- **A demo file already exists:** choose a new filename. The generator and report exporters deliberately refuse silent overwrites.
-- **CLI command not found:** activate the intended Python environment, then rerun `python -m pip install -e .`.
-- **Scapy is missing:** install `requirements-capture.txt` as shown above.
-- **No packets match a filter:** verify the session ID, protocol/address, or time range using `sessions` and a broader `query`.
-- **Live interface unavailable or permission denied:** check the interface name, OS capture driver, adapter state, and approved permissions. The generated-PCAP demo remains available without privileged capture.
-- **PDF/CSV destination exists:** use a new destination; overwrite is intentionally disabled.
-- **Wi-Fi/BLE behavior differs by machine:** this is platform/hardware-dependent and must be documented as unverified until tested on the intended adapter/driver.
+- **Sensor offline:** keep the packaged agent running, reconnect from the dashboard, and allow browser access to the local network.
+- **No connected adapter:** confirm the adapter is up, install Npcap on Windows, and refresh the dashboard. Use only the adapter you are authorized to monitor.
+- **No packets appear:** generate normal activity on the selected computer, check the optional capture filter, and confirm the selected adapter is the active one.
+- **Capture permission error:** check Npcap installation and the permission requested by the OS. Do not change to an unapproved network to get a result.
+- **Unexpected alert:** open its rule and metadata evidence; describe it as a signal to investigate, not a confirmed threat.
+
+## Post-presentation engineering verification
+
+Run automated checks separately from the live demonstration:
+
+```powershell
+ruff check --select E4,E7,E9,F,I src tests tools
+python -m pytest -q
+cd web
+npm ci
+npm run typecheck
+npm run build
+npm run test:e2e -- --workers=1
+```
+
+These tests use generated packet fixtures and mocked browser responses as test inputs only. They verify code paths and user flows; they are not evidence of live traffic. See [the SRS acceptance report](../tests/docs/ACCEPTANCE_TEST_REPORT.md) for measured results and outstanding target-hardware gates.

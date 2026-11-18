@@ -676,6 +676,15 @@ export default function App() {
           ) : (
             <section className="connected-note" role="status"><span><Check size={16} /></span><div><strong>Your sensor is connected on this computer.</strong><small>Captured packets and reports are stored locally. This dashboard does not upload them.</small>{agentUpdateAvailable && <a className="agent-update-link" href={AGENT_DOWNLOAD} target="_blank" rel="noreferrer">Update sensor for faster packet history <ArrowRight size={13} /></a>}</div><span className="connected-note-local"><i /> LOCAL ONLY</span></section>
           )}
+          <details className="privacy-notice">
+            <summary><ShieldCheck size={17} /><span><strong>Privacy & responsible use</strong><small>Capture only with permission. Your traffic stays on this computer.</small></span><span className="privacy-notice-action">Read guidelines <ChevronDown size={15} /></span></summary>
+            <div className="privacy-notice-body">
+              <div><strong>Use with permission</strong><p>Monitor only networks and devices you own or are explicitly authorized to inspect. PocketSniff listens passively; it does not inject or change network traffic.</p></div>
+              <div><strong>Know what is stored</strong><p>PCAP files and the searchable database stay on this computer. Captures can contain sensitive information. The dashboard shows packet metadata, not raw message contents; review files before sharing them.</p></div>
+              <div><strong>Understand the local connection</strong><p>The hosted dashboard does not receive your captures. If you choose a PCAP to replay, it is sent to the sensor on this same computer only.</p></div>
+              <button className="privacy-settings-link" onClick={() => setPage("Settings")}><LockKeyhole size={14} /> Open setup & privacy</button>
+            </div>
+          </details>
           {online && error && <div className="inline-error" role="alert">{error}</div>}
 
           <div className="page-heading">
@@ -746,7 +755,16 @@ export default function App() {
                 <Metric title="Signals to review" value={alerts.length.toLocaleString()} sub="Rule-based indicators" icon={<AlertTriangle size={18} />} color="amber" explanation="These are prompts to investigate, not proof of an attack." />
               </section>
 
-              <NetworkMap packets={rows} isCapturing={isCapturing && statistics.packets_per_sec > 0} />
+              <NetworkMap packets={rows} isCapturing={isCapturing && statistics.packets_per_sec > 0} onInspectAddress={(address) => {
+                setQuery("");
+                setAddressFilter(address);
+                setProtocol("All protocols");
+                setSessionFilter("");
+                setStartTime("");
+                setEndTime("");
+                setPageOffset(0);
+                setPage("Packets");
+              }} />
 
               <section className="network-grid">
                 <div className="analytics-side">
@@ -796,9 +814,18 @@ export default function App() {
             <div className="settings-grid">
               <div className="settings-card"><span className="setting-icon"><Radio size={19} /></span><div><strong>Local capture sensor</strong><p>{API}</p></div><span className={`setting-status ${online ? "good" : "pending"}`}>{online ? "CONNECTED" : "OFFLINE"}</span></div>
               <div className="settings-card"><span className="setting-icon"><HardDrive size={19} /></span><div><strong>Where your traffic is saved</strong><p>PCAP files and the searchable packet list stay on this computer.</p></div><span className="setting-status good">LOCAL</span></div>
-              <div className="settings-card"><span className="setting-icon"><LockKeyhole size={19} /></span><div><strong>What PocketSniff can read</strong><p>It records packet headers for analysis. It does not display packet contents or upload captures.</p></div><span className="setting-status good">PRIVATE</span></div>
+              <div className="settings-card"><span className="setting-icon"><LockKeyhole size={19} /></span><div><strong>What the dashboard displays</strong><p>Packet metadata is shown; raw message contents are not. Local PCAP files may contain sensitive information, so protect them and review before sharing.</p></div><span className="setting-status good">LOCAL</span></div>
               <div className="settings-card"><span className="setting-icon"><ShieldCheck size={19} /></span><div><strong>How unusual activity is detected</strong><p>Metadata rules check for address conflicts, unfamiliar devices, access points, unusual bursts, and destination scans.</p></div><span className="setting-status">REVIEW SIGNALS</span></div>
             </div>
+            <section className="capture-capabilities" aria-labelledby="capture-capabilities-title">
+              <div><span className="section-kicker">KNOW WHAT THIS SENSOR CAN SEE</span><h3 id="capture-capabilities-title">Capture compatibility</h3><p>Actual visibility depends on your adapter, driver, and operating system.</p></div>
+              <div className="capability-list">
+                <div className="capability-row"><span className="setting-icon"><Wifi size={17} /></span><div><strong>Ethernet & everyday Wi-Fi</strong><p>Live capture is available when the operating system and driver expose packets to the sensor.</p></div><span className="setting-status good">AVAILABLE</span></div>
+                <div className="capability-row"><span className="setting-icon"><Radio size={17} /></span><div><strong>Wi-Fi monitor mode</strong><p>Requires a compatible adapter and driver configured for monitor mode. PocketSniff does not enable radio modes.</p></div><span className="setting-status conditional">HARDWARE DEPENDENT</span></div>
+                <div className="capability-row"><span className="setting-icon"><Network size={17} /></span><div><strong>Bluetooth LE advertisements</strong><p>Live BLE scanning is not included in the current Windows sensor. Supported BLE PCAP files can be replayed for metadata analysis.</p></div><span className="setting-status pending">NO LIVE BLE</span></div>
+                <div className="capability-row"><span className="setting-icon"><FileUp size={17} /></span><div><strong>Capture-file replay</strong><p>Classic .pcap and .cap files only; PCAPNG is not supported. A selected file goes to this computer's local sensor.</p></div><span className="setting-status good">AVAILABLE</span></div>
+              </div>
+            </section>
             <div className="allowlist-settings"><div><span className="section-kicker">MAKE DEVICE ALERTS PERSONAL</span><h3>Tell the sensor which devices you recognize</h3><p>Use a device’s MAC address, usually shown on the router label or in its network settings. Unlisted devices may trigger a review signal. This list stays in this browser and is sent only to your local sensor when capture starts.</p></div><div className="allowlist-fields"><label>Known devices (one MAC address per line)<textarea value={knownDevices} onChange={(event) => setKnownDevices(event.target.value)} placeholder="Example: 02:00:00:00:00:01" rows={3} /></label><label>Known Wi-Fi access points (one BSSID per line)<textarea value={knownAccessPoints} onChange={(event) => setKnownAccessPoints(event.target.value)} placeholder="Example: 02:00:00:00:00:02" rows={3} /></label></div></div>
             <div className="agent-download-card"><span className="agent-download-icon"><Download size={20} /></span><div><strong>Set up PocketSniff on another Windows computer</strong><p>Download the ready-to-run sensor. Install Npcap once, open the sensor, then visit this dashboard and allow local-network access.</p></div><a className="btn primary" href={AGENT_DOWNLOAD} target="_blank" rel="noreferrer"><Download size={15} /> Download sensor</a></div>
             <p className="settings-safe-use"><ShieldCheck size={16} /> Only monitor a network or device that you own or have permission to inspect. This tool watches traffic; it never injects, changes, or replays packets onto a network.</p>
