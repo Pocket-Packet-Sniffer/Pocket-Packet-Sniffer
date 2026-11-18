@@ -2,11 +2,10 @@
 
 **SRS:** v1.3; dashboard change proposal adds web requirements
 **STP:** v1.3
-**Latest main baseline:** `6a682b6a853ebc7026a29ad9d896e7597659c7ff`; GitHub CI run [44352549033](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44352549033) passed.
-**Current local candidate:** `release/submission-readiness` (verification below is local and is not yet part of `main`).
+**Current main:** `0839abf9d102d0b4c1da4f0f58a205ef6d9a4525`; post-merge GitHub Actions [run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) passed.
 **Current closeout date:** 2026-11-18
 
-This report retains dated historical results below. The authoritative current local-candidate snapshot is in [Final acceptance verification](#final-acceptance-verification-2026-11-18); older rows are not presented as the newest run.
+This report retains dated historical results below. The authoritative current snapshot is in [Merged-main verification](#merged-main-verification-2026-11-18); older rows and the pre-merge table are historical and are not presented as the newest run.
 
 ## Latest main verification after PR #38 and PR #42 (2026-10-29)
 
@@ -145,7 +144,7 @@ The two full-suite skips are the POSIX permission-mode tests because the run was
 
 This local run is a separate verification snapshot from the earlier CI and coverage results above. It does not replace them. Hardware acceptance remains subject to the manual checks listed earlier; in particular, these automated tests do not establish Wi-Fi monitor-mode, BLE radio capture, Windows ACL, physical multi-adapter, Raspberry Pi throughput, or live packet-drop behavior.
 
-## Final acceptance verification — 2026-11-18
+## Pre-merge acceptance verification — 2026-11-18 (historical)
 
 | Check | Environment / command | Result |
 |---|---|---|
@@ -161,3 +160,22 @@ This local run is a separate verification snapshot from the earlier CI and cover
 The coverage command emitted non-fatal `ResourceWarning` messages from coverage.py's internal SQLite collector during shutdown; pytest exited with status 0. The warning is retained in the acceptance report and was not suppressed.
 
 **Acceptance limits:** this run verifies ordinary live Windows Wi-Fi capture only. It does not validate Wi-Fi monitor mode, live BLE scanning (not included in the current Windows agent), physical concurrent adapters, Windows ACL behavior, Raspberry Pi performance, or live packet-drop counters. The complete requirement-by-requirement disposition is in [ACCEPTANCE_TEST_REPORT.md](ACCEPTANCE_TEST_REPORT.md). Generated PCAPs remain internal test/CI inputs and are not part of the presentation flow.
+
+## Merged-main verification — 2026-11-18
+
+PR #60 was merged to `main` as commit `0839abf9d102d0b4c1da4f0f58a205ef6d9a4525`. Post-merge [GitHub Actions run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) completed with conclusion **success**. PR run #730 also passed before merge. The local acceptance and focused tests below ran against the same source tree before squash; no source changes followed the test run.
+
+| Check | Command / environment | Result |
+|---|---|---|
+| Post-merge GitHub CI | Ubuntu, Windows, and dashboard jobs; run #731 | **PASS** on merged `main` SHA `0839abf`. |
+| Ruff | `ruff check --select E4,E7,E9,F,I src tests tools` | **PASS** — all checks passed. |
+| Full Python suite + coverage | Windows 11, Python 3.13.1; pytest-cov with statement and branch coverage | **171 passed, 2 skipped, 0 failed**; 79.46% statements (1,899/2,390), 68.29% branches (519/760). POSIX permission-mode skips are not Windows ACL evidence. |
+| Focused unit-layer suites | Analysis / Capture / Storage / Presentation commands in [Unit Test Report](unit/UNIT_TEST_REPORT.md) | **45 + 42 + 25 + 22 = 134 passed**. These overlap with the full suite. |
+| Backend system-flow subset | Session integration, API, CLI, capture-control/runner, agent | **34 passed** in 3.28 seconds; overlaps with the full suite. |
+| Dashboard checks | `npm run typecheck`, `npm run build`, `npm run test:e2e -- --workers=1` | **PASS** — type-check/build succeeded; **13 browser tests passed**. Browser API responses are controlled and do not provide radio-capture evidence. |
+| Real-interface acceptance | Windows 11, Npcap, connected Wi-Fi adapter | **PASS for this adapter/run** — 175 actual packets seen, 175 stored, 0 ignored; clean stop; five nonzero rate samples; session query returned 175; CSV/PDF each HTTP 200. No generated or injected traffic was used. |
+| Local and hosted smoke checks | Local API/dashboard and Vercel production URL | **PASS** — returned HTTP 200; production HTML included updated privacy guidance. |
+
+Coverage hotspots and exact denominators are in [Code and Branch Coverage Report](CODE_AND_BRANCH_COVERAGE_REPORT.md). Detailed SRS disposition is in [Acceptance Test Report](ACCEPTANCE_TEST_REPORT.md), and the six required submission documents are indexed in [Submission Reports](../../Submission_Reports/README.md).
+
+**Still unverified:** Wi-Fi monitor mode, live BLE scanning (not implemented in the current Windows sensor), Windows ACL behavior, Raspberry Pi throughput/drop counters, simultaneous physical adapters, and a human usability study. Do not infer those from CI, mocked browser tests, or PCAP fixtures. The hosted site serves the dashboard only; capture and storage remain local.

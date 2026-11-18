@@ -4,7 +4,7 @@ The Capture Layer implements SRS REQ-1 and REQ-2 and maps to STP TC-CAP-01 and T
 
 - `PcapFileCapturer`: local classic-PCAP replay using a standard-library reader. It supports microsecond/nanosecond timestamps and both byte orders. PCAPNG is not supported.
 - `ScapyCapturer`: passive live capture on one selected interface using Scapy's asynchronous sniffer. The interface and driver must already support the requested link-layer mode; the tool does not enable Wi-Fi monitor mode or install/configure a capture driver.
-- `ConcurrentCapturer`: starts two or more independent capturers concurrently and forwards packets through the same callback. It shares cancellation and an optional aggregate packet count and preserves interface/backend/link-type metadata. File replay can be paired with other local PCAP replay sources for an unprivileged demonstration.
+- `ConcurrentCapturer`: starts two or more independent capturers concurrently and forwards packets through the same callback. It shares cancellation and an optional aggregate packet count and preserves interface/backend/link-type metadata. PCAP replay is available for an operator-selected local file and for automated regression tests; generated fixtures are not presented as live traffic in the product/demo.
 
 ## Supported packet context
 

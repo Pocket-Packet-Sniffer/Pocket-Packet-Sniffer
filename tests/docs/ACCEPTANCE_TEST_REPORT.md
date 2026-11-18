@@ -4,6 +4,8 @@
 
 **Run date:** 2026-11-18. Automated results below were run on Windows 11, Python 3.13.1, Node 22, and Chromium. The live-capture check used the user's connected Wi-Fi adapter through the local sensor and Npcap. Capture files and the SQLite index were kept in an isolated local application-data folder; no capture files or packet addresses are included in this report.
 
+**Current merged source:** `main` commit `0839abf9d102d0b4c1da4f0f58a205ef6d9a4525`; post-merge GitHub Actions [run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) completed successfully. The live capture evidence predates the merge and is dated above; CI run #731 verifies the merged software tree.
+
 ## Acceptance disposition
 
 The core sniffer workflow is implemented and passed a real local Windows Wi-Fi capture, storage, query, and report-export check. **Full SRS acceptance is not complete:** live BLE scanning is not included in the Windows sensor, Wi-Fi monitor mode has not been verified on a monitor-capable adapter, and target-specific performance/security checks remain open. Do not present those capabilities as validated.
@@ -38,6 +40,7 @@ The core sniffer workflow is implemented and passed a real local Windows Wi-Fi c
 | Wi-Fi monitor mode | **NOT RUN** | Requires a compatible adapter and driver in monitor mode. The dashboard does not change radio mode. |
 | BLE live scanning | **NOT IMPLEMENTED in current Windows sensor** | BLE metadata decoding from supported PCAP link types is available; live BLE radio/HCI acquisition is not shipped or validated. |
 | Production CI/CD | **CI configured; CD is Vercel Git integration** | GitHub Actions runs Python lint/tests on Linux and Windows, coverage, and dashboard build/browser tests. Vercel handles preview and production deployments separately; it does not host the local sensor or captures. Deployment/required-check settings must be verified from current GitHub/Vercel status before claiming merge protection. |
+| Merged release status | **PASS** | PR #60 merged as `0839abf`; post-merge CI [run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) succeeded. Production returned HTTP 200 and served the updated dashboard/privacy text. Branch-protection enforcement remains unverified. |
 
 ## Commands and results
 

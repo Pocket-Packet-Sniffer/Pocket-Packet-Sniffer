@@ -1,72 +1,39 @@
-# Analysis Layer - Unit Testing
+# Analysis Layer Unit Test Report
 
-## 1. Objective
+**Evidence revision:** source merged to `main` as `0839abf`
+**Focused result:** **45 passed, 0 failed**
+**CI:** [run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) passed on the merged source.
 
-Unit testing was performed to verify the individual components of the Analysis Layer of the Pocket Packet Sniffer project.
+## Objective
 
-The testing focuses on packet parsing, protocol classification, analyzer pipeline, traffic statistics, and suspicious activity detection.
+Check that supported packet inputs become consistent metadata and that pipeline, statistics, and alert components behave correctly for valid, invalid, and incomplete records.
 
-## 2. Test Files
+## Test modules and cases
 
-### 2.1 Packet Parser
+| Test module | Test focus |
+|---|---|
+| `tests/test_analysis_layer.py` | Protocol and header parsing for supported packet types, address/port/size/timestamp extraction, protocol classification, and malformed/unsupported input behavior |
+| `tests/test_analysis_parser_edge_cases.py` | IPv6 TCP/UDP, ICMPv6, generic Ethernet frames, metadata preservation, unknown link types, and empty packet bytes |
+| `tests/test_analysis_pipeline.py` | Analyzer ordering/selection, fallback behavior, declined packets, and invalid analyzer configuration |
+| `tests/test_analysis_statistics.py` | Packet/byte totals, rate windows, protocol distribution, top talkers, and invalid windows |
+| `tests/test_analysis_alerts.py` | ARP conflict and allowlist indicators, missing metadata, alert publishing, observer errors, subscriptions, and allowlist validation |
 
-File: `tests/test_analysis_layer.py`
+Some parser inputs describe Wi-Fi/BLE link-layer records supplied as test/PCAP data. This verifies parser behavior only; it does not show the sensor can scan Wi-Fi monitor mode or BLE radios.
 
-Tests TCP, UDP, ARP, ICMP, DNS, Wi-Fi beacon, BLE advertisement, unsupported link types, and malformed packets.
+## Execution
 
-Result: 9 tests passed.
+Run from the repository root on Windows:
 
-### 2.2 Parser Edge Cases
+```powershell
+python -m pytest -q tests/test_analysis_layer.py tests/test_analysis_parser_edge_cases.py tests/test_analysis_pipeline.py tests/test_analysis_statistics.py tests/test_analysis_alerts.py
+```
 
-File: `tests/test_analysis_parser_edge_cases.py`
+**Observed:** 45 passed in 1.68 seconds; 0 failed. This is a selected unit-group run, overlapping with the full suite (171 passed, 2 skipped); do not add the counts together.
 
-Tests IPv6 protocols, ICMPv6, generic Ethernet frames, capture metadata preservation, unknown link types, and empty packet validation.
+## Evidence
 
-Result: 8 tests passed.
+Supporting historical screenshots are stored in `tests/docs/evidence/unit/analysis/`: parser, edge-case, pipeline, statistics, and alert runs. These images are supplementary; the command result and CI are current pass/fail evidence.
 
-### 2.3 Analysis Pipeline
+## Interpretation and limits
 
-File: `tests/test_analysis_pipeline.py`
-
-Tests analyzer selection, fallback to the default parser, handling of declined packets, and rejection of an empty analyzer sequence.
-
-Result: 4 tests passed.
-
-### 2.4 Traffic Statistics
-
-File: `tests/test_analysis_statistics.py`
-
-Tests packet rate calculation, lifetime packet and byte counts, protocol distribution, top talkers, and invalid time-window values.
-
-Result: 9 tests passed.
-
-### 2.5 Suspicious Activity and Alerts
-
-File: `tests/test_analysis_alerts.py`
-
-Tests ARP address conflicts, unrecognized devices, unrecognized access points, missing metadata, alert publishing, observer failures, subscriptions, and allowlist validation.
-
-Result: 12 tests passed.
-
-## 3. Execution Summary
-
-All five selected test files were executed individually using pytest.
-
-- Total test executions: 42
-- Passed: 42
-- Failed: 0
-- Python version: 3.13.15
-
-## 4. Screenshots
-
-Execution evidence is available under `tests/docs/evidence/unit/analysis/`.
-
-1. `01_packet_parser.png`
-2. `02_parser_edge_cases.png`
-3. `03_analysis_pipeline.png`
-4. `04_analysis_statistics.png`
-5. `05_analysis_alerts.png`
-
-## 5. Conclusion
-
-All 42 selected Analysis Layer unit-test executions passed successfully. The results demonstrate the tested functionality of packet parsing, protocol classification, analysis pipeline, traffic statistics, and suspicious activity detection.
+The result verifies the exercised parser and analyzer scenarios. It does not prove protocol completeness or detection of every malicious packet. Alert rules are heuristics, not proof of compromise or safety. See the [coverage report](../CODE_AND_BRANCH_COVERAGE_REPORT.md) for untested Python statements/branches and the [acceptance report](../ACCEPTANCE_TEST_REPORT.md) for hardware limits.
