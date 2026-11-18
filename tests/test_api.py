@@ -12,6 +12,7 @@ from scapy.layers.l2 import Ether
 
 from pocket_packet_sniffer import api
 from pocket_packet_sniffer.storage import PacketRecord, PcapSqliteRepository
+from pocket_packet_sniffer.version import __version__
 
 
 @pytest.fixture
@@ -297,7 +298,7 @@ def test_live_statistics_and_dashboard_cors_boundary(client):
     blocked = client.get("/api/health", headers={"Origin": "https://untrusted.example"})
 
     assert allowed.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
-    assert allowed.json()["version"] == "0.2.2"
+    assert allowed.json()["version"] == __version__ == "1.0.0"
     assert "access-control-allow-origin" not in blocked.headers
 
 

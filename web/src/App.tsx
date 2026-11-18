@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import dashboardPackage from "../package.json";
 import { BrandLogo } from "./components/BrandLogo";
 import { NetworkMap } from "./components/NetworkMap";
 
@@ -109,8 +110,8 @@ type Alert = {
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-const CURRENT_AGENT_VERSION = "0.2.2";
-const SUPPORTED_AGENT_VERSIONS = new Set(["0.2.1", CURRENT_AGENT_VERSION]);
+const CURRENT_AGENT_VERSION = dashboardPackage.version;
+const SUPPORTED_AGENT_VERSIONS = new Set(["0.2.1", "0.2.2", CURRENT_AGENT_VERSION]);
 type LoopbackPermissionState = "prompt" | "granted" | "denied";
 function localFetch(input: RequestInfo | URL, init?: RequestInit) {
   const target = new URL(typeof input === "string" || input instanceof URL ? input.toString() : input.url, window.location.href);
@@ -752,7 +753,7 @@ export default function App() {
                 <Metric title="Packets per second" value={statistics.packets_per_sec.toFixed(1)} sub="Recent live capture speed" icon={<Activity size={18} />} color="purple" explanation="How many packets the sensor has understood in the last few seconds." />
                 <Metric title="Packets in this session" value={statistics.total_packets.toLocaleString()} sub="Seen by the local sensor" icon={<Network size={18} />} color="blue" explanation="A packet is one small message sent between devices." />
                 <Metric title="Saved traffic" value={`${(overview.total_bytes / 1048576).toFixed(2)} MB`} sub="Stored on this computer" icon={<HardDrive size={18} />} color="teal" explanation="Original packet records stay in your local capture folder." />
-                <Metric title="Signals to review" value={alerts.length.toLocaleString()} sub="Rule-based indicators" icon={<AlertTriangle size={18} />} color="amber" explanation="These are prompts to investigate, not proof of an attack." />
+                <Metric title="Activity to review" value={alerts.length.toLocaleString()} sub="Rule matches in captured metadata" icon={<AlertTriangle size={18} />} color="amber" explanation="Review these rule matches; they are prompts to investigate, not proof of an attack." />
               </section>
 
               <NetworkMap packets={rows} isCapturing={isCapturing && statistics.packets_per_sec > 0} onInspectAddress={(address) => {

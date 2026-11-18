@@ -2,6 +2,8 @@
 
 Pocket Packet Sniffer is a Software Engineering project for authorized, passive network traffic monitoring. It captures packets from supported interfaces, extracts metadata, stores captures, and presents traffic statistics and query/report functions.
 
+**Current stable version: 1.0.0.** This marks the first stable release of the documented local capture and analysis workflow. See the [1.0.0 release notes](Docs/RELEASE_NOTES.md) for capabilities, setup, verification, and hardware limitations.
+
 ## Architecture
 
 The design follows the four-layer architecture defined by the SRS and SASD:

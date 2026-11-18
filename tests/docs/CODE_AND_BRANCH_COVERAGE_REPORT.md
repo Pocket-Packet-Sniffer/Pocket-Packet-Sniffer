@@ -1,22 +1,22 @@
 # Code and Branch Coverage Report
 
 **Project:** Pocket Packet Sniffer
-**Measurement date:** 2026-11-18
+**Measurement date:** 2026-11-19
 **Source revision:** source tree merged to `main` as `0839abf9d102d0b4c1da4f0f58a205ef6d9a4525`
 **Environment:** Windows 11, Python 3.13.1, pytest-cov / coverage.py
 **CI:** [main run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) succeeded. CI runs the coverage-enabled Python suite on Ubuntu and Windows.
 
 ## Supplemental coverage run — 2026-11-19
 
-After adding risk-focused tests for platform-specific agent startup, the abstract repository contract, live-capture configuration/startup/callback/radio-link handling, and API input/error boundaries, the local Windows suite reported **193 passed, 2 skipped, 0 failed**. This run is against the local working tree based on `main`; these changes have not been committed or run in GitHub CI yet.
+After adding risk-focused tests for platform-specific agent startup, the abstract repository contract, live-capture configuration/startup/callback/radio-link handling, API input/error boundaries, and the coverage summary, the local Windows suite reported **196 passed, 2 skipped, 0 failed**. This run covers the 1.0.0 release-candidate source at commit `b8059f2`; GitHub CI for that candidate is pending.
 
 | Metric | Covered | Measured | Result |
 |---|---:|---:|---:|
-| Python statements | 2,006 | 2,390 | **83.93%** |
-| Python branch outcomes | 567 | 760 | **74.61%** |
-| Partially covered branch points | 167 | — | At least one outcome ran and at least one did not |
-| Uncovered branch outcomes | 193 | 760 | **25.39%** |
-| Test outcome | 195 passed, 2 skipped | 197 collected | 0 failed |
+| Python statements | 2,008 | 2,392 | **83.95%** |
+| Python branch outcomes | 568 | 760 | **74.74%** |
+| Partially covered branch points | 166 | — | At least one outcome ran and at least one did not |
+| Uncovered branch outcomes | 192 | 760 | **25.26%** |
+| Test outcome | 196 passed, 2 skipped | 198 collected | 0 failed |
 
 The two skipped tests are POSIX permission-mode tests, which do not establish Windows ACL behavior. The selected low-coverage modules changed as follows:
 
@@ -24,10 +24,11 @@ The two skipped tests are POSIX permission-mode tests, which do not establish Wi
 |---|---:|---:|
 | `agent.py` | 96.88% (31/32) | 83.33% (5/6) |
 | `storage/repository.py` | 100% (23/23) | 100% (4/4) |
-| `api.py` | 79.14% (296/374) | 67.65% (69/102) |
+| `api.py` | 79.20% (297/375) | 67.65% (69/102) |
 | `capture/scapy_live.py` | 85.88% (152/177) | 73.08% (57/78) |
-| `presentation/capture_control.py` | 75.15% (124/165) | 58.00% (29/50) |
+| `presentation/capture_control.py` | 75.15% (124/165) | 60.00% (30/50) |
 | `storage/pcap_sqlite_repository.py` | 73.89% (300/406) | 72.88% (86/118) |
+| `version.py` | 100% (1/1) | N/A (0 branches) |
 
 Coverage improved, but uncovered API, capture-control, and storage error paths remain. This run is evidence of executed tests, not a claim that every code path or hardware behavior is correct.
 
