@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pocket-packet-sniffer"
-version = "0.2.2"
+dynamic = ["version"]
 description = "Pocket Packet Sniffer passive capture, packet analysis, storage and CLI"
 requires-python = ">=3.10"
 dependencies = ["scapy>=2.5", "fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
@@ -18,6 +18,9 @@ pocket-packet-sniffer-agent = "pocket_packet_sniffer.agent:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pocket_packet_sniffer.version.__version__"}
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers"

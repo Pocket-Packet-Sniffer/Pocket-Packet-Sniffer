@@ -45,6 +45,7 @@ from pocket_packet_sniffer.capture import (
 from pocket_packet_sniffer.presentation.report_export import export_session_report_csv
 from pocket_packet_sniffer.presentation.report_pdf import export_session_report_pdf
 from pocket_packet_sniffer.storage import PcapSqliteRepository
+from pocket_packet_sniffer.version import __version__
 
 STORAGE_DIR = Path(os.getenv("PPS_STORAGE_DIR", "captures")).expanduser()
 _default_origins = "http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173,http://localhost:4173"
@@ -53,7 +54,7 @@ _allowed_origins = list(dict.fromkeys(
     for origin in f"{_default_origins},{os.getenv('PPS_ALLOWED_ORIGINS', '')}".split(",")
     if origin.strip()
 ))
-app = FastAPI(title="Pocket Packet Sniffer API", version="0.2.2")
+app = FastAPI(title="Pocket Packet Sniffer API", version=__version__)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,

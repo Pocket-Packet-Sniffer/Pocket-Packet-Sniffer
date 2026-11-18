@@ -59,7 +59,7 @@ The coverage run emitted non-fatal `ResourceWarning` messages from coverage.py's
 
 ### Supplemental automated coverage run — 2026-11-19
 
-The local working tree added risk-focused tests and now reports **195 passed, 2 skipped, 0 failed**, **83.93% statement coverage** (2,006/2,390), and **74.61% branch coverage** (567/760). Ruff passed for `src`, `tests`, and `tools`. These results are local and have not yet been confirmed by GitHub CI. The skipped POSIX permission tests do not verify Windows ACLs. See the [detailed coverage report](CODE_AND_BRANCH_COVERAGE_REPORT.md).
+The 1.0.0 release-candidate source includes the risk-focused tests and now reports **196 passed, 2 skipped, 0 failed**, **83.95% statement coverage** (2,008/2,392), and **74.74% branch coverage** (568/760). Ruff passed for `src`, `tests`, and `tools`. These results are local and have not yet been confirmed by GitHub CI. The skipped POSIX permission tests do not verify Windows ACLs. See the [detailed coverage report](CODE_AND_BRANCH_COVERAGE_REPORT.md).
 
 - Validate Wi-Fi monitor mode only with the intended compatible adapter/driver.
 - Add or explicitly exclude live BLE capture from the accepted product scope; current Windows agent does not scan BLE radios.

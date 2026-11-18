@@ -51,7 +51,7 @@ async function mockLocalAgent(page: Page, options: MockOptions = {}) {
     healthSequence = [],
     overviewDelayMs = 0,
     statisticsPackets = 1,
-    agentVersion = "0.2.2",
+    agentVersion = "1.0.0",
   } = options;
 
   await page.addInitScript((permissionState) => {
@@ -189,6 +189,8 @@ test("overview explains real activity with rate and an address diagram", async (
 
   await expect(page.getByRole("heading", { name: "Your network, at a glance." })).toBeVisible();
   await expect(page.getByText("Packets per second")).toBeVisible();
+  await expect(page.getByText("Activity to review")).toBeVisible();
+  await expect(page.getByText("Rule matches in captured metadata")).toBeVisible();
   await expect(page.getByText("5.0", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "How your traffic travels" })).toBeVisible();
   await expect(page.getByText("192.0.2.10").first()).toBeVisible();

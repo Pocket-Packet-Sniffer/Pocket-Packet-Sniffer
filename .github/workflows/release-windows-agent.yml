@@ -75,8 +75,9 @@ jobs:
           Compress-Archive -Path dist/pocket-packet-sniffer-agent.exe, dist/README.txt `
             -DestinationPath dist/pocket-packet-sniffer-agent-windows.zip -Force
       - name: Publish Windows agent release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: Pocket Packet Sniffer Windows Agent ${{ github.ref_name }}
+          body_path: Docs/RELEASE_NOTES.md
           generate_release_notes: true
           files: dist/pocket-packet-sniffer-agent-windows.zip
