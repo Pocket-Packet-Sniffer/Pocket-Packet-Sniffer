@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import struct
+import types
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -298,3 +299,96 @@ def test_live_statistics_and_dashboard_cors_boundary(client):
     assert allowed.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
     assert allowed.json()["version"] == "0.2.2"
     assert "access-control-allow-origin" not in blocked.headers
+
+
+@pytest.mark.parametrize(
+    ("payload", "status", "detail"),
+    [
+        ({"mode": "unknown"}, 422, "string should match pattern"),
+        ({"mode": "pcap"}, 422, "Choose a local classic PCAP file to replay"),
+        ({"mode": "interface", "interfaces": [""]}, 422, "Choose at least one valid network adapter"),
+    ],
+)
+def test_capture_start_rejects_invalid_requests(client, payload, status, detail):
+    response = client.post("/api/capture/start", json=payload)
+
+    assert response.status_code == status
+    assert detail.lower() in response.text.lower()
+
+
+def test_capture_start_rejects_missing_pcap_and_unavailable_adapter(client, tmp_path, monkeypatch):
+    missing = client.post(
+        "/api/capture/start",
+        json={"mode": "pcap", "pcap_path": str(tmp_path / "missing.pcap")},
+    )
+    assert missing.status_code == 400
+    assert "PCAP file not found" in missing.json()["detail"]
+
+    monkeypatch.setattr(api, "get_if_list", lambda: ["eth0"])
+    unavailable = client.post(
+        "/api/capture/start", json={"mode": "interface", "interface": "wlan9"}
+    )
+    assert unavailable.status_code == 422
+    assert "no longer available" in unavailable.json()["detail"]
+
+
+def test_interface_enumeration_failure_is_reported(client, monkeypatch):
+    monkeypatch.setattr(api, "get_if_list", lambda: (_ for _ in ()).throw(OSError("driver stopped")))
+
+    response = client.get("/api/interfaces")
+
+    assert response.status_code == 503
+    assert "driver stopped" in response.json()["detail"]
+
+
+def test_interface_inventory_normalizes_names_and_recommendations(client, monkeypatch):
+    monkeypatch.setattr(api, "get_if_list", lambda: ["eth0", "lo", "virtual-wan"])
+    monkeypatch.setattr(api, "get_windows_if_list", lambda: [])
+    monkeypatch.setattr(api.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(api, "get_windows_if_list", None)
+
+    response = client.get("/api/interfaces")
+
+    assert response.status_code == 200
+    adapters = response.json()["interfaces"]
+    assert adapters[0]["friendly_name"] == "eth0"
+    assert adapters[0]["capture_candidate"] is False
+    assert adapters[0]["recommended"] is False
+    assert adapters[1]["status"] == "Unknown"
+    assert adapters[2]["capture_candidate"] is False
+
+
+def test_interface_inventory_uses_windows_adapter_details(client, monkeypatch):
+    guid = "12345678-1234-1234-1234-123456789abc"
+    npf = rf"\\Device\\NPF_{{{guid}}}"
+    monkeypatch.setattr(api, "get_if_list", lambda: [npf])
+    monkeypatch.setattr(
+        api,
+        "get_windows_if_list",
+        lambda: [{"name": npf, "description": "Wi-Fi adapter", "ips": "192.0.2.5", "mac": "02:00:00:00:00:01"}],
+    )
+    monkeypatch.setattr(api.platform, "system", lambda: "Windows")
+    monkeypatch.setattr(
+        api.subprocess,
+        "run",
+        lambda *args, **kwargs: types.SimpleNamespace(
+            stdout=f'{{"Name":"Wi-Fi","InterfaceDescription":"Wireless Adapter","InterfaceGuid":"{{{guid}}}","Status":"Up","MacAddress":"02:00:00:00:00:02","IPs":["192.0.2.8"]}}'
+        ),
+    )
+
+    adapter = client.get("/api/interfaces").json()["interfaces"][0]
+
+    assert adapter["friendly_name"] == "Wi-Fi"
+    assert adapter["description"] == "Wireless Adapter"
+    assert adapter["capture_candidate"] is True
+    assert adapter["recommended"] is True
+    assert adapter["interface_guid"] == guid
+
+
+def test_report_and_alert_routes_validate_missing_data_and_bounds(client):
+    missing_report = client.get("/api/sessions/unknown/report")
+    assert missing_report.status_code == 404
+    assert "No saved capture session" in missing_report.json()["detail"]
+
+    invalid_limit = client.get("/api/alerts", params={"limit": 0})
+    assert invalid_limit.status_code == 422
