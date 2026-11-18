@@ -6,6 +6,31 @@
 **Environment:** Windows 11, Python 3.13.1, pytest-cov / coverage.py
 **CI:** [main run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) succeeded. CI runs the coverage-enabled Python suite on Ubuntu and Windows.
 
+## Supplemental coverage run — 2026-11-19
+
+After adding risk-focused tests for platform-specific agent startup, the abstract repository contract, live-capture configuration/startup/callback/radio-link handling, and API input/error boundaries, the local Windows suite reported **193 passed, 2 skipped, 0 failed**. This run is against the local working tree based on `main`; these changes have not been committed or run in GitHub CI yet.
+
+| Metric | Covered | Measured | Result |
+|---|---:|---:|---:|
+| Python statements | 2,006 | 2,390 | **83.93%** |
+| Python branch outcomes | 567 | 760 | **74.61%** |
+| Partially covered branch points | 167 | — | At least one outcome ran and at least one did not |
+| Uncovered branch outcomes | 193 | 760 | **25.39%** |
+| Test outcome | 195 passed, 2 skipped | 197 collected | 0 failed |
+
+The two skipped tests are POSIX permission-mode tests, which do not establish Windows ACL behavior. The selected low-coverage modules changed as follows:
+
+| Module | Statements | Branches |
+|---|---:|---:|
+| `agent.py` | 96.88% (31/32) | 83.33% (5/6) |
+| `storage/repository.py` | 100% (23/23) | 100% (4/4) |
+| `api.py` | 79.14% (296/374) | 67.65% (69/102) |
+| `capture/scapy_live.py` | 85.88% (152/177) | 73.08% (57/78) |
+| `presentation/capture_control.py` | 75.15% (124/165) | 58.00% (29/50) |
+| `storage/pcap_sqlite_repository.py` | 73.89% (300/406) | 72.88% (86/118) |
+
+Coverage improved, but uncovered API, capture-control, and storage error paths remain. This run is evidence of executed tests, not a claim that every code path or hardware behavior is correct.
+
 ## Executive summary
 
 | Metric | Covered | Measured | Result |

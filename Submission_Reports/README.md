@@ -11,14 +11,14 @@ This index contains the six reports requested for the project submission. The th
 | 3 | Software Architecture and Design Specification (SASD) | [Pocket Packet Sniffer SASD (PDF)](../Docs/Pocket_Packet_Sniffer_SASD.pdf) | Approved architecture/design document; implementation and test boundaries are summarized in the [architecture overview](../README.md#architecture). |
 | 4 | Unit Test Report | [Unit Test Report](../tests/docs/unit/UNIT_TEST_REPORT.md) | 134 focused layer-group tests run: 45 analysis, 42 capture, 25 storage, 22 presentation; all passed. Full-suite totals are reported separately to avoid double counting. |
 | 5 | System Test Report | [System and Integration Test Report](../tests/docs/SYSTEM_TEST_REPORT.md) | Backend connected-flow tests, 13 browser tests, cross-platform CI, and an actual authorized Wi-Fi capture with 175/175 packets stored. Explicit hardware limits are included. |
-| 6 | Code and Branch Coverage Report | [Code and Branch Coverage Report](../tests/docs/CODE_AND_BRANCH_COVERAGE_REPORT.md) | 79.46% Python statement coverage and 68.29% branch coverage with denominators, lower-coverage modules, follow-up priorities, and limits. |
+| 6 | Code and Branch Coverage Report | [Code and Branch Coverage Report](../tests/docs/CODE_AND_BRANCH_COVERAGE_REPORT.md) | Latest local run: 83.93% Python statement coverage and 74.61% branch coverage; 195 passed, 2 skipped. The report includes module-level results, risks, and hardware limits. |
 
 ## Current release evidence
 
 - Merged source revision: `0839abf9d102d0b4c1da4f0f58a205ef6d9a4525` on `main`.
 - GitHub Actions [main run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089): success on the merged commit.
 - GitHub Actions [PR run #730](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44363778707): success for the reviewed source change before squash merge.
-- Windows suite: **171 passed, 2 skipped**; the skipped POSIX mode tests do not establish Windows ACL behavior.
+- Latest Windows suite: **195 passed, 2 skipped**; the skipped POSIX mode tests do not establish Windows ACL behavior. This supplemental run is local and not yet a CI result.
 - Dashboard: type-check, optimized build, and **13 Playwright tests passed**.
 - Actual authorized Windows Wi-Fi capture: **175 seen, 175 stored, 0 ignored**, clean stop; session query returned 175 records; CSV and PDF exports succeeded.
 - Production dashboard: HTTP 200. Capture/API and packet storage remain local to the operator's computer.

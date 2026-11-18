@@ -262,6 +262,90 @@ def test_missing_scapy_dependency_is_clear(monkeypatch):
         ScapyCapturer("eth-test").capture(lambda _record: None, Event())
 
 
+@pytest.mark.parametrize(
+    ("interface", "bpf_filter", "startup_timeout", "poll_interval"),
+    [
+        ("", None, 3.0, 0.05),
+        ("eth-test", 123, 3.0, 0.05),
+        ("eth-test", None, 0, 0.05),
+        ("eth-test", None, 3.0, float("nan")),
+    ],
+)
+def test_scapy_constructor_rejects_invalid_configuration(interface, bpf_filter, startup_timeout, poll_interval):
+    with pytest.raises(ValueError):
+        ScapyCapturer(interface, bpf_filter, startup_timeout=startup_timeout, poll_interval=poll_interval)
+
+
+def test_scapy_capture_returns_immediately_when_already_stopped(monkeypatch):
+    install_fake_scapy(monkeypatch)
+    stop = Event()
+    stop.set()
+
+    ScapyCapturer("eth-test").capture(lambda _record: pytest.fail("must not receive packets"), stop)
+
+
+def test_scapy_interface_enumeration_failure_is_reported(monkeypatch):
+    install_fake_scapy(monkeypatch)
+    import sys
+
+    fake_all = sys.modules["scapy.all"]
+    fake_all.get_if_list = lambda: (_ for _ in ()).throw(OSError("driver unavailable"))
+
+    with pytest.raises(CaptureStartupError, match="Could not enumerate network interfaces"):
+        ScapyCapturer("eth-test").capture(lambda _record: None, Event())
+
+
+def test_scapy_startup_timeout_is_reported(monkeypatch):
+    class NeverStartedSniffer(FakeSniffer):
+        def start(self):
+            self.running = True
+
+    install_fake_scapy(monkeypatch, sniffer_factory=NeverStartedSniffer)
+
+    with pytest.raises(CaptureStartupError, match="did not start within"):
+        ScapyCapturer("eth-test", startup_timeout=0.01, poll_interval=0.001).capture(
+            lambda _record: None, Event()
+        )
+
+
+def test_scapy_callback_failure_is_reported_and_sensitive_text_is_hidden(monkeypatch):
+    install_fake_scapy(monkeypatch)
+
+    def broken(_record):
+        raise RuntimeError("private storage path")
+
+    with pytest.raises(CaptureCallbackError, match="Analysis callback failed") as error:
+        ScapyCapturer("eth-test").capture(broken, Event())
+    assert "private storage path" not in str(error.value)
+    assert isinstance(error.value.__cause__, RuntimeError)
+
+
+@pytest.mark.parametrize(
+    ("packet_type", "expected_link_type"),
+    [(type("BTLEPacket", (), {}), 251), (type("BTLE_RF", (), {}), 256), (type("Dot11Packet", (), {}), 105)],
+)
+def test_scapy_maps_supported_radio_packet_types(monkeypatch, packet_type, expected_link_type):
+    RadioPacket = type(
+        packet_type.__name__,
+        (packet_type,),
+        {"time": None, "sniffed_on": None, "__bytes__": lambda _self: b"radio-frame"},
+    )
+
+    class RadioSniffer(FakeSniffer):
+        def start(self):
+            self.running = True
+            self.kwargs["prn"](RadioPacket())
+            self.kwargs["started_callback"]()
+
+    install_fake_scapy(monkeypatch, sniffer_factory=RadioSniffer, layer_map={})
+    records = []
+    ScapyCapturer("eth-test").capture(records.append, Event(), count=1)
+
+    assert records[0].link_type == expected_link_type
+    assert records[0].interface == "eth-test"
+    assert records[0].timestamp.tzinfo is not None
+
+
 def test_keyboard_interrupt_stops_background_live_sniffer(monkeypatch):
     class InterruptingEvent(Event):
         def wait(self, timeout=None):
