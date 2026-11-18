@@ -46,18 +46,23 @@ jobs:
         if: runner.os == 'Linux'
         env:
           PYTHONPATH: src
-        run: python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
+        run: python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=json:coverage.json --cov-report=html:htmlcov
       - name: Run full test suite (Windows)
         if: runner.os == 'Windows'
         env:
           PYTHONPATH: src
-        run: python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
+        run: python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=json:coverage.json --cov-report=html:htmlcov
+      - name: Show Python coverage in the run summary
+        if: always()
+        run: python tools/publish_coverage_summary.py
       - name: Publish Python coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: python-coverage-${{ matrix.os }}
-          path: coverage.xml
+          name: python-coverage-details-${{ matrix.os }}
+          path: |
+            coverage.xml
+            htmlcov/
           if-no-files-found: ignore
           retention-days: 14
 
