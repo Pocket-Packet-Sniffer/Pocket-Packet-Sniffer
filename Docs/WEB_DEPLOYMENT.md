@@ -2,7 +2,7 @@
 
 ## Hosting choice
 
-The dashboard is deployed through Vercel's GitHub integration. Vercel creates preview deployments for pull requests and production deployments for the configured production branch. GitHub Actions CI runs Python lint/tests with statement and branch coverage on Ubuntu and Windows, plus frontend type-check/build/browser tests. Production availability and the merged UI were verified on 2026-11-17. Branch protection could not be inspected with the connected GitHub integration, so required-check merge gating is not asserted here.
+The dashboard is deployed through Vercel's GitHub integration. Vercel creates preview deployments for pull requests and production deployments for the configured production branch. GitHub Actions CI runs Python lint/tests with statement and branch coverage on Ubuntu and Windows, plus frontend type-check/build/browser tests. The latest main CI passed on 2026-11-18 (run [44352549033](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44352549033)); the production URL returned HTTP 200. The final local candidate in `release/submission-readiness` has not yet been merged or deployed. Branch protection could not be inspected with the connected GitHub integration, so required-check merge gating is not asserted here.
 
 Vercel Hobby is free for personal, non-commercial use. If the project is used commercially, choose a plan/provider that permits that use before production deployment. Vercel's GitHub integration is connected to this repository and its production deployment serves the current dashboard.
 

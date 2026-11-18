@@ -1,6 +1,6 @@
 # Pocket Packet Sniffer — Sprint Plan and Closeout
 
-**Current closeout snapshot:** 2026-11-17. Sprint 1 and Sprint 3 coordinator issues are closed in GitHub; no open pull requests or active sprint tracker remain. Issues #28 (target-hardware acceptance) and #16 (admin-only repository controls) remain open with explicit limits. Sprint 1's evidence-based closeout is documented in `Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md`. This record distinguishes automated test evidence from manual hardware checks and distinguishes the maintainer's asynchronous review from a synchronous team meeting (none is recorded in the repository).
+**Current closeout snapshot:** 2026-11-18. Sprint 1 and Sprint 3 coordinator issues are closed in GitHub. Issue #28 is open for the remaining target-hardware acceptance items; issue #16 tracks admin-only repository controls. The release-readiness candidate is being reviewed separately. Sprint 1's evidence-based closeout is documented in `Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md`. This record distinguishes automated test evidence from manual hardware checks and distinguishes the maintainer's asynchronous review from a synchronous team meeting (none is recorded in the repository).
 
 ## Sprint 1 — Foundation and core packet pipeline
 
@@ -83,7 +83,7 @@ Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket
 | Final backend acceptance gate | Continue [issue #28](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/28). Run authorized passive live-capture start/stop on the agreed target OS/interface and record permission/startup behavior. | High; required for full acceptance |
 | Platform/security verification | Verify Windows ACL behavior only if Windows is a supported target. Validate Wi-Fi monitor mode and BLE capture only if those live capabilities will be claimed. Record PASS/FAIL/NOT RUN and exact environment; do not infer hardware support from parser fixtures. | Conditional on supported platform claims |
 | Performance verification | If Raspberry Pi performance/no-drop is in scope, run `tools/benchmark_pipeline.py` on the target and separately measure live offered/received packets and available driver/kernel drop counters. Synthetic replay throughput is not proof of zero live packet loss. | Conditional on target/performance claim |
-| End-to-end demo | Follow [Docs/DEMO_SCRIPT.md](DEMO_SCRIPT.md) from a clean setup: generate synthetic PCAP, replay/capture, query protocol/address, inspect statistics/alerts, export CSV and PDF, and exercise concurrent replay. Keep all traffic local and synthetic unless live capture is explicitly authorized. | High |
+| End-to-end demo | Follow [Docs/DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the presentation: passively capture actual traffic on an authorized adapter, inspect packet metadata/statistics/alerts, then export CSV and PDF. Generated PCAP fixtures are restricted to automated tests and local regression checks, never presented as live traffic. | High |
 | Final evidence/documentation closeout | Update [Docs/REQUIREMENT_TRACEABILITY.md](REQUIREMENT_TRACEABILITY.md), [tests/docs/TEST_EXECUTION_REPORT.md](../tests/docs/TEST_EXECUTION_REPORT.md), and the implementation-gap audit with actual commands, results, environment, linked CI/PR evidence, and remaining limitations. Review README/setup, safe-use guidance, local-only data handling, and SRS/SASD/STP consistency. | High; after test/demo results |
 | Optional web dashboard | [Issue #27](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/issues/27) remains optional/stretch. Only continue after backend acceptance and if the team/instructor requires it. It must reuse existing layers, require explicit capture initiation, bind locally, and never upload packet data externally. | Stretch; not a blocker for the CLI SRS scope |
 
@@ -94,20 +94,27 @@ Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket
 - **#27:** optional dashboard; do not let it block core CLI acceptance unless explicitly required.
 - **#39:** sprint coordinator issue; close only when all required Sprint 3 acceptance criteria have evidence.
 
-### Current closeout — 2026-11-17
+### Historical closeout — 2026-11-17
 
-- Sprint coordinator issue #39 is closed. Completed dashboard work (#27) and dashboard packet-refresh work (#57) are merged to `main`; there are no open pull requests.
-- Issue #28 remains open only for actual authorized live-interface start/stop, conditional Wi-Fi/BLE hardware checks, target-device performance/drop measurements, and Windows ACL evidence where those claims are in scope. These checks need the actual supported hardware/environment and have not been fabricated or inferred from fixtures.
+- Sprint coordinator issue #39 is closed. Completed dashboard work (#27) and dashboard packet-refresh work (#57) are merged to `main`.
+- Issue #28 was reopened on 2026-11-18 after its remaining hardware acceptance checks were found incomplete. Actual authorized Windows Wi-Fi start/stop was verified (175 seen/stored, 0 ignored); monitor mode, live BLE, multi-adapter hardware, Pi throughput/drop rates, and Windows ACL behavior remain unverified as documented in the acceptance report.
 - No active sprint issue is left to close. Keep the completed sprint trackers closed; #28 remains for target acceptance and #16 remains for GitHub admin controls that this integration cannot inspect or change.
-- The current CI/CD workflow runs Python lint/tests on Ubuntu and Windows, dashboard type/build/browser checks, and tagged Windows agent packaging. Vercel Git integration handles preview and production dashboard deployment. Latest main CI and `agent-v0.2.2` packaging succeeded; current evidence is indexed in `tests/docs/TEST_EXECUTION_REPORT.md`.
+- The current CI/CD workflow runs Python lint/tests on Ubuntu and Windows, dashboard type/build/browser checks, and tagged Windows agent packaging. Vercel Git integration handles preview and production dashboard deployment. Main CI run [44352549033](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44352549033) passed; current evidence is indexed in `tests/docs/TEST_EXECUTION_REPORT.md`.
 
 ### Definition of done
 
 1. Required automated checks pass on the final candidate commit.
-2. The synthetic end-to-end demo is reproducible and demonstrates query, statistics/alerts, CSV/PDF export, and concurrent replay.
+2. Generated PCAP fixtures remain confined to automated verification; the presentation flow uses authorized real traffic and never labels fixtures as live.
 3. Manual checks are recorded as PASS/FAIL/NOT RUN with OS, interface/adapter, driver, commands and results; no results are fabricated.
 4. SRS REQ-1 through REQ-8 have implementation and test evidence; REQ-9/REQ-10 stretch status and hardware limits are explicit.
 5. Wi-Fi, BLE, Windows, and Raspberry Pi claims do not exceed recorded verification.
 6. Final traceability, test execution report, README and demo instructions agree with the implementation.
 
-**Current known gap:** the repository documentation reports the backend and synthetic demo path merged, with main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passing Ruff and 106 tests. Actual live-interface/platform checks remain unverified. Re-check the latest CI and PR state at execution time rather than relying on this historical snapshot.
+**Historical snapshot (2026-10):** the repository documentation at that time reported the backend and fixture walkthrough merged, with main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passing Ruff and 106 tests. This is superseded by the 2026-11-18 release-readiness evidence below.
+
+### Final verification addendum — 2026-11-18
+
+- A real local Windows Wi-Fi acceptance capture stored 175 of 175 observed packets and stopped with exit code 0; live-rate samples, session query, and CSV/PDF export are recorded in `tests/docs/ACCEPTANCE_TEST_REPORT.md`.
+- Current local verification passed Ruff, 171 Python tests (2 platform-conditional skips), dashboard type-check/build, and 13 browser tests. The release-readiness candidate changes are not merged or deployed yet.
+- GitHub main CI run [44352549033](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44352549033) succeeded for main commit `6a682b6`. The production Vercel site returned HTTP 200; it still serves the main build until the candidate is merged/deployed.
+- Physical Wi-Fi monitor mode, live BLE scanning (not included in the current Windows agent), Windows ACLs, Raspberry Pi throughput/drop counts, and concurrent physical adapters remain unverified. Keep the SRS acceptance gate open until these are tested or the project scope is formally narrowed.

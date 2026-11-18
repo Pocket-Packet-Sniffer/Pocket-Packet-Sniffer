@@ -39,9 +39,9 @@ The project may host the dashboard over HTTPS. When the local sensor is unavaila
 ## 3. Proposed non-functional and security requirements
 
 - **NFR-11 — Local capture boundary:** the capture API shall bind to loopback by default and shall not be deployed as a public cloud capture service.
-- **NFR-12 — Data locality:** captured packet bytes, metadata indexes, and generated reports shall remain local unless the operator explicitly exports them. The hosted demonstration shall contain synthetic records only.
+- **NFR-12 — Data locality:** captured packet bytes, metadata indexes, and generated reports shall remain local unless the operator explicitly exports them. The hosted dashboard shall contain no packet records; it shows real records only after an explicit connection to the operator's local sensor. Generated fixtures are limited to automated tests and are not presented as live or demo traffic.
 - **NFR-13 — Web/API boundary:** the local dashboard/API connection shall use an explicit origin policy and typed request validation. File replay requests shall be restricted to local files selected by the operator; the API shall not be exposed to untrusted remote origins.
-- **NFR-14 — Delivery:** pull requests shall run backend lint/tests and frontend install/type-check/build checks. Production static hosting shall deploy only from the protected `main` branch after required checks succeed. Any preview deployments must use synthetic demo data and must not receive production capture data or credentials.
+- **NFR-14 — Delivery:** pull requests shall run backend lint/tests and frontend install/type-check/build checks. Production static hosting shall deploy only from the protected `main` branch after required checks succeed. Preview deployments shall not contain packet records or production credentials; the dashboard stays empty until a user explicitly connects a local sensor. Generated packet fixtures are restricted to automated tests/CI and are never presented as live or demo traffic.
 - **NFR-15 — Accessibility and responsive use:** primary navigation and capture/query/report actions shall be keyboard-operable, have accessible names and visible focus, communicate status without color alone, and remain usable on mobile and desktop viewport sizes.
 
 ## 4. Explicit exclusions
@@ -76,6 +76,6 @@ The project may host the dashboard over HTTPS. When the local sensor is unavaila
 ## 7. Decisions needed for approval
 
 - Approve REQ-9 and REQ-10 as maintained product requirements rather than stretch goals.
-- Approve a hosted static synthetic demo while requiring real capture to remain local.
+- Confirm the hosted interface remains empty/offline until a user explicitly connects their local sensor; generated fixtures remain CI/test inputs only.
 - Confirm intended target OS/hardware for the live-capture, Wi-Fi, BLE, Windows ACL, and Raspberry Pi acceptance checks.
 - Confirm GitHub Pages as the initial free static-hosting provider, or choose Cloudflare Pages; provider choice does not change the local-only capture boundary.

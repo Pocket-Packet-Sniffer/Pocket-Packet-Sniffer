@@ -4,7 +4,7 @@
 
 **Metric:** statement coverage (executed statements / measured statements). Coverage describes execution by this suite; it does not establish correctness or requirement acceptance.
 
-**Run:** Windows 11 workspace, Python 3.13.1, 2026-11-17; 171 passed and 2 platform-conditional tests skipped.
+**Run:** Windows 11 workspace, Python 3.13.1, 2026-11-18; 171 passed and 2 platform-conditional tests skipped.
 
 **Result:** 79.46% statement coverage (1,899 / 2,390 statements). The combined coverage.py display is 77% because it includes branch outcomes. See the [branch coverage report](BRANCH_COVERAGE_REPORT.md) for decision coverage.
 
