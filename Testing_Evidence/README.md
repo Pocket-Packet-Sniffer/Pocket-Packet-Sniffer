@@ -1,6 +1,6 @@
 # Testing_Evidence
 
-This folder contains the original PNG screenshots from the Pocket Packet Sniffer testing rerun and a consolidated report.
+This folder preserves original PNG screenshots from earlier Pocket Packet Sniffer testing runs. They are historical evidence and can show older test counts/UI versions; they have not been recreated. Current outcomes are recorded against merged `main` commit `0839abf` in the consolidated report and linked CI run.
 
 ## Folders
 - `01_Full_Test_Suite` — complete Python test suite
@@ -14,3 +14,5 @@ This folder contains the original PNG screenshots from the Pocket Packet Sniffer
 
 The screenshots are original user-supplied captures, not recreated terminal output.
 See `Final_Testing_Report/TESTING_REPORT.md` for results and caveats.
+
+For the formal six-report submission package, use [`Submission_Reports/README.md`](../Submission_Reports/README.md). The current detailed unit, system, acceptance, and coverage reports are under `tests/docs/`.

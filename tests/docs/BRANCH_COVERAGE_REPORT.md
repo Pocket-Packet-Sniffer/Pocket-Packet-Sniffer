@@ -1,11 +1,7 @@
 # Branch Coverage Report
 
-**Measurement command:** the full Python suite with pytest-cov `--cov-branch`; see [code coverage report](CODE_COVERAGE_REPORT.md).
+**Current authoritative report:** [Code and Branch Coverage Report](CODE_AND_BRANCH_COVERAGE_REPORT.md).
 
-**Metric:** executed control-flow outcomes / measured outcomes. This helps find untested decisions that statement coverage can miss; it does not prove every possible runtime path is correct.
+The latest measured branch coverage is **68.29% (519 / 760 branch outcomes)**, with 173 partially covered branch points and 241 outcomes not exercised. The combined report contains the measurement method, module-level priorities, limits, and evidence revision.
 
-**Run:** Windows 11 workspace, Python 3.13.1, 2026-11-18; 171 passed and 2 platform-conditional tests skipped.
-
-**Result:** 68.29% branch outcomes covered (519 / 760). There are 173 partially covered branches and 241 missed branch outcomes in the coverage.py report. This is a measured baseline, not a threshold. CI publishes the terminal summary and XML artifact for subsequent runs.
-
-**Limit:** branch coverage is for `pocket_packet_sniffer` Python source. It does not measure JavaScript/React coverage, hardware behavior, or requirement coverage; use the RTM for requirement traceability.
+This legacy filename is retained for compatibility with older links. Use the combined report above for the current submission.

@@ -103,3 +103,7 @@ CI runs the same checks. Generated-PCAP tests exercise the layers without root/a
 - Windows ACL behaviour; POSIX mode-bit tests do not apply to Windows.
 - Wi-Fi monitor mode, BLE scanning and Raspberry Pi performance are not validated by CI.
 - Repeat security review if external integration paths are introduced.
+
+## Current release evidence — 2026-11-18
+
+PR #60 is merged to `main` at `0839abf`; post-merge CI [run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) passed. The Windows live Wi-Fi acceptance run saved 175/175 observed packets, stopped cleanly, returned 175 session records, and generated CSV/PDF successfully. The web dashboard is hosted on Vercel while the capture service and data remain local. See the [six-report submission index](../Submission_Reports/README.md), [system report](../tests/docs/SYSTEM_TEST_REPORT.md), and [acceptance report](../tests/docs/ACCEPTANCE_TEST_REPORT.md) for reproducible evidence and limits.

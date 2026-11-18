@@ -1,42 +1,32 @@
-# Capture Layer - Unit Testing
+# Capture Layer Unit Test Report
 
-## 1. Objective
+**Evidence revision:** source merged to `main` as `0839abf`
+**Focused result:** **42 passed, 0 failed**
+**CI:** [run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) passed on Windows and Ubuntu.
 
-Unit testing was performed to verify the Capture Layer components of the Pocket Packet Sniffer project.
+## Objective
 
-The tests cover PCAP replay, live-capture backend behavior, packet metadata, capture validation, error handling, and concurrent capture.
+Verify capture-source contracts and lifecycle without relying on a physical adapter: replay, packet metadata, source validation, typed errors, start/stop, and concurrent fan-in.
 
-## 2. Test Files
+## Test modules and cases
 
-### 2.1 Capture Layer
+| Test module | Test focus |
+|---|---|
+| `tests/test_capture_layer.py` | Classic PCAP replay, timestamps/link types, packet limits, stop signals, malformed/truncated captures, Scapy backend selection, interface resolution, startup/permission/callback errors, and validation |
+| `tests/test_concurrent_capture.py` | Multiple backend fan-in, source metadata, aggregate packet limits, invalid backend configuration, failures, and clean interruption |
 
-File: `tests/test_capture_layer.py`
+## Execution
 
-Tests PCAP replay, timestamp and link-type metadata, packet limits, stop events, malformed and truncated files, Scapy backend behavior, interface resolution, permissions, startup failures, callback errors, lifecycle diagnostics, and input validation.
+```powershell
+python -m pytest -q tests/test_capture_layer.py tests/test_concurrent_capture.py
+```
 
-Result: 37 tests passed.
+**Observed:** 42 passed in 1.18 seconds; 0 failed. This focused count is included in the full Python suite and must not be added to it.
 
-### 2.2 Concurrent Capture
+## Evidence
 
-File: `tests/test_concurrent_capture.py`
+Supporting screenshots are stored in `tests/docs/evidence/unit/capture/`. They show selected historical module runs. The current suite/CI result is the authoritative execution evidence.
 
-Tests concurrent packet capture, metadata preservation across backends, aggregate packet limits, backend failure handling, backend validation, and graceful interruption.
+## Interpretation and limits
 
-Result: 5 tests passed.
-
-## 3. Execution Summary
-
-Both selected test files were executed individually using pytest.
-
-- Total test executions: 42
-- Passed: 42
-- Failed: 0
-- Python version: 3.13.15
-
-## 4. Screenshots
-
-Execution screenshots are stored under `tests/docs/evidence/unit/capture/`.
-
-## 5. Conclusion
-
-All 42 selected Capture Layer unit-test executions passed successfully. The tests verify the selected PCAP replay, live-capture backend, packet validation, and concurrent capture behaviors.
+Mocked capture tests do not prove a specific adapter, driver, permission level, Wi-Fi monitor mode, live BLE, physical multi-adapter behavior, sustained throughput, or packet-loss performance. The separate real Wi-Fi acceptance run saved 175 of 175 packets on one Windows computer; see the [system report](../SYSTEM_TEST_REPORT.md). Windows permission tests do not establish Windows ACL configuration.

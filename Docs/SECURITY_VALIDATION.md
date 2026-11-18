@@ -32,3 +32,7 @@ For each completed check, record the test date, OS/version, adapter and driver, 
 - Final security review on the supported target after hardware smoke tests.
 
 PR #29 merged the backend compliance implementation into `main`. Latest main CI [run 40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/40479490511) passed Ruff and 106 tests in 1.87 seconds. A replay throughput benchmark is available, but this is not evidence of live packet-loss performance. Target-environment checks listed above remain unverified until recorded from the actual device/adapter/OS.
+
+## Current verification addendum — 2026-11-18
+
+PR #60 is merged as `0839abf`; post-merge CI [run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) passed. The real Wi-Fi acceptance session was passive, local, and stored 175 of 175 observed packets. This verifies the exercised workflow on that Windows computer only. It is not a security audit and does not validate Windows ACLs, Wi-Fi monitor mode, BLE radio capture, Raspberry Pi performance, packet-drop behavior, or every failure mode. Captures may include sensitive metadata and must be handled as private files; see [privacy guidelines](PRIVACY_GUIDELINES.md) and the [acceptance report](../tests/docs/ACCEPTANCE_TEST_REPORT.md).

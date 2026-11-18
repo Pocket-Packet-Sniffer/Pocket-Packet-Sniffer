@@ -9,9 +9,9 @@ The design follows the four-layer architecture defined by the SRS and SASD:
 1. **Capture** — captures raw packets through a common Capturer interface.
 2. **Analysis** — parses packets, extracts required metadata, and runs protocol analyzers.
 3. **Storage** — persists PCAP data and indexed metadata through a Repository interface.
-4. **Presentation** — provides the primary CLI for capture control, live statistics, queries, and reports.
+4. **Presentation** — provides the CLI and web dashboard for capture control, live statistics, queries, and reports. The dashboard communicates with a local sensor; Vercel hosts the interface, not the capture API or packet data.
 
-WiFi, Ethernet, and BLE are represented by the requirements. The dashboard uses a near-black visual system with signal-green/cyan accents and displays only data from the local capture agent. Live capture and PCAP replay are explicit operator actions; metadata-only heuristic alerts identify suspicious patterns for review. Live Wi-Fi monitor-mode and BLE-adapter behavior still require validation on target hardware. Vercel hosts the interface only; real capture remains local.
+Ordinary Wi-Fi and Ethernet capture use interfaces exposed by the operating system and capture driver. Live Wi-Fi monitor mode is adapter/driver-dependent; live BLE scanning is not included in the current Windows sensor. The parser can read supported BLE metadata from selected PCAP link types, which is file replay rather than radio scanning. The dashboard uses a near-black visual system with signal-green/cyan accents and displays data returned by the local capture agent. Capture and replay are explicit operator actions; metadata-only heuristic alerts are review signals, not attack verdicts.
 
 ## Requirements and project documents
 
@@ -22,6 +22,8 @@ The approved project documents currently live under Docs:
 - Software Architecture and Design Specification (SASD)
 
 The SRS is the source of functional and non-functional requirements. The STP defines the verification approach and test mapping. The SASD explains the design and component boundaries. Implementation decisions should be traceable to these documents.
+
+The six requested GitHub submission reports are collected in the [Submission Reports index](Submission_Reports/README.md): SRS, STP, SASD, unit-test report, system-test report, and combined code/branch-coverage report.
 
 ## Engineering workflow
 
@@ -48,7 +50,7 @@ python -m pytest -q
 python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing
 ```
 
-Automated tests use generated fixtures and mocked capture sources; they do not put synthetic traffic into the live product or require administrator privileges. The current Windows acceptance run and all outstanding hardware limits are recorded in the [SRS acceptance report](tests/docs/ACCEPTANCE_TEST_REPORT.md). For tomorrow's presentation, use the [real-traffic demo guide](Docs/DEMO_SCRIPT.md).
+Automated tests use generated fixtures and mocked capture sources; they do not put synthetic traffic into the live product or require administrator privileges. The current Windows acceptance run and all outstanding hardware limits are recorded in the [SRS acceptance report](tests/docs/ACCEPTANCE_TEST_REPORT.md). For a real-traffic presentation, use the [demo guide](Docs/DEMO_SCRIPT.md).
 
 ## Planning and traceability
 
@@ -60,6 +62,7 @@ Automated tests use generated fixtures and mocked capture sources; they do not p
 - [Course alignment](Docs/COURSE_ALIGNMENT.md) — maps Unit 3 network topics and Unit 4 software-quality/testing topics to project evidence.
 - [Privacy guidelines](Docs/PRIVACY_GUIDELINES.md) — authorized use, local capture handling, and sharing precautions.
 - [SRS acceptance report](tests/docs/ACCEPTANCE_TEST_REPORT.md) — current real-interface result, automated verification, and remaining acceptance gates.
+- [Six-report submission index](Submission_Reports/README.md) — direct GitHub links to each required report.
 
 ## Team engineering resources
 
@@ -191,9 +194,9 @@ pocket-packet-sniffer capture-multi --pcap-file demo-a.pcap --pcap-file demo-b.p
 
 ## Current implementation status
 
-The Capture → Analysis → Storage → Presentation workflow, local sensor, dashboard, and CI/CD are implemented. The latest verified `main` baseline at this checkout is commit `6a682b6`; GitHub Actions [run 44352549033](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44352549033) passed. On 2026-11-18, the local Windows acceptance run captured **175 real packets**, stored all 175, and exported CSV and PDF reports. Python checks reported 171 passed / 2 skipped; the dashboard build and all 13 browser tests passed. Full results are in the acceptance report.
+The Capture → Analysis → Storage → Presentation workflow, local sensor, dashboard, and CI/CD are implemented. Current `main` is commit `0839abf9d102d0b4c1da4f0f58a205ef6d9a4525`; GitHub Actions [run 44364160089](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) passed. On 2026-11-18, the local Windows acceptance run captured **175 real packets**, stored all 175, and exported CSV and PDF reports. Python checks reported 171 passed / 2 skipped; the dashboard type-check, production build, and all 13 browser tests passed. Full results are in the [acceptance report](tests/docs/ACCEPTANCE_TEST_REPORT.md) and [submission index](Submission_Reports/README.md).
 
-Live Wi-Fi monitor mode, live BLE scanning, simultaneous physical adapters, Windows ACL behavior, and Raspberry Pi throughput/drop rates are not validated. The current Windows sensor does not include live BLE scanning. The hosted production site returned HTTP 200 during this review; this local release candidate is not deployed yet. Branch-protection and GitHub security settings remain subject to admin-level verification.
+Live Wi-Fi monitor mode, live BLE scanning, simultaneous physical adapters, Windows ACL behavior, and Raspberry Pi throughput/drop rates are not validated. The current Windows sensor does not include live BLE scanning. The production dashboard is deployed and returned HTTP 200; packet capture and storage remain local. Branch-protection and GitHub security settings remain subject to admin-level verification.
 
 ## Third-party acknowledgements
 

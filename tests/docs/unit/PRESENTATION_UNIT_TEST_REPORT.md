@@ -1,53 +1,35 @@
-# Presentation Layer - Unit Testing
+# Presentation Layer Unit Test Report
 
-## 1. Objective
+**Evidence revision:** source merged to `main` as `0839abf`
+**Focused result:** **22 passed, 0 failed**
+**CI:** [run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) passed.
 
-Unit testing was performed to verify dashboard rendering and refresh behavior, CSV report export, and PDF report generation.
+## Objective
 
-## 2. Test Files
+Verify presentation-layer formatting, statistics refresh/stop behavior, and local CSV/PDF report generation from stored packet metadata.
 
-### 2.1 Dashboard
+## Test modules and cases
 
-**File:** `tests/test_presentation_dashboard.py`
+| Test module | Test focus |
+|---|---|
+| `tests/test_presentation_dashboard.py` | Statistics rendering, empty/invalid data, refresh and stop events, interval validation |
+| `tests/test_presentation_report_export.py` | Session-scoped CSV summaries and packet metadata, empty sessions, no-overwrite handling, consistency and invalid destinations |
+| `tests/test_report_pdf.py` | PDF structure/metadata, payload exclusion, no-overwrite handling, mismatched session validation |
 
-Tests dashboard statistics rendering, empty capture handling, invalid statistics, refresh/stop events, and refresh-interval validation.
+These are backend/CLI presentation unit tests. Dashboard browser behavior is separately covered by 13 Playwright tests in the [system test report](../SYSTEM_TEST_REPORT.md).
 
-Result: 13 test executions passed.
+## Execution
 
-### 2.2 Report Export
+```powershell
+python -m pytest -q tests/test_presentation_dashboard.py tests/test_presentation_report_export.py tests/test_report_pdf.py
+```
 
-**File:** `tests/test_presentation_report_export.py`
+**Observed:** 22 passed in 1.01 seconds; 0 failed. These tests are a subset of the full Python result.
 
-Tests CSV export of stored session summaries and packet metadata, empty-session export, no-overwrite behavior, session consistency, summary counts, and invalid output paths.
+## Evidence
 
-Result: 6 test executions passed.
+Historical supporting screenshots are in `tests/docs/evidence/unit/presentation/screenshots/`: dashboard renderer, report export, and PDF report. The current exact command result and CI #731 provide current pass/fail evidence.
 
-### 2.3 PDF Report
+## Interpretation and limits
 
-**File:** `tests/test_report_pdf.py`
-
-Tests PDF structure and metadata, exclusion of packet payloads, no-overwrite behavior, and rejection of mismatched session records.
-
-Result: 3 test executions passed.
-
-## 3. Execution Summary
-
-Each selected test file was executed individually using pytest.
-
-- Total test executions: 22
-- Passed: 22
-- Failed: 0
-- Execution times: dashboard 0.63 seconds; CSV export 0.65 seconds; PDF report 0.56 seconds
-- Environment: Windows, Python 3.13.15, pytest 8.3.4
-
-## 4. Screenshot Evidence
-
-Expected evidence location: `tests/docs/evidence/unit/presentation/`
-
-- `02_presentation_dashboard.png`
-- `03_presentation_report_export.png`
-- `04_presentation_pdf_report.png`
-
-## 5. Conclusion
-
-All 22 selected Presentation Layer test executions passed. The results verify the tested dashboard behavior and CSV/PDF report-export functionality.
+Passing unit tests establish tested formatting/export behavior, not whether reports are complete for every possible protocol or safe to share without review. Exports are metadata-oriented, but capture files themselves may contain sensitive packet bytes. This unit report does not measure frontend accessibility or human usability; see the [Usability Test Report](../USABILITY_TEST_REPORT.md).

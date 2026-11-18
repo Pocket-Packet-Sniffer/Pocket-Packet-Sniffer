@@ -35,12 +35,15 @@ CI runs lint and the Python suite on Ubuntu and Windows, then type-checks/builds
 | Regression | Fixed defects and repeated Python/browser regressions | [Regression test report](docs/REGRESSION_TEST_REPORT.md) |
 | Smoke and sanity | Packaged agent startup/health check; focused post-change checks | [Smoke test report](docs/SMOKE_TEST_REPORT.md), [sanity test report](docs/SANITY_TEST_REPORT.md) |
 | Validation and security | Requirement/contract validation, passive-only and local-origin checks | [Validation report](docs/VALIDATION_TEST_REPORT.md), [security test report](docs/SECURITY_TEST_REPORT.md) |
-| Coverage | Python statement and decision/branch measurement with pytest-cov | [Code coverage](docs/CODE_COVERAGE_REPORT.md), [branch coverage](docs/BRANCH_COVERAGE_REPORT.md) |
+| Coverage | Python statement and decision/branch measurement with pytest-cov | [Combined code and branch coverage report](docs/CODE_AND_BRANCH_COVERAGE_REPORT.md); legacy links: [code](docs/CODE_COVERAGE_REPORT.md), [branch](docs/BRANCH_COVERAGE_REPORT.md) |
 | Performance and usability | Synthetic replay benchmark and responsive/browser behavior | [Performance report](docs/PERFORMANCE_TEST_REPORT.md), [usability report](docs/USABILITY_TEST_REPORT.md); real target performance and user study are not claimed |
 
 ## Evidence and source material
 
 - [Test execution report](docs/TEST_EXECUTION_REPORT.md) contains dated run results, CI links, traceability, and explicit limitations.
+- [Submission report index](../Submission_Reports/README.md) lists the six requested documents in a single GitHub-ready location.
+- [Unit test report](docs/unit/UNIT_TEST_REPORT.md) and [system/integration report](docs/SYSTEM_TEST_REPORT.md) include current case counts, environments, outcomes, evidence sources, and limits.
+- [Code and branch coverage report](docs/CODE_AND_BRANCH_COVERAGE_REPORT.md) includes exact denominators, lower-coverage modules, and risk-based next steps.
 - [Software Test Plan v1.3](docs/test-plan/Pocket_Packet_Sniffer_Software_Test_Plan.pdf) is the preserved source plan.
 - [Unit screenshots](docs/evidence/unit/) are supporting evidence, not substitutes for test output.
 - The canonical implementation tests are the `tests/test_*.py` files. Former duplicate capture test copies were identical to the canonical files and have been consolidated.

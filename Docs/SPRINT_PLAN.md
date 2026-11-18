@@ -1,6 +1,6 @@
 # Pocket Packet Sniffer — Sprint Plan and Closeout
 
-**Current closeout snapshot:** 2026-11-18. Sprint 1 and Sprint 3 coordinator issues are closed in GitHub. Issue #28 is open for the remaining target-hardware acceptance items; issue #16 tracks admin-only repository controls. The release-readiness candidate is being reviewed separately. Sprint 1's evidence-based closeout is documented in `Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md`. This record distinguishes automated test evidence from manual hardware checks and distinguishes the maintainer's asynchronous review from a synchronous team meeting (none is recorded in the repository).
+**Current closeout snapshot:** 2026-11-18. Sprint 1 and Sprint 3 coordinator issues are closed in GitHub. Issue #28 is open for remaining target-hardware acceptance items; issue #16 tracks admin-only repository controls. PR #60 is merged to `main`; post-merge CI run #731 passed. Sprint 1's evidence-based closeout is documented in `Docs/SPRINT_1_REVIEW_RETROSPECTIVE.md`. This record distinguishes automated test evidence from manual hardware checks and distinguishes the maintainer's asynchronous review from a synchronous team meeting (none is recorded in the repository).
 
 ## Sprint 1 — Foundation and core packet pipeline
 
@@ -115,6 +115,6 @@ Latest main CI run [40479490511](https://github.com/Pocket-Packet-Sniffer/Pocket
 ### Final verification addendum — 2026-11-18
 
 - A real local Windows Wi-Fi acceptance capture stored 175 of 175 observed packets and stopped with exit code 0; live-rate samples, session query, and CSV/PDF export are recorded in `tests/docs/ACCEPTANCE_TEST_REPORT.md`.
-- Current local verification passed Ruff, 171 Python tests (2 platform-conditional skips), dashboard type-check/build, and 13 browser tests. The release-readiness candidate changes are not merged or deployed yet.
-- GitHub main CI run [44352549033](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44352549033) succeeded for main commit `6a682b6`. The production Vercel site returned HTTP 200; it still serves the main build until the candidate is merged/deployed.
+- PR #60 merged the release-readiness documentation and dashboard refinements into `main` as `0839abf`. Post-merge CI [run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089) succeeded. The Vercel production site returned HTTP 200 and served the updated privacy guidance.
+- Local verification passed Ruff, 171 Python tests (2 platform-conditional skips), dashboard type-check/build, and 13 browser tests. Actual authorized Wi-Fi acceptance stored 175 of 175 packets; see the detailed acceptance report.
 - Physical Wi-Fi monitor mode, live BLE scanning (not included in the current Windows agent), Windows ACLs, Raspberry Pi throughput/drop counts, and concurrent physical adapters remain unverified. Keep the SRS acceptance gate open until these are tested or the project scope is formally narrowed.

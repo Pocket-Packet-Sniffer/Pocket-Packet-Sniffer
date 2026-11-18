@@ -1,36 +1,38 @@
-# Pocket Packet Sniffer — Testing Evidence Report
+# Pocket Packet Sniffer — Consolidated Testing Evidence
 
-## Evidence scope
-This package contains original terminal/desktop screenshots supplied during the testing rerun, saved as PNG files. The screenshots have been preserved as evidence; they have not been recreated from text output.
+**Current source:** `main` commit `0839abf9d102d0b4c1da4f0f58a205ef6d9a4525`
+**Post-merge CI:** [GitHub Actions run #731](https://github.com/Pocket-Packet-Sniffer/Pocket-Packet-Sniffer/actions/runs/44364160089), success
+**Evidence period:** 2026-11-18
 
-## Test results
+## Current test results
 
-| Test area | Command / activity | Result |
-|---|---|---:|
-| Full Python test suite | `python -m pytest -v` | 171 passed, 2 skipped, 1 warning |
-| Capture component | `python -m pytest tests/test_capture_layer.py -v` | 37 passed |
-| Analysis component | `python -m pytest tests/test_analysis_layer.py tests/test_analysis_pipeline.py tests/test_analysis_statistics.py -v` | 22 passed |
-| Storage component | `python -m pytest tests/test_storage_query.py -v` | 25 passed |
-| Presentation component | `python -m pytest tests/test_presentation_dashboard.py tests/test_presentation_report_export.py tests/test_report_pdf.py -v` | 22 passed |
-| System integration | `python -m pytest tests/test_session_integration.py -v` | 1 passed |
-| API and CLI | `python -m pytest tests/test_api.py tests/test_cli.py -v` | 19 passed, 1 warning |
-| Sanity — storage | `python -m pytest -q tests/test_storage_query.py` | 25 passed |
-| Sanity — API | `python -m pytest -q tests/test_api.py` | 10 passed, 1 warning |
-| Frontend TypeScript | `npm run typecheck` in `web` | User confirmed command returned to prompt without diagnostics; screenshot captures command start only |
-| White-box / coverage | `python -m pytest -q --cov=pocket_packet_sniffer --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml` | 171 passed, 2 skipped, 1 warning |
-| Statement coverage | Read from `coverage.xml` | 79.46% |
-| Branch coverage | Read from `coverage.xml` | 68.29% |
-| Frontend production build | `npm run build` in `web` | Compilation, TypeScript, static generation (3/3), and optimization completed successfully |
-| Browser end-to-end | `npm run test:e2e -- --workers=2` | 11 passed |
-| Ruff lint | `ruff check --select E4,E7,E9,F,I src tests tools` | All checks passed |
+| Test area | Command or evidence | Result |
+|---|---|---|
+| Ruff lint | `ruff check --select E4,E7,E9,F,I src tests tools` | **PASS** — all checks passed |
+| Full Python suite | `python -m pytest -q` with pytest-cov enabled | **171 passed, 2 skipped, 0 failed**; POSIX permission-mode tests skipped on Windows |
+| Statement coverage | `coverage.json` / pytest-cov | **79.46%** — 1,899/2,390 Python statements |
+| Branch coverage | `coverage.json` / pytest-cov | **68.29%** — 519/760 branch outcomes |
+| Focused unit suites | Analysis 45, Capture 42, Storage 25, Presentation 22 | **134 passed**; these overlap with the full suite |
+| Backend system-flow subset | Integration/API/CLI/capture lifecycle/agent files | **34 passed**; overlaps with the full suite |
+| Frontend type-check | `npm run typecheck` in `web/` | **PASS** |
+| Production frontend build | `npm run build` in `web/` | **PASS** |
+| Browser end-to-end | `npm run test:e2e -- --workers=1` in `web/` | **13 passed**; API responses are controlled/mocked in browser tests |
+| Real interface acceptance | Passive authorized Windows Wi-Fi capture via local sensor/Npcap | **175 seen, 175 stored, 0 ignored**; clean stop; no generated/injected packets |
+| Live query and exports | Same isolated session | **175 records queried**; CSV and PDF each returned HTTP 200 |
+| Services and hosted dashboard | Local API, local web UI, deployed Vercel page | Each returned HTTP 200 |
 
-## Notes and limitations
-- The full Python suite reported 2 skipped tests. The skips concern POSIX permission-mode behavior that does not apply directly on Windows; this run does not establish Windows ACL security behavior.
-- The Starlette warning reports that using `httpx` with `starlette.testclient` is deprecated and recommends `httpx2`. It did not cause the displayed tests to fail.
-- The frontend typecheck screenshot shows `tsc --noEmit` starting. The user confirmed that the command completed and returned to the PowerShell prompt without errors; the screenshot does not independently show the completion prompt.
-- The production-build screenshot shows successful compilation, TypeScript, static page generation, and final optimization, but not the returned shell prompt.
-- These results demonstrate the tests that were run in the supplied Windows development environment. They do not by themselves prove live packet capture on every physical adapter, Wi-Fi monitor-mode support, BLE radio capture, performance on Raspberry Pi hardware, or zero packet loss under live traffic.
-- Component and sanity test runs overlap with the full test suite; do not add their counts together as a unique total.
+The current complete details are in the [Unit Test Report](../../tests/docs/unit/UNIT_TEST_REPORT.md), [System Test Report](../../tests/docs/SYSTEM_TEST_REPORT.md), [Code and Branch Coverage Report](../../tests/docs/CODE_AND_BRANCH_COVERAGE_REPORT.md), [Acceptance Test Report](../../tests/docs/ACCEPTANCE_TEST_REPORT.md), and [Test Execution Report](../../tests/docs/TEST_EXECUTION_REPORT.md).
 
-## Evidence authenticity
-PNG files in this package are copies of the screenshots supplied in this conversation. The report summarizes the visible results and the user's confirmation where noted. No synthetic terminal screenshots have been created.
+## Evidence interpretation
+
+- The six formal submission documents are indexed at [Submission Reports](../../Submission_Reports/README.md).
+- Coverage is a measured execution baseline, not a correctness or SRS-completion score. Python coverage does not measure the React/TypeScript frontend.
+- Two skipped POSIX permission tests do not verify Windows ACLs.
+- Browser tests validate scripted dashboard behavior, not physical adapter capture.
+- The real capture proves ordinary Wi-Fi capture on one Windows computer/adapter during one short run. It does not establish monitor mode, all-network visibility, sustained throughput, zero packet loss, or behavior on other hardware.
+- Live BLE scanning is not part of the current Windows sensor. Raspberry Pi performance/drop counters, Windows ACLs, Wi-Fi monitor mode, and simultaneous physical-adapter capture remain unverified.
+- Rule-based suspicious-activity indicators are heuristic prompts for investigation, not proof of attack or safety.
+
+## Screenshot provenance
+
+The PNG files in this folder tree are original historical screenshots supplied during earlier testing runs. They are retained as supporting evidence and have not been recreated. They may show older test counts or UI versions; use the dated CI links and current text reports above for current results. A screenshot is not substituted for machine-readable test output or CI status.
